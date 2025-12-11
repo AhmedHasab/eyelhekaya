@@ -2,75 +2,48 @@
 <html lang="ar" dir="rtl">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ذكاء اختيار القصص – إيه الحكاية؟</title>
 
-  <!-- Manifest (PWA) -->
-  <link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="style.css" />
 
-  <!-- Styles -->
-  <link rel="stylesheet" href="style.css">
-
-  <meta name="theme-color" content="#ffffff">
+  <meta name="theme-color" content="#ffffff" />
 </head>
 
 <body>
-
   <div class="app-container">
 
     <header class="app-header">
       <h1>🎬 ذكاء اختيار القصص – قناة "إيه الحكاية؟"</h1>
 
-      <!-- ====== الأزرار الرئيسية الأربعة ====== -->
+      <!-- أزرار الترند -->
       <div class="top-buttons">
-
-        <!-- زر 1: اختيار قصة فيديو طويل وفقًا للترند -->
-        <button id="btn-pick-today" class="btn primary strong">
-          🗓 اختيار قصة فيديو طويل وفقا للترند
-        </button>
-
-        <!-- زر 2: اختيار قصة عشوائية مسجلة بالموقع (فيديو طويل) -->
-        <button id="btn-pick-long" class="btn primary">
-          🎥 اختيار قصة عشوائيه مسجلة بالموقع (فيديو طويل)
-        </button>
-
-        <!-- زر 3: اختيار فيديو ريلز من الترند -->
-        <button id="btn-pick-short" class="btn accent">
-          ⚡ اختيار فيديو (ريلز) من الترند
-        </button>
-
-        <!-- زر 4: تحديث التريندات -->
-        <button id="btn-update-trends" class="btn secondary">
-          📈 تحديث التريندات
-        </button>
+        <button id="btn-pick-today" class="btn primary strong">🗓 اختيار قصة فيديو طويل وفقا للترند</button>
+        <button id="btn-pick-long" class="btn primary">🎥 اختيار قصة عشوائية مسجلة بالموقع (فيديو طويل)</button>
+        <button id="btn-pick-short" class="btn accent">⚡ اختيار فيديو (ريلز) من الترند</button>
+        <button id="btn-update-trends" class="btn secondary">📈 تحديث التريندات</button>
       </div>
 
-      <!-- ====== حالة التريندات ====== -->
+      <!-- حالة التريند -->
       <div class="status-row">
         <span id="status-trends" class="status-pill muted">تريندات Google غير محدثة</span>
         <span id="status-youtube" class="status-pill muted">تريندات YouTube غير محدثة</span>
         <span id="status-deaths" class="status-pill muted">وفيات آخر 48 ساعة غير محدثة</span>
       </div>
 
-      <!-- ====== التحكم في عرض اللوحين (يمين/شمال) ====== -->
+      <!-- التحكم في عرض اللوحين -->
       <div class="layout-controls">
-        <button id="btn-show-stories-only" class="btn secondary small">
-          ⬅ عرض إدارة القصص فقط
-        </button>
-        <button id="btn-show-both" class="btn secondary small">
-          ⬌ عرض اللوحين معًا
-        </button>
-        <button id="btn-show-ai-only" class="btn secondary small">
-          ➡ عرض نتائج الذكاء فقط
-        </button>
+        <button id="btn-show-stories-only" class="btn secondary small">⬅ عرض إدارة القصص فقط</button>
+        <button id="btn-show-both" class="btn secondary small">⬌ عرض اللوحين معًا</button>
+        <button id="btn-show-ai-only" class="btn secondary small">➡ عرض نتائج الذكاء فقط</button>
       </div>
     </header>
 
     <main class="main-layout">
 
-      <!-- ====== الذكاء الاصطناعي ====== -->
+      <!-- لوحة نتائج الذكاء -->
       <section class="ai-panel card">
         <h2>🧠 نتائج الذكاء الاصطناعي</h2>
         <div id="ai-output" class="ai-output">
@@ -78,11 +51,10 @@
         </div>
       </section>
 
-      <!-- ====== إدارة القصص ====== -->
+      <!-- لوحة إدارة القصص -->
       <section class="stories-panel card">
         <h2>📚 إدارة القصص</h2>
 
-        <!-- إدخال خام متعدد الأسطر -->
         <label class="block-label">✂️ الصق النص الخام للقصص (كل سطر = قصة):</label>
 
         <textarea id="raw-input" rows="5" placeholder="مثال:
@@ -91,65 +63,63 @@
 حادثة طائرة مصر للطيران
 ..."></textarea>
 
-        <button id="btn-parse-raw" class="btn primary small">
-          ➕ تحويل النص إلى قصص
-        </button>
+        <button id="btn-parse-raw" class="btn primary small">➕ تحويل النص إلى قصص</button>
 
-        <!-- إدخال يدوي كسطر مقسم إلى خلايا -->
+        <!-- إدخال يدوي كامل -->
         <div class="manual-input-row">
+
           <div class="manual-cell">
-            <label for="manual-name">اسم القصة</label>
-            <input id="manual-name" type="text" placeholder="اكتب اسم القصة هنا">
+            <label>اسم القصة</label>
+            <input id="manual-name" type="text" placeholder="اكتب اسم القصة هنا" />
           </div>
 
           <div class="manual-cell">
-            <label for="manual-type">نوع القصة</label>
+            <label>نوع القصة (Category)</label>
             <select id="manual-type">
-              <option value="">اختر النوع…</option>
-              <option value="crime">جريمة مكتشفة بالكامل</option>
-              <option value="mystery">اختفاء / لغز</option>
-              <option value="history">حرب / صراع تاريخي</option>
-              <option value="biography">سيرة ذاتية / مشهور</option>
-              <option value="general">عام / أخرى</option>
+              <option value="">اختر الفئة…</option>
+              <option value="A – المشاهير والنجوم">A – المشاهير والنجوم</option>
+              <option value="B – السياسيين والزعماء والقادة">B – السياسيين والزعماء والقادة</option>
+              <option value="C – المخابرات والجواسيس">C – المخابرات والجواسيس</option>
+              <option value="D – الجرائم والاختفاءات">D – الجرائم والاختفاءات</option>
+              <option value="E – التاريخ العسكري">E – التاريخ العسكري</option>
+              <option value="F – الأنبياء والصحابة والغزوات">F – الأنبياء والصحابة والغزوات</option>
+              <option value="G – العلماء والمفكرين">G – العلماء والمفكرين</option>
             </select>
           </div>
 
           <div class="manual-cell">
-            <label for="manual-score">تقييمك الشخصي (الدرجة)</label>
-            <input id="manual-score" type="number" min="0" max="100" value="80">
+            <label>تقييمك الشخصي (الدرجة)</label>
+            <input id="manual-score" type="number" min="0" max="100" value="80" />
           </div>
 
           <div class="manual-cell">
-            <label for="manual-notes">ملاحظات / روابط</label>
-            <input id="manual-notes" type="text" placeholder="رابط، ملاحظة، كلمة سرية...">
+            <label>ملاحظات / روابط</label>
+            <input id="manual-notes" type="text" placeholder="ملاحظة – رابط – كلمة مفتاحية" />
           </div>
 
           <div class="manual-cell manual-cell-action">
             <label>&nbsp;</label>
-            <button id="btn-add-manual" class="btn primary small">
-              ➕ إضافة قصة يدويًا
-            </button>
+            <button id="btn-add-manual" class="btn primary small">➕ إضافة قصة يدويًا</button>
           </div>
         </div>
 
-        <p class="manual-hint">
-          ⚙ درجة الذكاء وتاريخ التسجيل يتم احتسابهم تلقائيًا من الكود، ولا تحتاج لإدخالهم يدويًا.
-        </p>
+        <p class="manual-hint">⚙ يتم احتساب تاريخ التسجيل ودرجة الذكاء تلقائيًا.</p>
 
+        <!-- تصدير واستيراد -->
         <div class="backup-row">
           <button id="btn-export" class="btn secondary small">💾 تصدير القصص</button>
 
           <label for="import-file" class="btn secondary small file-label">📂 استيراد القصص</label>
-          <input type="file" id="import-file" hidden accept="application/json">
+          <input type="file" id="import-file" hidden accept="application/json" />
         </div>
 
-        <!-- شريط البحث في القصص المسجّلة -->
+        <!-- شريط البحث -->
         <div class="search-row">
-          <label for="stories-search">🔎 شريط بحث في كل القصص المتسجلة:</label>
-          <input id="stories-search" type="text" placeholder="اكتب جزء من الاسم، النوع، أو الملاحظات للبحث...">
+          <label>🔎 شريط بحث:</label>
+          <input id="stories-search" type="text" placeholder="اكتب للبحث في جميع القصص…" />
         </div>
 
-        <!-- ====== جدول القصص ====== -->
+        <!-- جدول القصص -->
         <div class="table-wrapper">
           <table id="stories-table">
             <thead>
@@ -171,19 +141,15 @@
         </div>
 
       </section>
-
     </main>
 
   </div>
 
-  <!-- ====== ملف الجافاسكريبت الرئيسي ====== -->
   <script src="app.js"></script>
 
-  <!-- ====== Service Worker ====== -->
   <script>
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("service-worker.js")
-        .catch(err => console.log("Service Worker failed:", err));
+      navigator.serviceWorker.register("service-worker.js");
     }
   </script>
 
