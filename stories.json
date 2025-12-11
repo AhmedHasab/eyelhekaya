@@ -1,1 +1,2213 @@
+[
+  {
+    "id": 1,
+    "name": "ليلى مراد",
+    "score": 80,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 2,
+    "name": "رشدي اباظه",
+    "score": 100,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 3,
+    "name": "دكتاتور رومانيا",
+    "score": 50,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 4,
+    "name": "توفيق الدقن",
+    "score": 60,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 5,
+    "name": "سيد زيان",
+    "score": 60,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 6,
+    "name": "صلاح نصر",
+    "score": 100,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 7,
+    "name": "سيد قطب",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 8,
+    "name": "كاميليا",
+    "score": 100,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 9,
+    "name": "سعاد حسني",
+    "score": 100,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 10,
+    "name": "عمر سليمان",
+    "score": 100,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 11,
+    "name": "حافظ الاسد",
+    "score": 100,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 12,
+    "name": "اسمهان",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 13,
+    "name": "على مشرفة",
+    "score": 65,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 14,
+    "name": "سعاد نصر",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 15,
+    "name": "ذكرى",
+    "score": 95,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 16,
+    "name": "سوزان تميم",
+    "score": 100,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 17,
+    "name": "لسان التمساح 1",
+    "score": 100,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 18,
+    "name": "زينات صدقي",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 19,
+    "name": "السادات",
+    "score": 100,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 20,
+    "name": "محمد علي",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 21,
+    "name": "جمال خاشقي",
+    "score": 100,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 22,
+    "name": "محمد نجيب",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 23,
+    "name": "محمد حسني مبارك",
+    "score": 100,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 24,
+    "name": "ابراهيم الرفاعي",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 25,
+    "name": "عبدالمنعم رياض",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 26,
+    "name": "حسين طنطاوي",
+    "score": 100,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 27,
+    "name": "احمد زويل",
+    "score": 95,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 28,
+    "name": "سميرة موسى",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 29,
+    "name": "طه حسين",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 30,
+    "name": "نجيب محفوظ",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 31,
+    "name": "جمال عبدالناصر",
+    "score": 100,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 32,
+    "name": "اشرف مروان",
+    "score": 100,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 33,
+    "name": "عبدالحكيم عامر",
+    "score": 100,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 34,
+    "name": "نعيمة عاكف",
+    "score": 80,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 35,
+    "name": "محمد فوزي",
+    "score": 95,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 36,
+    "name": "تحية كاريوكا",
+    "score": 95,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 37,
+    "name": "إسحاق رابين",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 38,
+    "name": "جون كيندي",
+    "score": 75,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 39,
+    "name": "شارون",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 40,
+    "name": "صدام حسين",
+    "score": 100,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 41,
+    "name": "ليفي كوهين",
+    "score": 100,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 42,
+    "name": "حسن نصر الله",
+    "score": 100,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 43,
+    "name": "اسماعيل هنية",
+    "score": 95,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 44,
+    "name": "السنوار",
+    "score": 95,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 45,
+    "name": "ياسر عرفات",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  }
+  {
+    "id": 46,
+    "name": "شاه ايران",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 47,
+    "name": "صالح سليم",
+    "score": 100,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 48,
+    "name": "الشيخ احمد ياسين",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 49,
+    "name": "منظمة التحرير الفلسطينية",
+    "score": 100,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 50,
+    "name": "صبره وشتيله",
+    "score": 100,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 51,
+    "name": "نبي الله ايوب",
+    "score": 100,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 52,
+    "name": "عمر بن الخطاب",
+    "score": 100,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 53,
+    "name": "غزوة بدر",
+    "score": 95,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 54,
+    "name": "قطز",
+    "score": 95,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 55,
+    "name": "كمال الجنزوري",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 56,
+    "name": "الشعراوي",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 57,
+    "name": "هواري بومدين",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 58,
+    "name": "الحريري",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 59,
+    "name": "ملك الاردن حسين",
+    "score": 95,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 60,
+    "name": "الملك فيصل",
+    "score": 95,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 61,
+    "name": "الجمسي",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 62,
+    "name": "سعد الدين الشاذلي",
+    "score": 75,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 63,
+    "name": "داليدا",
+    "score": 75,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 64,
+    "name": "عمر خورشيد",
+    "score": 80,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 65,
+    "name": "سر اختفاء العالم نبيل القليني",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 66,
+    "name": "رفعت الأسد",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 67,
+    "name": "نادية لطفي",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 68,
+    "name": "هند رستم",
+    "score": 95,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 69,
+    "name": "اسماعيل ياسين",
+    "score": 95,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 70,
+    "name": "ام كلثوم",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 71,
+    "name": "عبدالحليم حافظ",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 72,
+    "name": "محمد عبدالوهاب",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 73,
+    "name": "السادات واغتيال السوفيت لمشروعاته",
+    "score": 95,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 74,
+    "name": "عبدالله غيث",
+    "score": 95,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 75,
+    "name": "محمود عبدالعزيز",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 76,
+    "name": "محاولات اغتيال مبارك",
+    "score": 100,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 77,
+    "name": "اغتيال الأميرة ديانا",
+    "score": 100,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 78,
+    "name": "كيف اخترقوا حياة ملوك الخليج",
+    "score": 100,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 79,
+    "name": "الفيلم اللي منعته الدولة خوفا من الفتنة",
+    "score": 100,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 80,
+    "name": "راقية ابراهيم (فنانة مصرية يهوديه)",
+    "score": 95,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 81,
+    "name": "الممثلة (زار امير الابراهيمين اللي اختفت بعد كشف فضيحة",
+    "score": 95,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 82,
+    "name": "سعد زغلول",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 83,
+    "name": "طلعت حرب",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 84,
+    "name": "أحمد عرابي",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 85,
+    "name": "زين العابدين بن علي",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 86,
+    "name": "موشي ديان",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 87,
+    "name": "سعيد صالح",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 88,
+    "name": "فؤاد المهندس",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 89,
+    "name": "نيلسون مانديلا",
+    "score": 95,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 90,
+    "name": "ادولف هتلر",
+    "score": 95,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  }
+  {
+    "id": 91,
+    "name": "المهاتما غاندي",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 92,
+    "name": "قصة نجاح رواندا",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 93,
+    "name": "نجيب الريحاني",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 94,
+    "name": "محمد كمال شرفنطح",
+    "score": 70,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 95,
+    "name": "فريد شوقي",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 96,
+    "name": "مصطفى محمود",
+    "score": 100,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 97,
+    "name": "عمر المختار",
+    "score": 100,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 98,
+    "name": "زياد الرحباني",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 99,
+    "name": "بابا شارو",
+    "score": 70,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 100,
+    "name": "أبلة فضيلة",
+    "score": 70,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 101,
+    "name": "عبدالمنعم ابراهيم",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 102,
+    "name": "ابراهيم الفقي",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 103,
+    "name": "خالد مشعل",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 104,
+    "name": "الحسين بن طلال",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 105,
+    "name": "أحمد إسماعيل",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 106,
+    "name": "حسن البنا",
+    "score": 95,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 107,
+    "name": "الحبيب بورقيبه",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 108,
+    "name": "عبدالكريم قاسم",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 109,
+    "name": "الحسن الثاني (المغرب)",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 110,
+    "name": "صفوت الشريف",
+    "score": 95,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 111,
+    "name": "حسين الشافعي (منافس السادات ع الحكم)",
+    "score": 95,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 112,
+    "name": "ناهد شريف",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 113,
+    "name": "بديعة مصابني",
+    "score": 100,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 114,
+    "name": "فرج فودة",
+    "score": 100,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 115,
+    "name": "ريا و سكينه",
+    "score": 100,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 116,
+    "name": "خط الصعيد الاصلي",
+    "score": 100,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 117,
+    "name": "رأفت الهجان",
+    "score": 95,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 118,
+    "name": "جمعة الشوان",
+    "score": 95,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 119,
+    "name": "هبة سليم",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 120,
+    "name": "المليجي",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 121,
+    "name": "عادل ادهم",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 122,
+    "name": "عبدالباسط عبدالصمد",
+    "score": 95,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 123,
+    "name": "محمود على البنا",
+    "score": 95,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 124,
+    "name": "محمد رفعت",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 125,
+    "name": "مصطفى إسماعيل",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 126,
+    "name": "محمود خليل الحصري",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 127,
+    "name": "معمر القذافي",
+    "score": 95,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 128,
+    "name": "محمد مرسي",
+    "score": 95,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 129,
+    "name": "برلانت عبدالحميد",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 130,
+    "name": "وردة الجزائرية",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 131,
+    "name": "صباح",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 132,
+    "name": "إلياس ابو عازار",
+    "score": 95,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 133,
+    "name": "صالح العروري",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 134,
+    "name": "حرب لبنان الأهلية",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 135,
+    "name": "غزو الكويت",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  }
+  {
+    "id": 136,
+    "name": "يحيى المشد",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 137,
+    "name": "أحداث أيلول الأسود",
+    "score": 95,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 138,
+    "name": "باب العزيزية",
+    "score": 95,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 139,
+    "name": "مأساة واحة سيوه",
+    "score": 95,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 140,
+    "name": "مذبحة قصر الرحاب ١٩٥٨",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 141,
+    "name": "ماري منيب",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 142,
+    "name": "اسماعيل ياسين",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 143,
+    "name": "عمر الشريف",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 144,
+    "name": "كمال الشناوي",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 145,
+    "name": "يوسف وهبي",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 146,
+    "name": "شكري سرحان",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 147,
+    "name": "احمد ذكي",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 148,
+    "name": "البطل احمد عبد العزيز",
+    "score": 100,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 149,
+    "name": "انور وجدي",
+    "score": 100,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 150,
+    "name": "نور الشريف",
+    "score": 100,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 151,
+    "name": "الشيخ كشك",
+    "score": 95,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 152,
+    "name": "محمود درويش",
+    "score": 100,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 153,
+    "name": "سفّاح كرموز (سعد إسكندر عبدالمسيح)",
+    "score": 95,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 154,
+    "name": "حرب الكويت",
+    "score": 95,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 155,
+    "name": "مدلك الرئيس السادات",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 156,
+    "name": "عدوان ٥٦",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 157,
+    "name": "الشيخ أحمد عمر هاشم",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 158,
+    "name": "جاسوس الشامبانيا اتقبض عليه في مصر",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 159,
+    "name": "العميل 1001",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 160,
+    "name": "محمد نسيم قلب الأسد",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 161,
+    "name": "الجاسوس كيبورك يعقوبيان",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 162,
+    "name": "حكمت فهمي الممثله المصرية وعملها كجاسوسه للالمان على حساب الانجليز ودور السادات ومساعدته ليها",
+    "score": 95,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 163,
+    "name": "عبد الرحيم عبد الرؤوف قرمان (عابد كرمان)",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 164,
+    "name": "العراف الجاسوس المصري",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 165,
+    "name": "مارسيل فيكتور نينو",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 166,
+    "name": "مقتل نجلاء نعمة الله",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 167,
+    "name": "مقتل روان الحسيني",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 168,
+    "name": "أطفال المريوطية",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 169,
+    "name": "فتاة المعادي – مريم محمد",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 170,
+    "name": "زينة بورسعيد",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 171,
+    "name": "قضية مقتل شيماء جمال",
+    "score": 95,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 172,
+    "name": "جريمة الطالبة منة الله هشام",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 173,
+    "name": "قضية جريمة فيلا نانسي",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 174,
+    "name": "مقتل رضوى جمال",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 175,
+    "name": "المغول",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 176,
+    "name": "جريمة سقوط موظفة البنك الأهلي",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 177,
+    "name": "جريمة فتاة بورسعيد – ريم مجدي",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 178,
+    "name": "جريمة طفلة المنوفية – جنى",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  }
+{
+    "id": 179,
+    "name": "مقتل إيمان داخل شقتها – الزقازيق",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 180,
+    "name": "قضية مذبحة بني مزار – المنيا",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 181,
+    "name": "جريمة مقتل مسنّ المطرية على يد حفيده",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 182,
+    "name": "قضية مذبحة بنها – الأم التي قتلت أبناءها الأربعة",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 183,
+    "name": "قضية الطالب محمود البنا – شهيد الشهامة",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 184,
+    "name": "احمد الريان",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 185,
+    "name": "قضية سيدة الكفن – الهرم",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 186,
+    "name": "قضية الطفلة أماني – المنيا",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 187,
+    "name": "قضية ذبح تاجر الشرقية ودفنه داخل مخزن",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 188,
+    "name": "قضية مقتل الصيدلي ولاء زايد – حلوان",
+    "score": 95,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 189,
+    "name": "العملية لافون (عملية سوزانا)",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 190,
+    "name": "محمد العطار",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 191,
+    "name": "انشراح موسى",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 192,
+    "name": "عزام عزام",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 193,
+    "name": "إيلان جرابيل",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 194,
+    "name": "المتجسِّس الإسرائيلي العربي المُدان في مصر (1997)",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 195,
+    "name": "عملية الحفار",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 196,
+    "name": "محمد نسيم (صقر المخابرات)",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 197,
+    "name": "الملك الصالح نجم الدين ايوب",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 198,
+    "name": "قضية الجاسوس المصري في السودان – أحمد حسين عبد المقصود",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 199,
+    "name": "قضية جاسوس العراق – عدنان حسن",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 200,
+    "name": "قضية الجاسوس الأردني لصالح إسرائيل – أحمد الدقامسة",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 201,
+    "name": "قضية سيرجيو راؤول – الجاسوس الإسرائيلي في تونس",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 202,
+    "name": "قضية ماركوس كلارك – الجاسوس الأمريكي في ليبيا",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 203,
+    "name": "العميلة كاميليا شمعون (لبنان)",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 204,
+    "name": "اللواء محمد فوزي – عملية العصفور (سوريا 1980)",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 205,
+    "name": "العميل المزدوج أحمد الجعفري – صائد الموساد في لبنان",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 206,
+    "name": "الضابط المصري منير حافظ – عملية اختراق محطة الموساد في أوروبا",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 207,
+    "name": "عملية الكيلو 108 (اختطاف طائرة إسرائيلية 1969)",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 208,
+    "name": "عملية الهروب من ليبيا (تهريب أسرى 1967)",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 209,
+    "name": "عملية تهريب عبد الحميد السراج من دمشق (1962)",
+    "score": 95,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 210,
+    "name": "التتار",
+    "score": 95,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 211,
+    "name": "عملية الخداع الاستراتيجي قبل حرب أكتوبر",
+    "score": 95,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 212,
+    "name": "عملية أمواج البحر – تجنيد عميل داخل البحرية الإسرائيلية",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 213,
+    "name": "عملية الصمت العميق – تفكيك شبكة إسرائيلية بالإسكندرية",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 214,
+    "name": "قضية الخلية الإلكترونية للموساد (2013)",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 215,
+    "name": "قضية الجاسوس أحمد الجوهري (2016)",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 216,
+    "name": "قضية الجاسوس السوداني في القاهرة (2019)",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 217,
+    "name": "قضية جاسوس تيك توك – المهندس خالد (2021)",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 218,
+    "name": "قضية شبكة التجسس بين القاهرة وإيلات (2023)",
+    "score": 85,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 219,
+    "name": "عملية لوكيربي",
+    "score": 90,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 220,
+    "name": "حرب الاستنزاف",
+    "score": 80,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  },
+  {
+    "id": 221,
+    "name": "رئيس تشيلي سلفادور اليندي اللي موت نفسه",
+    "score": 80,
+    "done": false,
+    "category": "",
+    "added": "2025-02-11",
+    "notes": "",
+    "analysis": null
+  }
+]
 
