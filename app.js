@@ -11,7 +11,7 @@ const API_CONFIG = {
   deathsEndpoint: "/api/recent-deaths",
 
   // 🔥 Worker الخاص بالترندات (الكود السحري الجديد)
-  storyBaseUrl: "https://odd-credit-25c6.namozg50.workers.dev/", // ⬅️ عدّلها لرابط الـ Worker فعليًا
+  storyBaseUrl: "https://odd-credit-25c6.namozg50.workers.dev", // ⬅️ عدّلها لرابط الـ Worker فعليًا
   storyAllEndpoint: "/api/story-all",
   storyGeoEndpoint: "/api/story"
 };
