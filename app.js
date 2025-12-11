@@ -37,7 +37,7 @@ const elements = {
   btnParseRaw: document.getElementById("btn-parse-raw"),
   btnExport: document.getElementById("btn-export"),
   inputImport: document.getElementById("import-file"),
-  btnPickToday: document.getElementById("btn-pick-today"),   // 🆕
+  btnPickToday: document.getElementById("btn-pick-today"),
   btnPickLong: document.getElementById("btn-pick-long"),
   btnPickShort: document.getElementById("btn-pick-short"),
   btnUpdateTrends: document.getElementById("btn-update-trends"),
@@ -45,7 +45,6 @@ const elements = {
   statusYoutube: document.getElementById("status-youtube"),
   statusDeaths: document.getElementById("status-deaths")
 };
-
 
 
 /* ============================================================
@@ -102,21 +101,20 @@ function renderStoriesTable() {
     cell.colSpan = 9;
     cell.textContent = "لا توجد قصص حالياً. أضف قصصًا من الأعلى أو من ملف التصدير.";
     cell.style.textAlign = "center";
-    elements.tbody.appendChild(row);
     row.appendChild(cell);
+    elements.tbody.appendChild(row);
     return;
   }
 
   stories
     .slice()
-    .sort((a, b) => a.id - b.id)
+    .sort((a, b) => (a.id ?? 0) - (b.id ?? 0))
     .forEach((story, index) => {
       const tr = document.createElement("tr");
       tr.dataset.id = story.id;
 
       const analysis = ensureStoryAnalysis(story);
 
-      // الأعمدة
       const cells = [
         index + 1,
         story.name || "",
@@ -305,9 +303,6 @@ function handleImportFile(event) {
    🧠 6) التحليل الذكي الداخلي لكل قصة
 ============================================================ */
 
-/**
- * تصنيف نوع القصة بناءً على كلمات مفتاحية بسيطة.
- */
 function classifyStoryType(name) {
   const n = name || "";
 
@@ -316,11 +311,10 @@ function classifyStoryType(name) {
   const warWords = ["حرب", "معركة", "غزوة", "الاستنزاف", "أكتوبر", "نكسة", "عملية"];
   const politicsWords = ["رئيس", "ملك", "حكومة", "رئاسة", "انقلاب", "ثورة"];
   const disasterWords = ["كارثة", "مأساة", "اختفاء", "حادثة", "انفجار", "تحطم"];
-  const biographyWords = ["فنان", "ممثلة", "ممثلة", "كاتب", "عالم", "مفكر", "شيخ", "داعية", "قاريء", "منشد"];
+  const biographyWords = ["فنان", "ممثلة", "كاتب", "عالم", "مفكر", "شيخ", "داعية", "قاريء", "منشد"];
   const historyWords = ["الفرعونية", "التتار", "المغول", "صلاح الدين", "قطز", "تاريخ", "الخلافة"];
 
   const lower = n.toLowerCase();
-
   const has = arr => arr.some(w => n.includes(w) || lower.includes(w.toLowerCase()));
 
   if (has(crimeWords)) return "جريمة";
@@ -334,26 +328,25 @@ function classifyStoryType(name) {
   return "سيرة/تاريخ";
 }
 
-/**
- * تقدير التشبع (Saturation) بناءً على مدى شهرة الاسم.
- */
 function estimateSaturation(name) {
   const n = name || "";
-  const veryFamousWords = ["أم كلثوم", "عبدالحليم", "نجيب محفوظ", "جمال عبدالناصر", "هتلر", "غاندي", "صدام حسين", "محمد مرسي", "معمر القذافي"];
-  const mediumWords = ["هواري بومدين", "الملك فيصل", "سعد زغلول", "طلعت حرب", "عمر المختار", "مصطفى محمود", "صلاح نصر"];
+  const veryFamousWords = [
+    "أم كلثوم", "عبدالحليم", "نجيب محفوظ", "جمال عبدالناصر",
+    "هتلر", "غاندي", "صدام حسين", "محمد مرسي", "معمر القذافي"
+  ];
+  const mediumWords = [
+    "هواري بومدين", "الملك فيصل", "سعد زغلول", "طلعت حرب",
+    "عمر المختار", "مصطفى محمود", "صلاح نصر"
+  ];
 
   if (veryFamousWords.some(w => n.includes(w))) return "High";
   if (mediumWords.some(w => n.includes(w))) return "Medium";
   return "Low";
 }
 
-/**
- * تقدير جاذبية القصة (0–100)
- */
 function estimateAttractiveness(story) {
   const n = story.name || "";
   const base = story.score ?? 70;
-
   let extra = 0;
 
   if (/اغتيال|مقتل|جريمة|سفّاح|اختفاء|كارثة/.test(n)) extra += 15;
@@ -366,20 +359,15 @@ function estimateAttractiveness(story) {
   return Math.round(result);
 }
 
-/**
- * تقدير فرصة الانفجار (Viral Chance %) بناءً على النوع + الجاذبية + التريند.
- */
 function estimateViralChance(story, trendState, attractiveness) {
   let viral = attractiveness;
-
-  // لو الاسم متقاطع مع تريندات جوجل
   const name = story.name || "";
+
   if (trendState.googleTrends && trendState.googleTrends.length) {
     const hit = trendState.googleTrends.some(t => name.includes(t.keyword));
     if (hit) viral += 10;
   }
 
-  // لو متقاطع مع YouTube
   if (trendState.youtubeTrends && trendState.youtubeTrends.length) {
     const hit = trendState.youtubeTrends.some(v => name.includes(v.keyword));
     if (hit) viral += 10;
@@ -390,9 +378,6 @@ function estimateViralChance(story, trendState, attractiveness) {
   return Math.round(viral);
 }
 
-/**
- * تقدير مستوى التطابق مع التريند TrendMatching (0–100)
- */
 function estimateTrendMatching(story, trendState) {
   const name = story.name || "";
   let score = 0;
@@ -413,11 +398,7 @@ function estimateTrendMatching(story, trendState) {
   return Math.round(score);
 }
 
-/**
- * تقدير Audience Match – مدى مناسبة القصة لجمهور القناة (0–100)
- */
 function estimateAudienceMatch(storyType) {
-  // قناة "إيه الحكاية؟" تميل للسير الذاتية، الجرائم، المخابرات، السياسة
   switch (storyType) {
     case "سيرة ذاتية":
     case "سيرة/تاريخ":
@@ -439,9 +420,6 @@ function estimateAudienceMatch(storyType) {
   }
 }
 
-/**
- * Competition Level – مستوى المنافسة (كلما زاد → ذكاء أقل)
- */
 function estimateCompetitionLevel(saturation) {
   switch (saturation) {
     case "High":
@@ -454,9 +432,6 @@ function estimateCompetitionLevel(saturation) {
   }
 }
 
-/**
- * أفضل نوع فيديو (طويل – قصير – الاثنين)
- */
 function estimateBestFormat(storyType, saturation, viralChance) {
   if (storyType === "جريمة" || storyType === "كارثة" || storyType === "مخابرات") {
     if (viralChance >= 80) return "الاثنين";
@@ -469,20 +444,10 @@ function estimateBestFormat(storyType, saturation, viralChance) {
   return "الاثنين";
 }
 
-/**
- * حساب درجة الذكاء النهائية 100/100
- */
 function computeIntelligenceScore(story, metrics) {
   const baseScore = story.score ?? 70;
+  const { viralChance, trendMatching, audienceMatch, competitionLevel } = metrics;
 
-  const {
-    viralChance,
-    trendMatching,
-    audienceMatch,
-    competitionLevel
-  } = metrics;
-
-  // كلما كانت المنافسة أعلى → يقل الذكاء
   const competitionPenalty = (competitionLevel / 100) * 20; // حد أقصى 20 نقطة خصم
 
   let result =
@@ -498,9 +463,6 @@ function computeIntelligenceScore(story, metrics) {
   return Math.round(result);
 }
 
-/**
- * التحليل الكامل للقصة (مرة واحدة وتخزينه في story.analysis)
- */
 function analyzeStory(story, trendState) {
   const type = classifyStoryType(story.name);
   const attractiveness = estimateAttractiveness(story);
@@ -524,8 +486,8 @@ function analyzeStory(story, trendState) {
     viralChance,
     saturation,
     bestFormat,
-    expectationScore: intelligenceScore,       // تقريبًا
-    viralProbability: viralChance,             // إعادة تسمية
+    expectationScore: intelligenceScore,
+    viralProbability: viralChance,
     trendMatching,
     audienceMatch,
     competitionLevel,
@@ -575,9 +537,6 @@ function showStoryAnalysis(story) {
    🌍 8) الاتصال بالسيرفر الوسيط (تريندات + وفيات)
 ============================================================ */
 
-/**
- * دالة عامة لاستدعاء API من السيرفر الوسيط
- */
 async function callMiddleware(endpoint, fallbackData = []) {
   try {
     if (!API_CONFIG.baseUrl || API_CONFIG.baseUrl.includes("your-middleware")) {
@@ -596,9 +555,6 @@ async function callMiddleware(endpoint, fallbackData = []) {
   }
 }
 
-/**
- * جلب تريندات Google (22 دولة عربية)
- */
 async function fetchGoogleTrends() {
   const fallback = [
     { keyword: "حرب غزة", score: 98 },
@@ -613,9 +569,6 @@ async function fetchGoogleTrends() {
   elements.statusTrends.classList.add("success");
 }
 
-/**
- * جلب تريندات YouTube للدول العربية
- */
 async function fetchYoutubeTrends() {
   const fallback = [
     { keyword: "وثائقي", views: 1000000, velocity: 90 },
@@ -630,9 +583,6 @@ async function fetchYoutubeTrends() {
   elements.statusYoutube.classList.add("success");
 }
 
-/**
- * جلب أسماء الشخصيات التي توفيت خلال آخر 48 ساعة
- */
 async function fetchRecentDeaths() {
   const fallback = [
     { name: "شخصية سياسية عربية (افتراضية)", relevance: 80 },
@@ -646,9 +596,6 @@ async function fetchRecentDeaths() {
   elements.statusDeaths.classList.add("success");
 }
 
-/**
- * زر "تحديث التريندات"
- */
 async function handleUpdateTrends() {
   elements.aiOutput.innerHTML = "<p>⏳ يتم الآن تحديث تريندات Google و YouTube والوفيات الأخيرة...</p>";
 
@@ -666,7 +613,7 @@ async function handleUpdateTrends() {
 
 
 /* ============================================================
-   🎬 9) اختيار قصة الآن (فيديو طويل)
+   🎬 9) اختيار قصة اليوم + فيديو طويل
 ============================================================ */
 
 function computeStoryWeightForLong(story) {
@@ -716,7 +663,6 @@ function weightedRandomChoice(items, weights) {
 function suggestTitlesForStory(story, analysis) {
   const baseName = story.name;
   const type = analysis.type;
-
   const variants = [];
 
   if (type === "جريمة" || type === "مخابرات" || /جاسوس|عملية/.test(baseName)) {
@@ -778,7 +724,6 @@ function suggestKeywordsForStory(story, analysis) {
 
   base.push(name);
 
-  // إزالة التكرار
   return [...new Set(base)];
 }
 
@@ -835,12 +780,25 @@ function describeYoutubeFit(analysis) {
   return text;
 }
 
-function handlePickLong() {
-  const candidates = stories.filter(s => !s.done);
-  if (!candidates.length) {
-    elements.aiOutput.innerHTML = "<p>⚠ لا توجد قصص متاحة (أو أن جميع القصص تم تنفيذها).</p>";
-    return;
+function buildThumbnailIdea(story, analysis) {
+  const name = story.name;
+  const type = analysis.type;
+
+  if (type === "جريمة") {
+    return `لقطة سينمائية مظلمة لشارع أو غرفة تحقيق، وفي المنتصف صورة بورتريه للشخصية الأساسية مع عنوان كبير باللون الأحمر: «${name}» وخلفية فيها تدرجات حمراء/سوداء تعكس التوتر والخطر.`;
   }
+  if (type === "مخابرات") {
+    return `خريطة أو مستندات سرية ممزقة مع صورة ظلية لعميل مجهول وعيون تراقب من الخلفية، واسم «${name}» بخط واضح مع كلمة مثل «الملف السري» أو «قصة الجاسوس».`;
+  }
+  if (type === "سيرة ذاتية" || type === "سيرة/تاريخ") {
+    return `بورتريه واضح للشخصية في المنتصف، مع تقسيم الشاشة إلى نصفين: جانب يكشف المجد والنجاح وجانب آخر مظلم يعكس المعاناة أو النهاية، وكتابة «الحكاية اللي محدش قالها» مع اسم «${name}».`;
+  }
+  if (type === "سياسة" || type === "حرب") {
+    return `خريطة أو علم الدولة المرتبط بها الحدث في الخلفية، وصورة للزعيم أو الشخصية السياسية في المقدمة، مع عناصر مثل دخان أو نيران خفيفة تعبر عن الصراع، واسم «${name}» بخط جريء وواضح.`;
+  }
+  return `صورة تعبيرية قريبة من أجواء القصة، مع إبراز اسم «${name}» في المنتصف، واستخدام ألوان متباينة (أصفر/أسود أو أحمر/أسود) مع لمسة درامية بسيطة.`;
+}
+
 function handlePickToday() {
   const candidates = stories.filter(s => !s.done);
   if (!candidates.length) {
@@ -848,10 +806,8 @@ function handlePickToday() {
     return;
   }
 
-  // نستخدم نفس وزن الفيديو الطويل، لأنه الأنسب لقصة اليوم
   const weights = candidates.map(st => computeStoryWeightForLong(st));
 
-  // نجيب أعلى 5 قصص ونختار واحدة منهم عشوائيًا بوزن
   const sorted = candidates
     .map((st, idx) => ({ story: st, weight: weights[idx] }))
     .sort((a, b) => b.weight - a.weight)
@@ -917,9 +873,15 @@ function handlePickToday() {
   elements.aiOutput.innerHTML = html;
 }
 
-  // حساب الأوزان
+function handlePickLong() {
+  const candidates = stories.filter(s => !s.done);
+  if (!candidates.length) {
+    elements.aiOutput.innerHTML = "<p>⚠ لا توجد قصص متاحة (أو أن جميع القصص تم تنفيذها).</p>";
+    return;
+  }
+
   const weights = candidates.map(st => computeStoryWeightForLong(st));
-  // ترتيب حسب الوزن وأخذ أعلى 5
+
   const sorted = candidates
     .map((st, idx) => ({ story: st, weight: weights[idx] }))
     .sort((a, b) => b.weight - a.weight)
@@ -979,31 +941,10 @@ function handlePickToday() {
     <p class="ai-tags">${keywords.map(k => `#${k.replace(/\s+/g, "_")}`).join(" ")}</p>
 
     <h3>🖼 فكرة للصورة المصغرة (Thumbnail Idea):</h3>
-    <p>
-      ${buildThumbnailIdea(chosen, analysis)}
-    </p>
+    <p>${buildThumbnailIdea(chosen, analysis)}</p>
   `;
 
   elements.aiOutput.innerHTML = html;
-}
-
-function buildThumbnailIdea(story, analysis) {
-  const name = story.name;
-  const type = analysis.type;
-
-  if (type === "جريمة") {
-    return `لقطة سينمائية مظلمة لشارع أو غرفة تحقيق، وفي المنتصف صورة بورتريه للشخصية الأساسية مع عنوان كبير باللون الأحمر: «${name}» وخلفية فيها تدرجات حمراء/سوداء تعكس التوتر والخطر.`;
-  }
-  if (type === "مخابرات") {
-    return `خريطة أو مستندات سرية ممزقة مع صورة ظلية لعميل مجهول وعيون تراقب من الخلفية، واسم «${name}» بخط واضح مع كلمة مثل «الملف السري» أو «قصة الجاسوس».`;
-  }
-  if (type === "سيرة ذاتية" || type === "سيرة/تاريخ") {
-    return `بورتريه واضح للشخصية في المنتصف، مع تقسيم الشاشة إلى نصفين: جانب يكشف المجد والنجاح وجانب آخر مظلم يعكس المعاناة أو النهاية، وكتابة «الحكاية اللي محدش قالها» مع اسم «${name}».`;
-  }
-  if (type === "سياسة" || type === "حرب") {
-    return `خريطة أو علم الدولة المرتبط بها الحدث في الخلفية، وصورة للزعيم أو الشخصية السياسية في المقدمة، مع عناصر مثل دخان أو نيران خفيفة تعبر عن الصراع، واسم «${name}» بخط جريء وواضح.`;
-  }
-  return `صورة تعبيرية قريبة من أجواء القصة، مع إبراز اسم «${name}» في المنتصف، واستخدام ألوان متباينة (أصفر/أسود أو أحمر/أسود) مع لمسة درامية بسيطة.`;
 }
 
 
@@ -1037,7 +978,6 @@ function pickShortStoryCandidate() {
 }
 
 function generateExternalShortIdeas() {
-  // 85% عربية – 15% عالمية (أسماء عامة قابلة للتعديل حسب التريند)
   const arabIdeas = [
     "جريمة غامضة في حي شعبي عربي انتهت بحكم صادم",
     "قصة مسؤول عربي كبير سقط بسبب مكالمة مسرّبة",
@@ -1135,7 +1075,7 @@ function handlePickShort() {
 
 
 /* ============================================================
-   🧠 11) تهيئة الأحداث (Event Listeners) وتشغيل التطبيق
+   🧠 11) تهيئة الأحداث وتشغيل التطبيق
 ============================================================ */
 
 function initEventListeners() {
@@ -1149,7 +1089,7 @@ function initEventListeners() {
     elements.inputImport.addEventListener("change", handleImportFile);
   }
   if (elements.btnPickToday) {
-    elements.btnPickToday.addEventListener("click", handlePickToday); // 🆕
+    elements.btnPickToday.addEventListener("click", handlePickToday);
   }
   if (elements.btnPickLong) {
     elements.btnPickLong.addEventListener("click", handlePickLong);
@@ -1162,11 +1102,9 @@ function initEventListeners() {
   }
 }
 
-
 async function initApp() {
   elements.aiOutput.innerHTML = "<p>⏳ يتم تحميل القصص…</p>";
   await loadStories();
-  // تحليل لكل القصص مرة واحدة
   stories.forEach(st => ensureStoryAnalysis(st));
   renderStoriesTable();
   elements.aiOutput.innerHTML = "<p>✅ تم تحميل القصص. يمكنك الآن اختيار قصة أو لصق قصص جديدة.</p>";
