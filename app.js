@@ -37,6 +37,7 @@ const elements = {
   btnParseRaw: document.getElementById("btn-parse-raw"),
   btnExport: document.getElementById("btn-export"),
   inputImport: document.getElementById("import-file"),
+  btnPickToday: document.getElementById("btn-pick-today"),   // 🆕
   btnPickLong: document.getElementById("btn-pick-long"),
   btnPickShort: document.getElementById("btn-pick-short"),
   btnUpdateTrends: document.getElementById("btn-update-trends"),
@@ -44,6 +45,7 @@ const elements = {
   statusYoutube: document.getElementById("status-youtube"),
   statusDeaths: document.getElementById("status-deaths")
 };
+
 
 
 /* ============================================================
