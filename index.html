@@ -1,1 +1,108 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ذكاء اختيار القصص – إيه الحكاية؟</title>
+
+  <!-- Manifest (PWA) -->
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Icons -->
+  <link rel="icon" href="icon-192.png">
+
+  <meta name="theme-color" content="#ffffff">
+</head>
+
+<body>
+
+  <div class="app-container">
+
+    <header class="app-header">
+      <h1>🎬 ذكاء اختيار القصص – قناة "إيه الحكاية؟"</h1>
+
+      <div class="top-buttons">
+        <button id="btn-pick-long" class="btn primary">🎥 اختيار قصة الآن (فيديو طويل)</button>
+        <button id="btn-pick-short" class="btn accent">⚡ اختيار فيديو قصير (ريلز)</button>
+        <button id="btn-update-trends" class="btn secondary">📈 تحديث التريندات</button>
+      </div>
+
+      <div class="status-row">
+        <span id="status-trends" class="status-pill muted">تريندات Google غير محدثة</span>
+        <span id="status-youtube" class="status-pill muted">تريندات YouTube غير محدثة</span>
+        <span id="status-deaths" class="status-pill muted">وفيات آخر 48 ساعة غير محدثة</span>
+      </div>
+    </header>
+
+    <main class="main-layout">
+
+      <!-- منطقة الذكاء -->
+      <section class="ai-panel card">
+        <h2>🧠 نتائج الذكاء الاصطناعي</h2>
+        <div id="ai-output" class="ai-output">
+          <p>اضغط على أحد الأزرار بالأعلى لبدء التحليل.</p>
+        </div>
+      </section>
+
+      <!-- إدارة القصص -->
+      <section class="stories-panel card">
+        <h2>📚 إدارة القصص</h2>
+
+        <label class="block-label">✂️ الصق النص الخام للقصص (كل سطر = قصة):</label>
+        <textarea id="raw-input" rows="5" placeholder="مثال:
+ليلى مراد
+محاولات اغتيال مبارك
+حادثة طائرة مصر للطيران
+..."></textarea>
+
+        <button id="btn-parse-raw" class="btn primary small">➕ تحويل النص إلى قصص</button>
+
+        <div class="backup-row">
+          <button id="btn-export" class="btn secondary small">💾 تصدير القصص</button>
+
+          <label for="import-file" class="btn secondary small file-label">📂 استيراد القصص</label>
+          <input type="file" id="import-file" hidden accept="application/json">
+        </div>
+
+        <div class="table-wrapper">
+          <table id="stories-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>الاسم</th>
+                <th>النوع</th>
+                <th>الدرجة</th>
+                <th>الجاذبية</th>
+                <th>ذكاء</th>
+                <th>تنفيذ</th>
+                <th>تاريخ</th>
+                <th>تحكم</th>
+              </tr>
+            </thead>
+            <tbody id="stories-tbody">
+              <!-- يتم الملء عبر JS -->
+            </tbody>
+          </table>
+        </div>
+
+      </section>
+
+    </main>
+
+  </div>
+
+  <script src="app.js"></script>
+
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("service-worker.js")
+        .catch(err => console.log("Service Worker failed:", err));
+    }
+  </script>
+
+</body>
+</html>
 
