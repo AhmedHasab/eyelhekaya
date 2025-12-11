@@ -1,1 +1,211 @@
+/* إعدادات عامة */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: #f4f4f4;
+  font-family: "Tahoma", Arial, sans-serif;
+  direction: rtl;
+  color: #222;
+}
+
+.app-container {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* العنوان */
+.app-header h1 {
+  margin: 0;
+  font-size: 1.7rem;
+  font-weight: bold;
+}
+
+.top-buttons {
+  margin-top: 15px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.95rem;
+  transition: transform 0.1s, opacity 0.2s;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  opacity: 0.9;
+}
+
+.btn.primary {
+  background: #ff5252;
+  color: white;
+}
+
+.btn.accent {
+  background: #ffb300;
+  color: #222;
+}
+
+.btn.secondary {
+  background: #ddd;
+  color: #222;
+}
+
+.btn.small {
+  padding: 7px 14px;
+  font-size: 0.85rem;
+}
+
+.status-row {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.status-pill {
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: #ececec;
+  font-size: 0.8rem;
+  color: #444;
+}
+
+.status-pill.ok {
+  background: #c8e6c9;
+  color: #1b5e20;
+}
+
+.status-pill.warn {
+  background: #fff3cd;
+  color: #8a6d3b;
+}
+
+.status-pill.muted {
+  background: #eeeeee;
+  color: #777;
+}
+
+/* البطاقات */
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 18px;
+  margin-top: 20px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.07);
+}
+
+/* المنطقة الرئيسية */
+.main-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 900px) {
+  .main-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* منطقة الذكاء */
+.ai-output {
+  min-height: 180px;
+  background: #fafafa;
+  padding: 12px;
+  border-radius: 10px;
+  overflow-y: auto;
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
+
+/* إدارة القصص */
+textarea {
+  width: 100%;
+  resize: vertical;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid #ccc;
+  font-size: 0.9rem;
+}
+
+.block-label {
+  font-weight: bold;
+  margin-top: 10px;
+  margin-bottom: 5px;
+}
+
+.backup-row {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.file-label {
+  cursor: pointer;
+}
+
+/* الجدول */
+.table-wrapper {
+  margin-top: 12px;
+  max-height: 380px;
+  overflow-y: auto;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+thead {
+  position: sticky;
+  top: 0;
+  background: #f2f2f2;
+  font-weight: bold;
+}
+
+th, td {
+  padding: 8px;
+  border-bottom: 1px solid #eee;
+}
+
+tr:hover {
+  background: #f9f9f9;
+}
+
+.badge-done {
+  background: #c8e6c9;
+  color: #1b5e20;
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+}
+
+.badge-not-done {
+  background: #ffebee;
+  color: #b71c1c;
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+}
+
+.table-actions {
+  display: flex;
+  gap: 5px;
+}
 
