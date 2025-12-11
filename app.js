@@ -644,14 +644,6 @@ async function handleUpdateTrends() {
    🌐 9) الاتصال بـ Worker الترندات (Story API)
 ============================================================ */
 
-function normalizeArabic(str) {
-  return (str || "")
-    .toString()
-    .trim()
-    .replace(/\s+/g, "")
-    .toLowerCase();
-}
-
 async function fetchStoryTrendsAll() {
   try {
     if (!API_CONFIG.storyBaseUrl || API_CONFIG.storyBaseUrl.includes("your-story-worker")) {
