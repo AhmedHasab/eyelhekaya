@@ -644,7 +644,7 @@ async function handleUpdateTrends() {
    🌐 9) الاتصال بـ Worker الترندات (Story API)
 ============================================================ */
 
-function normalizeText(str) {
+function normalizeArabic(str) {
   return (str || "")
     .toString()
     .trim()
@@ -734,7 +734,7 @@ function dedupeByTitle(items, maxPerTitle = 1) {
   const result = [];
 
   items.forEach(it => {
-    const key = normalizeText(it.title);
+    const key = normalizeArabic(it.title);
     const count = map.get(key) || 0;
     if (count < maxPerTitle) {
       result.push(it);
@@ -869,12 +869,12 @@ async function handlePickToday() {
 
 // حساب عدد مرات ظهور عنوان القصة داخل نتائج الـ Worker
 function computeStoryHitCountFromTrends(story, trendItems) {
-  const normName = normalizeText(story.name);
+  const normName = normalizeArabic(story.name);
   if (!normName || !trendItems.length) return 0;
 
   let hits = 0;
   trendItems.forEach(it => {
-    const normTitle = normalizeText(it.title);
+    const normTitle = normalizeArabic(it.title);
     if (!normTitle) return;
 
     if (normTitle.includes(normName) || (normName.length > 6 && normName.includes(normTitle))) {
@@ -940,8 +940,8 @@ async function handlePickLong() {
     // استخراج بعض عناوين الترند المطابقة (بحد أقصى 3)
     const related = trendItems
       .filter(it => {
-        const normTitle = normalizeText(it.title);
-        const normName = normalizeText(story.name);
+        const normTitle = normalizeArabic(it.title);
+        const normName = normalizeArabic(story.name);
         return normTitle.includes(normName) || (normName.length > 6 && normName.includes(normTitle));
       })
       .slice(0, 3);
@@ -1004,10 +1004,10 @@ async function handlePickShort() {
   }
 
   // استبعاد العناوين الموجودة بالفعل في القصص المسجّلة بالموقع
-  const storyNamesNorm = stories.map(st => normalizeText(st.name));
+  const storyNamesNorm = stories.map(st => normalizeArabic(st.name));
 
   items = items.filter(it => {
-    const normTitle = normalizeText(it.title);
+    const normTitle = normalizeArabic(it.title);
     if (!normTitle) return false;
 
     const existsInLocal = storyNamesNorm.some(n => n && (normTitle.includes(n) || n.includes(normTitle)));
