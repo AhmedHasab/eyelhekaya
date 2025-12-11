@@ -842,15 +842,15 @@ function handlePickToday() {
       <li>عامل الجاذبية: <strong>${analysis.attractiveness}/100</strong></li>
       <li>فرصة الانفجار (Viral Chance): <strong>${analysis.viralChance}%</strong></li>
       <li>مستوى التشبع: <strong>${analysis.saturation}</strong></li>
-      <li>أفضل شكل فيديو حاليًا: <strong>${analysis.bestFormat}</strong></li>
+      <li>أفضل شكل فيديو: <strong>${analysis.bestFormat}</strong></li>
       <li>تطابق مع التريند: <strong>${analysis.trendMatching}/100</strong></li>
       <li>Audience Match: <strong>${analysis.audienceMatch}/100</strong></li>
     </ul>
 
     <h3>📊 توقع عدد المشاهدات لو نزلت النهاردة:</h3>
-    <p>المدى التقريبي: <strong>${minViews.toLocaleString()} – ${maxViews.toLocaleString()} مشاهدة</strong> (مع تنفيذ بصري وصوتي قوي).</p>
+    <p>المدى التقريبي: <strong>${minViews.toLocaleString()} – ${maxViews.toLocaleString()} مشاهدة</strong></p>
 
-    <h3>🧠 ملاءمتها لخوارزمية يوتيوب اليوم:</h3>
+    <h3>🧠 ملاءمتها لخوارزمية يوتيوب:</h3>
     <p>${youtubeFitText}</p>
 
     <h3>✅ نقاط القوة:</h3>
@@ -858,20 +858,18 @@ function handlePickToday() {
       ${strengths.map(s => `<li>${s}</li>`).join("")}
     </ul>
 
-    <h3>⚠ نقاط تحتاج انتباه في التنفيذ:</h3>
+    <h3>⚠ نقاط تحتاج انتباه:</h3>
     <ul class="ai-list">
       ${weaknesses.map(w => `<li>${w}</li>`).join("")}
     </ul>
 
-    <h3>🔑 كلمات مفتاحية مقترحة للنشر اليوم:</h3>
-    <p class="ai-tags">${keywords.map(k => `#${k.replace(/\s+/g, "_")}`).join(" ")}</p>
-
-    <h3>🖼 فكرة للصورة المصغرة:</h3>
-    <p>${buildThumbnailIdea(chosen, analysis)}</p>
+    <h3>🔑 كلمات مفتاحية:</h3>
+    <p class="ai-tags">${keywords.map(k => "#" + k.replace(/\s+/g, "_")).join(" ")}</p>
   `;
 
   elements.aiOutput.innerHTML = html;
 }
+
 
 function handlePickLong() {
   const candidates = stories.filter(s => !s.done);
