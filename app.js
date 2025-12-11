@@ -1148,6 +1148,9 @@ function initEventListeners() {
   if (elements.inputImport) {
     elements.inputImport.addEventListener("change", handleImportFile);
   }
+  if (elements.btnPickToday) {
+    elements.btnPickToday.addEventListener("click", handlePickToday); // 🆕
+  }
   if (elements.btnPickLong) {
     elements.btnPickLong.addEventListener("click", handlePickLong);
   }
@@ -1158,6 +1161,7 @@ function initEventListeners() {
     elements.btnUpdateTrends.addEventListener("click", handleUpdateTrends);
   }
 }
+
 
 async function initApp() {
   elements.aiOutput.innerHTML = "<p>⏳ يتم تحميل القصص…</p>";
