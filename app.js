@@ -841,6 +841,81 @@ function handlePickLong() {
     elements.aiOutput.innerHTML = "<p>⚠ لا توجد قصص متاحة (أو أن جميع القصص تم تنفيذها).</p>";
     return;
   }
+function handlePickToday() {
+  const candidates = stories.filter(s => !s.done);
+  if (!candidates.length) {
+    elements.aiOutput.innerHTML = "<p>⚠ لا توجد قصص متاحة (أو أن جميع القصص تم تنفيذها).</p>";
+    return;
+  }
+
+  // نستخدم نفس وزن الفيديو الطويل، لأنه الأنسب لقصة اليوم
+  const weights = candidates.map(st => computeStoryWeightForLong(st));
+
+  // نجيب أعلى 5 قصص ونختار واحدة منهم عشوائيًا بوزن
+  const sorted = candidates
+    .map((st, idx) => ({ story: st, weight: weights[idx] }))
+    .sort((a, b) => b.weight - a.weight)
+    .slice(0, 5);
+
+  const topStories = sorted.map(x => x.story);
+  const topWeights = sorted.map(x => x.weight);
+
+  const chosen = weightedRandomChoice(topStories, topWeights);
+  const analysis = ensureStoryAnalysis(chosen);
+  const titles = suggestTitlesForStory(chosen, analysis);
+  const keywords = suggestKeywordsForStory(chosen, analysis);
+  const { minViews, maxViews } = estimateViewRange(analysis);
+  const { strengths, weaknesses } = buildStrengthsAndWeaknesses(analysis);
+  const youtubeFitText = describeYoutubeFit(analysis);
+
+  const html = `
+    <h2>🗓 قصة اليوم المثالية للنشر</h2>
+    <h3>القصة المختارة:</h3>
+    <p class="ai-title">${chosen.name}</p>
+
+    <h3>🎯 عناوين مقترحة (3 خيارات):</h3>
+    <ol>
+      <li>${titles[0]}</li>
+      <li>${titles[1]}</li>
+      <li>${titles[2]}</li>
+    </ol>
+
+    <h3>🤖 لماذا هذه القصة الأنسب لليوم؟</h3>
+    <ul class="ai-list">
+      <li>درجة الذكاء: <strong>${analysis.intelligenceScore}/100</strong></li>
+      <li>عامل الجاذبية: <strong>${analysis.attractiveness}/100</strong></li>
+      <li>فرصة الانفجار (Viral Chance): <strong>${analysis.viralChance}%</strong></li>
+      <li>مستوى التشبع: <strong>${analysis.saturation}</strong></li>
+      <li>أفضل شكل فيديو حاليًا: <strong>${analysis.bestFormat}</strong></li>
+      <li>تطابق مع التريند: <strong>${analysis.trendMatching}/100</strong></li>
+      <li>Audience Match: <strong>${analysis.audienceMatch}/100</strong></li>
+    </ul>
+
+    <h3>📊 توقع عدد المشاهدات لو نزلت النهاردة:</h3>
+    <p>المدى التقريبي: <strong>${minViews.toLocaleString()} – ${maxViews.toLocaleString()} مشاهدة</strong> (مع تنفيذ بصري وصوتي قوي).</p>
+
+    <h3>🧠 ملاءمتها لخوارزمية يوتيوب اليوم:</h3>
+    <p>${youtubeFitText}</p>
+
+    <h3>✅ نقاط القوة:</h3>
+    <ul class="ai-list">
+      ${strengths.map(s => `<li>${s}</li>`).join("")}
+    </ul>
+
+    <h3>⚠ نقاط تحتاج انتباه في التنفيذ:</h3>
+    <ul class="ai-list">
+      ${weaknesses.map(w => `<li>${w}</li>`).join("")}
+    </ul>
+
+    <h3>🔑 كلمات مفتاحية مقترحة للنشر اليوم:</h3>
+    <p class="ai-tags">${keywords.map(k => `#${k.replace(/\s+/g, "_")}`).join(" ")}</p>
+
+    <h3>🖼 فكرة للصورة المصغرة:</h3>
+    <p>${buildThumbnailIdea(chosen, analysis)}</p>
+  `;
+
+  elements.aiOutput.innerHTML = html;
+}
 
   // حساب الأوزان
   const weights = candidates.map(st => computeStoryWeightForLong(st));
