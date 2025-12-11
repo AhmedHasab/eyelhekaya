@@ -53,6 +53,19 @@
         <span id="status-youtube" class="status-pill muted">تريندات YouTube غير محدثة</span>
         <span id="status-deaths" class="status-pill muted">وفيات آخر 48 ساعة غير محدثة</span>
       </div>
+
+      <!-- ====== التحكم في عرض اللوحين (يمين/شمال) ====== -->
+      <div class="layout-controls">
+        <button id="btn-show-stories-only" class="btn secondary small">
+          ⬅ عرض إدارة القصص فقط
+        </button>
+        <button id="btn-show-both" class="btn secondary small">
+          ⬌ عرض اللوحين معًا
+        </button>
+        <button id="btn-show-ai-only" class="btn secondary small">
+          ➡ عرض نتائج الذكاء فقط
+        </button>
+      </div>
     </header>
 
     <main class="main-layout">
@@ -69,6 +82,7 @@
       <section class="stories-panel card">
         <h2>📚 إدارة القصص</h2>
 
+        <!-- إدخال خام متعدد الأسطر -->
         <label class="block-label">✂️ الصق النص الخام للقصص (كل سطر = قصة):</label>
 
         <textarea id="raw-input" rows="5" placeholder="مثال:
@@ -81,11 +95,58 @@
           ➕ تحويل النص إلى قصص
         </button>
 
+        <!-- إدخال يدوي كسطر مقسم إلى خلايا -->
+        <div class="manual-input-row">
+          <div class="manual-cell">
+            <label for="manual-name">اسم القصة</label>
+            <input id="manual-name" type="text" placeholder="اكتب اسم القصة هنا">
+          </div>
+
+          <div class="manual-cell">
+            <label for="manual-type">نوع القصة</label>
+            <select id="manual-type">
+              <option value="">اختر النوع…</option>
+              <option value="crime">جريمة مكتشفة بالكامل</option>
+              <option value="mystery">اختفاء / لغز</option>
+              <option value="history">حرب / صراع تاريخي</option>
+              <option value="biography">سيرة ذاتية / مشهور</option>
+              <option value="general">عام / أخرى</option>
+            </select>
+          </div>
+
+          <div class="manual-cell">
+            <label for="manual-score">تقييمك الشخصي (الدرجة)</label>
+            <input id="manual-score" type="number" min="0" max="100" value="80">
+          </div>
+
+          <div class="manual-cell">
+            <label for="manual-notes">ملاحظات / روابط</label>
+            <input id="manual-notes" type="text" placeholder="رابط، ملاحظة، كلمة سرية...">
+          </div>
+
+          <div class="manual-cell manual-cell-action">
+            <label>&nbsp;</label>
+            <button id="btn-add-manual" class="btn primary small">
+              ➕ إضافة قصة يدويًا
+            </button>
+          </div>
+        </div>
+
+        <p class="manual-hint">
+          ⚙ درجة الذكاء وتاريخ التسجيل يتم احتسابهم تلقائيًا من الكود، ولا تحتاج لإدخالهم يدويًا.
+        </p>
+
         <div class="backup-row">
           <button id="btn-export" class="btn secondary small">💾 تصدير القصص</button>
 
           <label for="import-file" class="btn secondary small file-label">📂 استيراد القصص</label>
           <input type="file" id="import-file" hidden accept="application/json">
+        </div>
+
+        <!-- شريط البحث في القصص المسجّلة -->
+        <div class="search-row">
+          <label for="stories-search">🔎 شريط بحث في كل القصص المتسجلة:</label>
+          <input id="stories-search" type="text" placeholder="اكتب جزء من الاسم، النوع، أو الملاحظات للبحث...">
         </div>
 
         <!-- ====== جدول القصص ====== -->
@@ -101,6 +162,7 @@
                 <th>ذكاء</th>
                 <th>تنفيذ</th>
                 <th>تاريخ</th>
+                <th>ملاحظات</th>
                 <th>تحكم</th>
               </tr>
             </thead>
