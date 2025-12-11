@@ -2,6 +2,22 @@
    📦 1) الإعدادات العامة – API و الكونستانت
 ============================================================ */
 
+// 🔧 Normalize Arabic text for matching (removes Hamza, diacritics, etc.)
+function normalizeArabic(str) {
+  if (!str) return "";
+
+  return str
+    .replace(/[أإآا]/g, "ا")     // كل أنواع الألف = "ا"
+    .replace(/ى/g, "ي")          // ى → ي
+    .replace(/ئ/g, "ي")          // ئ → ي
+    .replace(/ؤ/g, "و")          // ؤ → و
+    .replace(/ة/g, "ه")          // ة → ه
+    .replace(/[^\u0600-\u06FF ]/g, "") // إزالة الرموز غير العربية
+    .normalize("NFD")            // إزالة التشكيل
+    .replace(/[\u064B-\u065F]/g, "") // حركات: ً ٌ ٍ َ ُ ِ ّ ْ
+    .trim();
+}
+
 const API_CONFIG = {
   // حط هنا رابط السيرفر الوسيط لما تجهزه (Netlify Functions / Cloudflare Worker / أي Backend)
   baseUrl: "https://your-middleware-domain.com", // TODO: عدّل ده لاحقًا (تريندات جوجل/يوتيوب/وفيات)
