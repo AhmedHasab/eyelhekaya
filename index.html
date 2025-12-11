@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>ذكاء اختيار القصص – إيه الحكاية؟</title>
 
   <!-- Manifest (PWA) -->
@@ -10,9 +12,6 @@
 
   <!-- Styles -->
   <link rel="stylesheet" href="style.css">
-
-  <!-- Icons (ألغينا الأيقونة غير الموجودة لتفادي 404) -->
-  <!-- <link rel="icon" href="icon-192.png"> -->
 
   <meta name="theme-color" content="#ffffff">
 </head>
@@ -24,24 +23,31 @@
     <header class="app-header">
       <h1>🎬 ذكاء اختيار القصص – قناة "إيه الحكاية؟"</h1>
 
+      <!-- ====== الأزرار الرئيسية الأربعة ====== -->
       <div class="top-buttons">
+
+        <!-- زر 1: اختيار قصة فيديو طويل وفقًا للترند -->
         <button id="btn-pick-today" class="btn primary strong">
           🗓 اختيار قصة فيديو طويل وفقا للترند
         </button>
 
+        <!-- زر 2: اختيار قصة عشوائية مسجلة بالموقع (فيديو طويل) -->
         <button id="btn-pick-long" class="btn primary">
           🎥 اختيار قصة عشوائيه مسجلة بالموقع (فيديو طويل)
         </button>
 
+        <!-- زر 3: اختيار فيديو ريلز من الترند -->
         <button id="btn-pick-short" class="btn accent">
           ⚡ اختيار فيديو (ريلز) من الترند
         </button>
 
+        <!-- زر 4: تحديث التريندات -->
         <button id="btn-update-trends" class="btn secondary">
           📈 تحديث التريندات
         </button>
       </div>
 
+      <!-- ====== حالة التريندات ====== -->
       <div class="status-row">
         <span id="status-trends" class="status-pill muted">تريندات Google غير محدثة</span>
         <span id="status-youtube" class="status-pill muted">تريندات YouTube غير محدثة</span>
@@ -51,7 +57,7 @@
 
     <main class="main-layout">
 
-      <!-- منطقة الذكاء -->
+      <!-- ====== الذكاء الاصطناعي ====== -->
       <section class="ai-panel card">
         <h2>🧠 نتائج الذكاء الاصطناعي</h2>
         <div id="ai-output" class="ai-output">
@@ -59,18 +65,21 @@
         </div>
       </section>
 
-      <!-- إدارة القصص -->
+      <!-- ====== إدارة القصص ====== -->
       <section class="stories-panel card">
         <h2>📚 إدارة القصص</h2>
 
         <label class="block-label">✂️ الصق النص الخام للقصص (كل سطر = قصة):</label>
+
         <textarea id="raw-input" rows="5" placeholder="مثال:
 ليلى مراد
 محاولات اغتيال مبارك
 حادثة طائرة مصر للطيران
 ..."></textarea>
 
-        <button id="btn-parse-raw" class="btn primary small">➕ تحويل النص إلى قصص</button>
+        <button id="btn-parse-raw" class="btn primary small">
+          ➕ تحويل النص إلى قصص
+        </button>
 
         <div class="backup-row">
           <button id="btn-export" class="btn secondary small">💾 تصدير القصص</button>
@@ -79,6 +88,7 @@
           <input type="file" id="import-file" hidden accept="application/json">
         </div>
 
+        <!-- ====== جدول القصص ====== -->
         <div class="table-wrapper">
           <table id="stories-table">
             <thead>
@@ -104,9 +114,10 @@
 
   </div>
 
-  <!-- JS -->
+  <!-- ====== ملف الجافاسكريبت الرئيسي ====== -->
   <script src="app.js"></script>
 
+  <!-- ====== Service Worker ====== -->
   <script>
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("service-worker.js")
@@ -115,4 +126,5 @@
   </script>
 
 </body>
+
 </html>
