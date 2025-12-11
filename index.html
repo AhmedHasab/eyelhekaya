@@ -1,26 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-
-<script>
-  // لو المستخدم اتحظر من محاولة سابقة
-  if (localStorage.getItem("blocked") === "1") {
-      document.body.innerHTML = "<h1 style='text-align:center;margin-top:40px;font-family:sans-serif;color:red'>❌ غير مسموح بالدخول</h1>";
-      throw new Error("Blocked");
-  }
-
-  // طلب كلمة السر
-  const pass = prompt("من فضلك ادخل كلمة السر للدخول:");
-  const realPass = "Hasaballa2025"; // ← عدّل كلمة السر هنا
-
-  // التحقق + الحظر
-  if (pass !== realPass) {
-      localStorage.setItem("blocked", "1");
-      document.body.innerHTML = "<h1 style='text-align:center;margin-top:40px;font-family:sans-serif;color:red'>❌ كلمة السر غير صحيحة</h1>";
-      throw new Error("Unauthorized");
-  }
-</script>
-
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ذكاء اختيار القصص – إيه الحكاية؟</title>
@@ -31,34 +11,62 @@
   <!-- Styles -->
   <link rel="stylesheet" href="style.css">
 
-  <!-- Icons -->
-  <link rel="icon" href="icon-192.png">
+  <!-- Icons (ألغينا الأيقونة غير الموجودة لتفادي 404) -->
+  <!-- <link rel="icon" href="icon-192.png"> -->
 
   <meta name="theme-color" content="#ffffff">
 </head>
 
 <body>
 
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+    // لو تم الحظر سابقًا
+    if (localStorage.getItem("blocked") === "1") {
+        document.body.innerHTML =
+          "<h1 style='text-align:center;margin-top:40px;font-family:sans-serif;color:red'>❌ غير مسموح بالدخول</h1>";
+        return;
+    }
+
+    // طلب كلمة السر
+    const realPass = "Hasaballa2025";
+    const pass = prompt("من فضلك ادخل كلمة السر للدخول:");
+
+    // فشل كلمة السر
+    if (pass !== realPass) {
+        localStorage.setItem("blocked", "1");
+        document.body.innerHTML =
+          "<h1 style='text-align:center;margin-top:40px;font-family:sans-serif;color:red'>❌ كلمة السر غير صحيحة</h1>";
+        return;
+    }
+
+});
+</script>
+
+
   <div class="app-container">
 
     <header class="app-header">
       <h1>🎬 ذكاء اختيار القصص – قناة "إيه الحكاية؟"</h1>
 
-<div class="top-buttons">
-  <button id="btn-pick-today" class="btn primary strong">
-    🗓 اختيار قصة اليوم المثالية
-  </button>
-  <button id="btn-pick-long" class="btn primary">
-    🎥 اختيار قصة الآن (فيديو طويل)
-  </button>
-  <button id="btn-pick-short" class="btn accent">
-    ⚡ اختيار فيديو قصير (ريلز)
-  </button>
-  <button id="btn-update-trends" class="btn secondary">
-    📈 تحديث التريندات
-  </button>
-</div>
+      <div class="top-buttons">
+        <button id="btn-pick-today" class="btn primary strong">
+          🗓 اختيار قصة اليوم المثالية
+        </button>
 
+        <button id="btn-pick-long" class="btn primary">
+          🎥 اختيار قصة الآن (فيديو طويل)
+        </button>
+
+        <button id="btn-pick-short" class="btn accent">
+          ⚡ اختيار فيديو قصير (ريلز)
+        </button>
+
+        <button id="btn-update-trends" class="btn secondary">
+          📈 تحديث التريندات
+        </button>
+      </div>
 
       <div class="status-row">
         <span id="status-trends" class="status-pill muted">تريندات Google غير محدثة</span>
@@ -112,9 +120,7 @@
                 <th>تحكم</th>
               </tr>
             </thead>
-            <tbody id="stories-tbody">
-              <!-- يتم الملء عبر JS -->
-            </tbody>
+            <tbody id="stories-tbody"></tbody>
           </table>
         </div>
 
@@ -124,6 +130,7 @@
 
   </div>
 
+  <!-- JS -->
   <script src="app.js"></script>
 
   <script>
@@ -135,4 +142,3 @@
 
 </body>
 </html>
-
