@@ -19,32 +19,6 @@
 
 <body>
 
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-
-    // لو تم الحظر سابقًا
-    if (localStorage.getItem("blocked") === "1") {
-        document.body.innerHTML =
-          "<h1 style='text-align:center;margin-top:40px;font-family:sans-serif;color:red'>❌ غير مسموح بالدخول</h1>";
-        return;
-    }
-
-    // طلب كلمة السر
-    const realPass = "Hasaballa2025";
-    const pass = prompt("من فضلك ادخل كلمة السر للدخول:");
-
-    // فشل كلمة السر
-    if (pass !== realPass) {
-        localStorage.setItem("blocked", "1");
-        document.body.innerHTML =
-          "<h1 style='text-align:center;margin-top:40px;font-family:sans-serif;color:red'>❌ كلمة السر غير صحيحة</h1>";
-        return;
-    }
-
-});
-</script>
-
-
   <div class="app-container">
 
     <header class="app-header">
