@@ -7,7 +7,7 @@
 
 const TREND_API_URL = "/api/story-all"; 
 // 🔧 لو الـ Worker على دومين مستقل:
-// const TREND_API_URL = "https://YOUR-WORKER-DOMAIN/api/story-all";
+// const TREND_API_URL = "https://odd-credit-25c6.namozg50.workers.dev";
 
 let stories = [];       // كل القصص من stories.json + الإضافات
 let trendData = null;   // بيانات التريند من الـ Worker
