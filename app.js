@@ -4,10 +4,16 @@
 
 const API_CONFIG = {
   // حط هنا رابط السيرفر الوسيط لما تجهزه (Netlify Functions / Cloudflare Worker / أي Backend)
-  baseUrl: "https://your-middleware-domain.com", // TODO: عدّل ده لاحقًا
+  baseUrl: "https://your-middleware-domain.com", // TODO: عدّل ده لاحقًا (تريندات جوجل/يوتيوب/وفيات)
+
   googleTrendsEndpoint: "/api/google-trends",
   youtubeTrendsEndpoint: "/api/youtube-trends",
-  deathsEndpoint: "/api/recent-deaths"
+  deathsEndpoint: "/api/recent-deaths",
+
+  // 🔥 Worker الخاص بالترندات (الكود السحري الجديد)
+  storyBaseUrl: "https://your-story-worker-domain.com", // ⬅️ عدّلها لرابط الـ Worker فعليًا
+  storyAllEndpoint: "/api/story-all",
+  storyGeoEndpoint: "/api/story"
 };
 
 const ARAB_COUNTRIES = [
@@ -18,11 +24,17 @@ const ARAB_COUNTRIES = [
 const LOCAL_STORAGE_KEY = "eyelhekaya_stories_v1";
 const TODAY = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
 
-// حالة التريندات
+// حالة التريندات (Google / YouTube / وفيات)
 const trendState = {
   googleTrends: [],
   youtubeTrends: [],
   deaths: [],
+  lastUpdated: null
+};
+
+// حالة تريند الـ Worker (الترندات حسب الدول والقصص)
+const storyTrendCache = {
+  data: null,
   lastUpdated: null
 };
 
@@ -37,9 +49,9 @@ const elements = {
   btnParseRaw: document.getElementById("btn-parse-raw"),
   btnExport: document.getElementById("btn-export"),
   inputImport: document.getElementById("import-file"),
-  btnPickToday: document.getElementById("btn-pick-today"),
-  btnPickLong: document.getElementById("btn-pick-long"),
-  btnPickShort: document.getElementById("btn-pick-short"),
+  btnPickToday: document.getElementById("btn-pick-today"),   // ← زر: اختيار قصة فيديو طويل وفقًا للترند
+  btnPickLong: document.getElementById("btn-pick-long"),     // ← زر: اختيار قصة عشوائية مسجّلة بالموقع (فيديو طويل)
+  btnPickShort: document.getElementById("btn-pick-short"),   // ← زر: اختيار فيديو (ريلز) من الترند
   btnUpdateTrends: document.getElementById("btn-update-trends"),
   statusTrends: document.getElementById("status-trends"),
   statusYoutube: document.getElementById("status-youtube"),
@@ -613,7 +625,119 @@ async function handleUpdateTrends() {
 
 
 /* ============================================================
-   🎬 9) اختيار قصة اليوم + فيديو طويل
+   🌐 9) الاتصال بـ Worker الترندات (Story API)
+============================================================ */
+
+function normalizeText(str) {
+  return (str || "")
+    .toString()
+    .trim()
+    .replace(/\s+/g, "")
+    .toLowerCase();
+}
+
+async function fetchStoryTrendsAll() {
+  try {
+    if (!API_CONFIG.storyBaseUrl || API_CONFIG.storyBaseUrl.includes("your-story-worker")) {
+      console.warn("⚠ لم يتم ضبط رابط الـ Story Worker بعد. عدّل API_CONFIG.storyBaseUrl.");
+    }
+
+    // لو عندنا كاش في نفس الجلسة نستخدمه
+    if (storyTrendCache.data) {
+      return storyTrendCache.data;
+    }
+
+    const url = API_CONFIG.storyBaseUrl + API_CONFIG.storyAllEndpoint;
+    const res = await fetch(url);
+
+    if (!res.ok) throw new Error("Story API error: " + res.status);
+
+    const data = await res.json();
+    storyTrendCache.data = data;
+    storyTrendCache.lastUpdated = new Date().toISOString();
+    return data;
+  } catch (err) {
+    console.error("Story Worker API error:", err);
+    elements.aiOutput.innerHTML = "<p>⚠ تعذر الاتصال بسيرفر الترندات (Worker). تأكد من رابط storyBaseUrl في الكود.</p>";
+    return null;
+  }
+}
+
+// تفريغ بيانات الـ Worker إلى عناصر واضحة (عنوان / دولة / نوع / وزن)
+function flattenWorkerResults(workerData) {
+  if (!workerData || !Array.isArray(workerData.countries)) return [];
+
+  const items = [];
+
+  workerData.countries.forEach(countryObj => {
+    const countryCode = countryObj.code || countryObj.country_code;
+    const countryName = countryObj.country;
+    const storyGroups = countryObj.stories || [];
+
+    storyGroups.forEach(group => {
+      const groupWeight = group.weight ?? (
+        (Array.isArray(group.google) ? group.google.length : 0) * 0.8 +
+        (Array.isArray(group.youtube) ? group.youtube.length : 0) * 0.2
+      );
+
+      // نتائج Google
+      (group.google || []).forEach(g => {
+        items.push({
+          title: g.title,
+          link: g.link,
+          snippet: g.snippet || "",
+          source: "google",
+          countryCode,
+          country: countryName,
+          score: groupWeight * 0.8
+        });
+      });
+
+      // نتائج YouTube
+      (group.youtube || []).forEach(y => {
+        items.push({
+          title: y.title,
+          link: y.link,
+          views: y.views || "",
+          published: y.published || "",
+          source: "youtube",
+          countryCode,
+          country: countryName,
+          score: groupWeight * 0.2
+        });
+      });
+    });
+  });
+
+  return items;
+}
+
+// فلترة التكرار حسب العنوان
+function dedupeByTitle(items, maxPerTitle = 1) {
+  const map = new Map();
+  const result = [];
+
+  items.forEach(it => {
+    const key = normalizeText(it.title);
+    const count = map.get(key) || 0;
+    if (count < maxPerTitle) {
+      result.push(it);
+      map.set(key, count + 1);
+    }
+  });
+
+  return result;
+}
+
+// تصنيف مناسب لريلز بناء على العنوان فقط
+function isTitleShortFriendly(title) {
+  const t = title || "";
+  return /جريمة|قتل|مقتل|اغتيال|اختفاء|اختطاف|كارثة|فضيحة|سر|لغز|صادم|انفجار|تحطم/.test(t);
+}
+
+
+/* ============================================================
+   🎬 10) دوال الوزن القديمة (ما زالت مفيدة)
 ============================================================ */
 
 function computeStoryWeightForLong(story) {
@@ -660,420 +784,281 @@ function weightedRandomChoice(items, weights) {
   return items[items.length - 1];
 }
 
-function suggestTitlesForStory(story, analysis) {
-  const baseName = story.name;
-  const type = analysis.type;
-  const variants = [];
-
-  if (type === "جريمة" || type === "مخابرات" || /جاسوس|عملية/.test(baseName)) {
-    variants.push(
-      `حكاية ${baseName}… القصة الكاملة التي لم تُروَ من قبل`,
-      `${baseName}… من الأرشيف السري إلى الشاشة`,
-      `${baseName}… أخطر ملف مخابراتي في تاريخنا الحديث؟`
-    );
-  } else if (type === "سيرة ذاتية" || type === "سيرة/تاريخ") {
-    variants.push(
-      `${baseName}… الوجه الآخر الذي لا يعرفه أحد`,
-      `${baseName}… قصة صعود وسقوط نجم استثنائي`,
-      `${baseName}… الحكاية من أول مشهد لآخر نفس`
-    );
-  } else if (type === "سياسة" || type === "حرب") {
-    variants.push(
-      `${baseName}… قرارات غيّرت وجه المنطقة`,
-      `${baseName}… كيف بدأ كل شيء؟`,
-      `${baseName}… الأسرار وراء الكواليس`
-    );
-  } else {
-    variants.push(
-      `${baseName}… القصة الحقيقية`,
-      `القصة الكاملة لـ ${baseName}`,
-      `${baseName}… ما الذي حدث فعلاً؟`
-    );
-  }
-
-  return variants;
-}
-
-function suggestKeywordsForStory(story, analysis) {
-  const name = story.name;
-  const type = analysis.type;
-
-  const base = [
-    "إيه الحكاية",
-    "قصة حقيقية",
-    "وثائقي عربي",
-    "قصص مشوقة",
-    "قناة إيه الحكاية"
-  ];
-
-  if (type === "جريمة") {
-    base.push("جرائم حقيقية", "قصة جريمة", "جريمة غامضة", "قصة قتل");
-  }
-  if (type === "مخابرات") {
-    base.push("قصص مخابرات", "جاسوس", "الموساد", "المخابرات المصرية");
-  }
-  if (type === "سيرة ذاتية" || type === "سيرة/تاريخ") {
-    base.push("سيرة ذاتية", "حياة الفنانين", "قصة حياة");
-  }
-  if (type === "سياسة") {
-    base.push("قصة سياسية", "تاريخ سياسي", "زعماء العرب");
-  }
-  if (type === "حرب" || type === "تاريخ") {
-    base.push("حروب", "تاريخ العرب", "قصة حرب");
-  }
-
-  base.push(name);
-
-  return [...new Set(base)];
-}
-
-function estimateViewRange(analysis) {
-  const iq = analysis.intelligenceScore;
-  const viral = analysis.viralChance;
-
-  const baseMin = 5000;
-  let multiplier = iq / 80 + viral / 120;
-
-  if (multiplier < 0.8) multiplier = 0.8;
-  if (multiplier > 3) multiplier = 3;
-
-  const minViews = Math.round(baseMin * multiplier);
-  const maxViews = Math.round(minViews * (1.8 + viral / 200));
-
-  return { minViews, maxViews };
-}
-
-function buildStrengthsAndWeaknesses(analysis) {
-  const strengths = [];
-  const weaknesses = [];
-
-  if (analysis.viralChance >= 80) strengths.push("فرصة عالية للانتشار (Viral) على المنصات.");
-  if (analysis.audienceMatch >= 85) strengths.push("متناسبة جدًا مع جمهور قناة \"إيه الحكاية؟\".");
-  if (analysis.trendMatching >= 60) strengths.push("مرتبطة جزئيًا بتريندات حالية أو متجددة.");
-  if (analysis.saturation === "Low") strengths.push("القصة غير مستهلكة بالكامل على يوتيوب.");
-
-  if (analysis.saturation === "High") weaknesses.push("الموضوع متشبع إلى حد كبير على يوتيوب.");
-  if (analysis.trendMatching < 40) weaknesses.push("القصة ليست مرتبطة بقوة بتريندات اللحظة الحالية.");
-  if (analysis.intelligenceScore < 80) weaknesses.push("تحتاج معالجة بصرية وسينمائية قوية لتعويض المنافسة.");
-
-  if (!strengths.length) strengths.push("قابلة للتقديم بأسلوب مختلف يخدم هوية القناة.");
-  if (!weaknesses.length) weaknesses.push("لا توجد نقاط ضعف جوهرية، فقط تحتاج تنفيذًا عالي الجودة.");
-
-  return { strengths, weaknesses };
-}
-
-function describeYoutubeFit(analysis) {
-  let text = "";
-
-  if (analysis.intelligenceScore >= 90) {
-    text = "القصة متوافقة جدًا مع خوارزمية يوتيوب لو تم تنفيذها بصريًا وصوتيًا بجودة عالية، مع عنوان جذاب وصورة مصغرة قوية.";
-  } else if (analysis.intelligenceScore >= 80) {
-    text = "القصة مناسبة جدًا ليوتيوب، مع فرصة جيدة للحصول على دفع من خوارزمية التوصيات، خاصة لو تم تقسيمها إلى مشاهد مشوقة.";
-  } else {
-    text = "القصة تحتاج معالجة أذكى في العنوان والصورة المصغرة وبناء السرد القصصي حتى تحصل على فرصة أعلى في اقتراحات يوتيوب.";
-  }
-
-  if (analysis.saturation === "High") {
-    text += " لكن يجب الانتباه لمستوى التشبع والبحث عن زاوية مختلفة تمامًا عن الموجود.";
-  }
-
-  return text;
-}
-
-function buildThumbnailIdea(story, analysis) {
-  const name = story.name;
-  const type = analysis.type;
-
-  if (type === "جريمة") {
-    return `لقطة سينمائية مظلمة لشارع أو غرفة تحقيق، وفي المنتصف صورة بورتريه للشخصية الأساسية مع عنوان كبير باللون الأحمر: «${name}» وخلفية فيها تدرجات حمراء/سوداء تعكس التوتر والخطر.`;
-  }
-  if (type === "مخابرات") {
-    return `خريطة أو مستندات سرية ممزقة مع صورة ظلية لعميل مجهول وعيون تراقب من الخلفية، واسم «${name}» بخط واضح مع كلمة مثل «الملف السري» أو «قصة الجاسوس».`;
-  }
-  if (type === "سيرة ذاتية" || type === "سيرة/تاريخ") {
-    return `بورتريه واضح للشخصية في المنتصف، مع تقسيم الشاشة إلى نصفين: جانب يكشف المجد والنجاح وجانب آخر مظلم يعكس المعاناة أو النهاية، وكتابة «الحكاية اللي محدش قالها» مع اسم «${name}».`;
-  }
-  if (type === "سياسة" || type === "حرب") {
-    return `خريطة أو علم الدولة المرتبط بها الحدث في الخلفية، وصورة للزعيم أو الشخصية السياسية في المقدمة، مع عناصر مثل دخان أو نيران خفيفة تعبر عن الصراع، واسم «${name}» بخط جريء وواضح.`;
-  }
-  return `صورة تعبيرية قريبة من أجواء القصة، مع إبراز اسم «${name}» في المنتصف، واستخدام ألوان متباينة (أصفر/أسود أو أحمر/أسود) مع لمسة درامية بسيطة.`;
-}
-
-function handlePickToday() {
-  const candidates = stories.filter(s => !s.done);
-  if (!candidates.length) {
-    elements.aiOutput.innerHTML = "<p>⚠ لا توجد قصص متاحة (أو أن جميع القصص تم تنفيذها).</p>";
-    return;
-  }
-
-  const weights = candidates.map(st => computeStoryWeightForLong(st));
-
-  const sorted = candidates
-    .map((st, idx) => ({ story: st, weight: weights[idx] }))
-    .sort((a, b) => b.weight - a.weight)
-    .slice(0, 5);
-
-  const topStories = sorted.map(x => x.story);
-  const topWeights = sorted.map(x => x.weight);
-
-  const chosen = weightedRandomChoice(topStories, topWeights);
-  const analysis = ensureStoryAnalysis(chosen);
-  const titles = suggestTitlesForStory(chosen, analysis);
-  const keywords = suggestKeywordsForStory(chosen, analysis);
-  const { minViews, maxViews } = estimateViewRange(analysis);
-  const { strengths, weaknesses } = buildStrengthsAndWeaknesses(analysis);
-  const youtubeFitText = describeYoutubeFit(analysis);
-
-  const html = `
-    <h2>🗓 قصة اليوم المثالية للنشر</h2>
-    <h3>القصة المختارة:</h3>
-    <p class="ai-title">${chosen.name}</p>
-
-    <h3>🎯 عناوين مقترحة (3 خيارات):</h3>
-    <ol>
-      <li>${titles[0]}</li>
-      <li>${titles[1]}</li>
-      <li>${titles[2]}</li>
-    </ol>
-
-    <h3>🤖 لماذا هذه القصة الأنسب لليوم؟</h3>
-    <ul class="ai-list">
-      <li>درجة الذكاء: <strong>${analysis.intelligenceScore}/100</strong></li>
-      <li>عامل الجاذبية: <strong>${analysis.attractiveness}/100</strong></li>
-      <li>فرصة الانفجار (Viral Chance): <strong>${analysis.viralChance}%</strong></li>
-      <li>مستوى التشبع: <strong>${analysis.saturation}</strong></li>
-      <li>أفضل شكل فيديو: <strong>${analysis.bestFormat}</strong></li>
-      <li>تطابق مع التريند: <strong>${analysis.trendMatching}/100</strong></li>
-      <li>Audience Match: <strong>${analysis.audienceMatch}/100</strong></li>
-    </ul>
-
-    <h3>📊 توقع عدد المشاهدات لو نزلت النهاردة:</h3>
-    <p>المدى التقريبي: <strong>${minViews.toLocaleString()} – ${maxViews.toLocaleString()} مشاهدة</strong></p>
-
-    <h3>🧠 ملاءمتها لخوارزمية يوتيوب:</h3>
-    <p>${youtubeFitText}</p>
-
-    <h3>✅ نقاط القوة:</h3>
-    <ul class="ai-list">
-      ${strengths.map(s => `<li>${s}</li>`).join("")}
-    </ul>
-
-    <h3>⚠ نقاط تحتاج انتباه:</h3>
-    <ul class="ai-list">
-      ${weaknesses.map(w => `<li>${w}</li>`).join("")}
-    </ul>
-
-    <h3>🔑 كلمات مفتاحية:</h3>
-    <p class="ai-tags">${keywords.map(k => "#" + k.replace(/\s+/g, "_")).join(" ")}</p>
-  `;
-
-  elements.aiOutput.innerHTML = html;
-}
-
-
-function handlePickLong() {
-  const candidates = stories.filter(s => !s.done);
-  if (!candidates.length) {
-    elements.aiOutput.innerHTML = "<p>⚠ لا توجد قصص متاحة (أو أن جميع القصص تم تنفيذها).</p>";
-    return;
-  }
-
-  const weights = candidates.map(st => computeStoryWeightForLong(st));
-
-  const sorted = candidates
-    .map((st, idx) => ({ story: st, weight: weights[idx] }))
-    .sort((a, b) => b.weight - a.weight)
-    .slice(0, 5);
-
-  const topStories = sorted.map(x => x.story);
-  const topWeights = sorted.map(x => x.weight);
-
-  const chosen = weightedRandomChoice(topStories, topWeights);
-  const analysis = ensureStoryAnalysis(chosen);
-  const titles = suggestTitlesForStory(chosen, analysis);
-  const keywords = suggestKeywordsForStory(chosen, analysis);
-  const { minViews, maxViews } = estimateViewRange(analysis);
-  const { strengths, weaknesses } = buildStrengthsAndWeaknesses(analysis);
-  const youtubeFitText = describeYoutubeFit(analysis);
-
-  const html = `
-    <h2>🎥 ترشيح فيديو طويل</h2>
-    <h3>القصة المختارة:</h3>
-    <p class="ai-title">${chosen.name}</p>
-
-    <h3>🎯 عناوين مقترحة (3 خيارات):</h3>
-    <ol>
-      <li>${titles[0]}</li>
-      <li>${titles[1]}</li>
-      <li>${titles[2]}</li>
-    </ol>
-
-    <h3>🤖 سبب اختيار هذه القصة:</h3>
-    <ul class="ai-list">
-      <li>درجة الذكاء: <strong>${analysis.intelligenceScore}/100</strong></li>
-      <li>عامل الجاذبية: <strong>${analysis.attractiveness}/100</strong></li>
-      <li>فرصة الانفجار (Viral Chance): <strong>${analysis.viralChance}%</strong></li>
-      <li>مستوى التشبع: <strong>${analysis.saturation}</strong></li>
-      <li>أفضل شكل فيديو: <strong>${analysis.bestFormat}</strong></li>
-      <li>تطابق مع التريند: <strong>${analysis.trendMatching}/100</strong></li>
-      <li>Audience Match: <strong>${analysis.audienceMatch}/100</strong></li>
-    </ul>
-
-    <h3>📊 توقع عدد المشاهدات المتوقعة:</h3>
-    <p>المدى التقريبي المتوقّع: <strong>${minViews.toLocaleString()} – ${maxViews.toLocaleString()} مشاهدة</strong> (مع تنفيذ بصري وصوتي قوي).</p>
-
-    <h3>🧠 مدى توافقها مع خوارزمية يوتيوب:</h3>
-    <p>${youtubeFitText}</p>
-
-    <h3>✅ نقاط القوة:</h3>
-    <ul class="ai-list">
-      ${strengths.map(s => `<li>${s}</li>`).join("")}
-    </ul>
-
-    <h3>⚠ نقاط الضعف:</h3>
-    <ul class="ai-list">
-      ${weaknesses.map(w => `<li>${w}</li>`).join("")}
-    </ul>
-
-    <h3>🔑 كلمات مفتاحية مقترحة:</h3>
-    <p class="ai-tags">${keywords.map(k => `#${k.replace(/\s+/g, "_")}`).join(" ")}</p>
-
-    <h3>🖼 فكرة للصورة المصغرة (Thumbnail Idea):</h3>
-    <p>${buildThumbnailIdea(chosen, analysis)}</p>
-  `;
-
-  elements.aiOutput.innerHTML = html;
-}
-
 
 /* ============================================================
-   ⚡ 10) اختيار فيديو قصير (ريلز)
+   🎬 11) زر 1: اختيار قصة فيديو طويل وفقًا للترند (من الـ Worker)
+       (اختيار قصة فيديو طويل وفقا للترند)
 ============================================================ */
 
-function isShortFriendlyStory(story) {
-  const name = story.name || "";
-  const type = classifyStoryType(name);
+async function handlePickToday() {
+  elements.aiOutput.innerHTML = "<p>⏳ يتم الآن جلب كل نتائج البحث من Worker الترندات...</p>";
 
-  const isCrimeOrFast =
-    type === "جريمة" ||
-    type === "مخابرات" ||
-    type === "كارثة" ||
-    /اغتيال|مقتل|سفّاح|قضية|اختطاف/.test(name);
+  const data = await fetchStoryTrendsAll();
+  if (!data) return;
 
-  return isCrimeOrFast;
-}
+  const items = flattenWorkerResults(data);
+  if (!items.length) {
+    elements.aiOutput.innerHTML = "<p>⚠ لا توجد نتائج ترند متاحة حاليًا من الـ Worker.</p>";
+    return;
+  }
 
-function pickShortStoryCandidate() {
-  const filtered = stories.filter(s => isShortFriendlyStory(s) && !s.done);
-  if (filtered.length) {
-    const weights = filtered.map(st => {
-      const a = ensureStoryAnalysis(st);
-      return a.viralChance * 0.6 + a.attractiveness * 0.4;
+  // تجميع حسب الدولة
+  const byCountry = {};
+  items.forEach(it => {
+    const key = it.countryCode || it.country;
+    if (!byCountry[key]) {
+      byCountry[key] = {
+        country: it.country,
+        items: []
+      };
+    }
+    byCountry[key].items.push(it);
+  });
+
+  // ترتيب داخل كل دولة حسب score، وتحديد أفضل 10 فقط لكل دولة
+  Object.values(byCountry).forEach(group => {
+    group.items.sort((a, b) => b.score - a.score);
+    group.items = dedupeByTitle(group.items).slice(0, 10);
+  });
+
+  const htmlParts = [
+    "<h2>🎥 كل نتائج الترند الحالية (حسب الدول العربية)</h2>",
+    `<p>عدد الدول: <strong>${Object.keys(byCountry).length}</strong> – تم الدمج بنسبة <strong>80% Google + 20% YouTube</strong>.</p>`
+  ];
+
+  Object.values(byCountry).forEach(group => {
+    htmlParts.push(`<h3>🌍 ${group.country}</h3>`);
+    htmlParts.push("<ol>");
+    group.items.forEach(it => {
+      htmlParts.push(`
+        <li>
+          <strong>[${it.source === "google" ? "Google" : "YouTube"}]</strong>
+          <span>${it.title}</span>
+          <br>
+          <a href="${it.link}" target="_blank" rel="noopener">🔗 فتح الرابط</a>
+        </li>
+      `);
     });
-    return weightedRandomChoice(filtered, weights);
-  }
-  return null;
-}
+    htmlParts.push("</ol>");
+  });
 
-function generateExternalShortIdeas() {
-  const arabIdeas = [
-    "جريمة غامضة في حي شعبي عربي انتهت بحكم صادم",
-    "قصة مسؤول عربي كبير سقط بسبب مكالمة مسرّبة",
-    "اختفاء ناشط عربي في ظروف غامضة وظهور أسرار خطيرة لاحقًا",
-    "فضيحة تجسس عربية تم التستر عليها سنوات طويلة",
-    "حادثة تحطم طائرة عربية غيّرت قوانين الطيران في المنطقة"
-  ];
-
-  const globalIdeas = [
-    "قصة أخطر عملية سرقة بنك في التاريخ الحديث",
-    "قضية اختفاء طائرة عالمية لا زالت لغزًا حتى اليوم"
-  ];
-
-  const chosenArab = arabIdeas[Math.floor(Math.random() * arabIdeas.length)];
-  const chosenGlobal = globalIdeas[Math.floor(Math.random() * globalIdeas.length)];
-
-  return {
-    arab: chosenArab,
-    global: chosenGlobal
-  };
-}
-
-function buildShortVideoMetadata(titleCore) {
-  const durationSec = Math.floor(45 + Math.random() * 45); // بين 45 و 90 ثانية
-  const hashtags = [
-    "إيه_الحكاية",
-    "قصص_حقيقية",
-    "ريلز",
-    "shorts",
-    "وثائقيات",
-    "قصة_اليوم"
-  ];
-  const desc = `قصة قصيرة مشوقة عن: ${titleCore}.\nتابع قناة "إيه الحكاية؟" للمزيد من القصص الحقيقية المشوقة.`;
-
-  return {
-    durationSec,
-    hashtags,
-    description: desc
-  };
-}
-
-function handlePickShort() {
-  const candidate = pickShortStoryCandidate();
-  const { arab, global } = generateExternalShortIdeas();
-
-  const selectedTitle = candidate ? candidate.name : arab;
-  const analysis = candidate ? ensureStoryAnalysis(candidate) : null;
-  const meta = buildShortVideoMetadata(selectedTitle);
-
-  const reasonLines = [];
-  if (analysis) {
-    reasonLines.push(`• نوع القصة: ${analysis.type}`);
-    reasonLines.push(`• عامل الجاذبية: ${analysis.attractiveness}/100`);
-    reasonLines.push(`• فرصة الانفجار (Viral): ${analysis.viralChance}%`);
-    reasonLines.push(`• مستوى التشبع: ${analysis.saturation}`);
-    reasonLines.push("• مناسبة جدًا لريلز/Shorts بسبب سرعة الحدث وقوة الحبكة.");
-  } else {
-    reasonLines.push("• القصة المقترحة مبنية على نمط رائج في الريلز (جرائم/اختفاءات/انفجارات سريعة).");
-  }
-
-  const html = `
-    <h2>⚡ ترشيح فيديو قصير (ريلز)</h2>
-
-    <h3>📌 قصة قصيرة جاهزة للنشر:</h3>
-    <p class="ai-title">${selectedTitle}</p>
-
-    <h3>📝 عنوان مقترح:</h3>
-    <p>«${selectedTitle}… الحكاية في أقل من دقيقة»</p>
-
-    <h3>📄 وصف مقترح:</h3>
-    <p>${meta.description}</p>
-
-    <h3>🏷 هاشتاجات مقترحة:</h3>
-    <p class="ai-tags">${meta.hashtags.map(h => "#" + h).join(" ")}</p>
-
-    <h3>⏱ مدة الفيديو المقترحة:</h3>
-    <p>${meta.durationSec} ثانية تقريبًا.</p>
-
-    <h3>🧠 سبب قوة هذا الموضوع:</h3>
-    <ul class="ai-list">
-      ${reasonLines.map(r => `<li>${r}</li>`).join("")}
-    </ul>
-
-    <hr>
-
-    <h3>💡 قصص جديدة مقترحة (غير موجودة في القائمة حاليًا):</h3>
-    <ul class="ai-list">
-      <li>قصة عربية (85%): ${arab}</li>
-      <li>قصة عالمية (15%): ${global}</li>
-    </ul>
-  `;
-
-  elements.aiOutput.innerHTML = html;
+  elements.aiOutput.innerHTML = htmlParts.join("");
 }
 
 
 /* ============================================================
-   🧠 11) تهيئة الأحداث وتشغيل التطبيق
+   🎬 12) زر 2: اختيار قصة عشوائية مسجّلة بالموقع (فيديو طويل)
+        (اختيار قصة عشوائية مسجلة بالموقع (فيديو طويل))
+============================================================ */
+
+// حساب عدد مرات ظهور عنوان القصة داخل نتائج الـ Worker
+function computeStoryHitCountFromTrends(story, trendItems) {
+  const normName = normalizeText(story.name);
+  if (!normName || !trendItems.length) return 0;
+
+  let hits = 0;
+  trendItems.forEach(it => {
+    const normTitle = normalizeText(it.title);
+    if (!normTitle) return;
+
+    if (normTitle.includes(normName) || (normName.length > 6 && normName.includes(normTitle))) {
+      hits++;
+    }
+  });
+
+  return hits;
+}
+
+async function handlePickLong() {
+  elements.aiOutput.innerHTML = "<p>⏳ يتم الآن حساب أفضل القصص المسجّلة بالموقع بناءً على تقييمك + الترند...</p>";
+
+  const data = await fetchStoryTrendsAll();
+  if (!data) return;
+
+  const trendItems = flattenWorkerResults(data);
+
+  const candidates = stories.filter(s => !s.done); // قصص لم تُنفذ بعد
+  if (!candidates.length) {
+    elements.aiOutput.innerHTML = "<p>⚠ لا توجد قصص متاحة (كل القصص تم تنفيذها).</p>";
+    return;
+  }
+
+  const ranked = candidates.map(story => {
+    const analysis = ensureStoryAnalysis(story);
+    const hitCount = computeStoryHitCountFromTrends(story, trendItems);
+
+    // نحول عدد الـ Hits إلى درجة من 0 إلى 100 (بحد أقصى 10 Hits)
+    const hitScore = Math.min(hitCount, 10) / 10 * 100;
+
+    // وزن داخلي للقصة (ذكاء + جاذبية + عمر...)
+    const baseLongWeight = computeStoryWeightForLong(story); // من 0 إلى ~100
+
+    // المعامل النهائي: 60% تقييمك + ذكاء القصة + 40% الترند (HitScore)
+    const finalWeight = baseLongWeight * 0.6 + hitScore * 0.4;
+
+    return {
+      story,
+      analysis,
+      hitCount,
+      hitScore: Math.round(hitScore),
+      baseLongWeight: Math.round(baseLongWeight),
+      finalWeight: Math.round(finalWeight)
+    };
+  });
+
+  // ترتيب تنازلي واختيار أفضل 5
+  ranked.sort((a, b) => b.finalWeight - a.finalWeight);
+  const top5 = ranked.slice(0, 5);
+
+  // تجهيز HTML
+  const htmlParts = [
+    "<h2>🎥 أفضل 5 قصص مسجّلة بالموقع لفيديو طويل</h2>",
+    "<p>الاختيار مبني على <strong>تقييمك الشخصي</strong> + <strong>عدد مرات ظهور العنوان في الترند</strong> آخر فترة.</p>",
+    "<ol>"
+  ];
+
+  top5.forEach(item => {
+    const { story, analysis, finalWeight, hitCount, hitScore, baseLongWeight } = item;
+    const { intelligenceScore, attractiveness, bestFormat, saturation } = analysis;
+
+    // استخراج بعض عناوين الترند المطابقة (بحد أقصى 3)
+    const related = trendItems
+      .filter(it => {
+        const normTitle = normalizeText(it.title);
+        const normName = normalizeText(story.name);
+        return normTitle.includes(normName) || (normName.length > 6 && normName.includes(normTitle));
+      })
+      .slice(0, 3);
+
+    htmlParts.push(`
+      <li>
+        <p class="ai-title">${story.name}</p>
+        <ul class="ai-list">
+          <li>درجة ذكاء القصة (تحليل داخلي): <strong>${intelligenceScore}/100</strong></li>
+          <li>عامل الجاذبية: <strong>${attractiveness}/100</strong></li>
+          <li>أفضل شكل للفيديو: <strong>${bestFormat}</strong> – مستوى التشبع: <strong>${saturation}</strong></li>
+          <li>تقييمك الشخصي (score): <strong>${story.score ?? 80}</strong></li>
+          <li>وزن القصة الداخلي للفيديوهات الطويلة: <strong>${baseLongWeight}</strong></li>
+          <li>عدد مرات ظهور العنوان في نتائج الترند: <strong>${hitCount}</strong> (درجة الترند: ${hitScore}/100)</li>
+          <li>💡 الوزن النهائي للاختيار: <strong>${finalWeight}/100</strong></li>
+        </ul>
+
+        ${
+          related.length
+            ? `
+            <details>
+              <summary>🔎 بعض النتائج المطابقة في الترند (${related.length}):</summary>
+              <ul class="ai-list">
+                ${related
+                  .map(
+                    r =>
+                      `<li>[${r.source === "google" ? "Google" : "YouTube"}] ${r.title} – <a href="${r.link}" target="_blank" rel="noopener">رابط</a></li>`
+                  )
+                  .join("")}
+              </ul>
+            </details>
+          `
+            : `<p>لا توجد روابط مطابقة مباشرة، لكن القصة قوية من حيث تقييمك وتحليلها الداخلي.</p>`
+        }
+      </li>
+    `);
+  });
+
+  htmlParts.push("</ol>");
+
+  elements.aiOutput.innerHTML = htmlParts.join("");
+}
+
+
+/* ============================================================
+   ⚡ 13) زر 3: اختيار فيديو (ريلز) من الترند
+        (اختيار فيديو (ريلز) من الترند)
+============================================================ */
+
+async function handlePickShort() {
+  elements.aiOutput.innerHTML = "<p>⏳ يتم الآن تحليل الترند لاختيار أفضل أفكار ريلز...</p>";
+
+  const data = await fetchStoryTrendsAll();
+  if (!data) return;
+
+  let items = flattenWorkerResults(data);
+  if (!items.length) {
+    elements.aiOutput.innerHTML = "<p>⚠ لا توجد نتائج ترند مناسبة حاليًا.</p>";
+    return;
+  }
+
+  // استبعاد العناوين الموجودة بالفعل في القصص المسجّلة بالموقع
+  const storyNamesNorm = stories.map(st => normalizeText(st.name));
+
+  items = items.filter(it => {
+    const normTitle = normalizeText(it.title);
+    if (!normTitle) return false;
+
+    const existsInLocal = storyNamesNorm.some(n => n && (normTitle.includes(n) || n.includes(normTitle)));
+    if (existsInLocal) return false;
+
+    // نريد فقط العناوين السريعة (جرائم / اختفاء / صدمة...)
+    return isTitleShortFriendly(it.title);
+  });
+
+  if (!items.length) {
+    elements.aiOutput.innerHTML = "<p>⚠ لا توجد قصص ترند مناسبة للريلز وغير مسجّلة عندك حاليًا.</p>";
+    return;
+  }
+
+  // ترتيب حسب score (80% جوجل + 20% يوتيوب متضمنة في score الأصلي)
+  items.sort((a, b) => b.score - a.score);
+  items = dedupeByTitle(items);
+  const top5 = items.slice(0, 5);
+
+  const htmlParts = [
+    "<h2>⚡ أفضل 5 أفكار ريلز من الترند الحالي</h2>",
+    "<p>تم اختيار هذه القصص بنسبة وزن <strong>80% Google + 20% YouTube</strong>، مع استبعاد القصص المسجّلة بالفعل في موقعك.</p>",
+    "<ol>"
+  ];
+
+  top5.forEach(it => {
+    const metaDuration = Math.floor(45 + Math.random() * 45); // بين 45 و 90 ثانية
+    const hashtags = [
+      "إيه_الحكاية",
+      "قصص_حقيقية",
+      "ريلز",
+      "shorts",
+      "وثائقيات",
+      "قصة_اليوم"
+    ];
+
+    const desc = `قصة قصيرة مشوقة عن: ${it.title}.\nتابع قناة "إيه الحكاية؟" للمزيد من القصص الحقيقية المشوقة.`;
+
+    htmlParts.push(`
+      <li>
+        <p class="ai-title">${it.title}</p>
+        <p>المصدر: <strong>${it.source === "google" ? "Google" : "YouTube"}</strong> – الدولة: <strong>${it.country}</strong></p>
+        <p>🔗 <a href="${it.link}" target="_blank" rel="noopener">فتح الرابط الأصلي</a></p>
+
+        <h4>📝 عنوان مقترح للريلز:</h4>
+        <p>«${it.title}… الحكاية في أقل من دقيقة»</p>
+
+        <h4>📄 وصف مقترح:</h4>
+        <p>${desc}</p>
+
+        <h4>⏱ مدة مقترحة:</h4>
+        <p>${metaDuration} ثانية تقريبًا.</p>
+
+        <h4>🏷 هاشتاجات مقترحة:</h4>
+        <p class="ai-tags">${hashtags.map(h => "#" + h).join(" ")}</p>
+      </li>
+    `);
+  });
+
+  htmlParts.push("</ol>");
+
+  elements.aiOutput.innerHTML = htmlParts.join("");
+}
+
+
+/* ============================================================
+   🧠 14) تهيئة الأحداث وتشغيل التطبيق
 ============================================================ */
 
 function initEventListeners() {
@@ -1086,6 +1071,8 @@ function initEventListeners() {
   if (elements.inputImport) {
     elements.inputImport.addEventListener("change", handleImportFile);
   }
+
+  // 🔘 الأزرار الثلاثة الرئيسية أعلى الصفحة
   if (elements.btnPickToday) {
     elements.btnPickToday.addEventListener("click", handlePickToday);
   }
@@ -1095,6 +1082,7 @@ function initEventListeners() {
   if (elements.btnPickShort) {
     elements.btnPickShort.addEventListener("click", handlePickShort);
   }
+
   if (elements.btnUpdateTrends) {
     elements.btnUpdateTrends.addEventListener("click", handleUpdateTrends);
   }
