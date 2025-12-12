@@ -208,4 +208,52 @@ tr:hover {
   display: flex;
   gap: 5px;
 }
+.trend-card {
+    background: #fff;
+    margin: 10px 0;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #e6e6e6;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.trend-rank {
+    font-size: 18px;
+    font-weight: bold;
+    color: #c00;
+}
+
+.trend-title {
+    font-size: 17px;
+    margin: 5px 0;
+    font-weight: bold;
+}
+
+.trend-meta, .trend-scores {
+    font-size: 13px;
+    margin: 5px 0;
+    color: #555;
+}
+
+.add-btn {
+    width: 100%;
+    padding: 8px;
+    margin-top: 8px;
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.add-btn:hover {
+    background: #218838;
+}
+
+.trend-link {
+    display: block;
+    margin-top: 6px;
+    color: #007bff;
+    text-decoration: none;
+}
 
