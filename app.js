@@ -1,536 +1,1105 @@
-// Cloudflare Worker – Hasaballa Story Trends Engine
-// يعمل كـ API واحد لكل الطلبات من app.js
+// app.js
+// ذكاء اختيار القصص – واجهة العميل (Frontend)
 
-const DEFAULT_YT_API_KEY = "AIzaSyCYVZKHbhpFTba-eKWR23oR0JzNVf10eNc";
+// ==========================
+// إعدادات عامة وثوابت
+// ==========================
 
-// أسواق Bing لمجموعة الدول
-const ARAB_MARKETS = [
-  { code: "ar-EG", country: "مصر" },
-  { code: "ar-SA", country: "السعودية" },
-  { code: "ar-YE", country: "اليمن" },
-  { code: "ar-IQ", country: "العراق" },
-  { code: "ar-LY", country: "ليبيا" },
-  { code: "ar-LB", country: "لبنان" },
-  { code: "ar-SY", country: "سوريا" },
-  { code: "ar-MA", country: "المغرب" },
-];
+const WORKER_URL = "https://odd-credit-25c6.namozg50.workers.dev"; // عدّلها لو غيّرت Route
+const STORAGE_KEY_STORIES = "eh_story_picker_stories_v1";
+const STORAGE_KEY_STATUS = "eh_story_picker_status_v1";
+const STORAGE_KEY_LAYOUT = "eh_story_picker_layout_v1";
+const STORAGE_KEY_AI_CACHE = "eh_story_picker_ai_cache_v1";
 
-const WORLD_MARKETS = [
-  { code: "en-US", country: "الولايات المتحدة" },
-  { code: "es-CO", country: "كولومبيا" },
-  { code: "ko-KR", country: "كوريا الجنوبية" },
-  { code: "pt-BR", country: "البرازيل" },
-  { code: "en-AU", country: "أستراليا" },
-];
+// عشان نمنع تنزيل Backup كل نص ثانية لو حد بيكتب بسرعة
+const BACKUP_MIN_INTERVAL_MS = 15000;
 
-// كلمات مفتاحية لتحديد نوع القصة
-const CRIME_KEYWORDS = [
-  "جريمة",
-  "قتل",
-  "مقتل",
-  "اغتيال",
-  "مذبحة",
-  "سفاح",
-  "جنايات",
-  "murder",
-  "killed",
-  "assassination",
-  "crime",
-];
+// الحالة العامة
+let stories = [];
+let lastStoryId = 0;
+let editingStoryId = null;
+let lastBackupTime = 0;
 
-const DEATH_KEYWORDS = [
-  "وفاة",
-  "رحيل",
-  "رحل",
-  "مات",
-  "توفي",
-  "died",
-  "death",
-  "passed away",
-];
+// DOM Elements
+let aiOutputEl,
+  storiesTbodyEl,
+  rawInputEl,
+  manualNameEl,
+  manualTypeEl,
+  manualScoreEl,
+  manualNotesEl,
+  importFileEl,
+  searchInputEl,
+  statusTrendsEl,
+  statusYoutubeEl,
+  statusDeathsEl,
+  aiPanelEl,
+  storiesPanelEl,
+  suggestionsBoxEl;
 
-const WAR_KEYWORDS = [
-  "حرب",
-  "معركة",
-  "غزو",
-  "اجتياح",
-  "هجوم",
-  "صراع",
-  "انتفاضة",
-  "اشتباكات",
-  "war",
-  "battle",
-  "conflict",
-  "invasion",
-];
+// ==========================
+// Helpers – Normalization & تواريخ
+// ==========================
 
-const SPY_KEYWORDS = [
-  "جاسوس",
-  "جاسوسة",
-  "تجسس",
-  "مخابرات",
-  "عميل",
-  "عملية سرية",
-  "spy",
-  "espionage",
-  "intelligence",
-];
-
-// =====================
-// Utils
-// =====================
-
-function jsonResponse(body, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      "Content-Type": "application/json; charset=utf-8",
-      "Access-Control-Allow-Origin": "*",
-    },
-  });
-}
-
-function normalizeText(str) {
+// إزالة التشكيل والهمزات والنقط والرموز من أجل بحث موحّد
+function normalizeArabic(str) {
   if (!str) return "";
   let s = str.toString().toLowerCase();
+
+  // توحيد أشكال الألف
   s = s.replace(/[أإآا]/g, "ا");
+  // توحيد الياء
   s = s.replace(/[ىي]/g, "ي");
+  // توحيد الهاء/التاء المربوطة
   s = s.replace(/ة/g, "ه");
+
+  // إزالة التشكيل
   s = s.replace(/[\u064B-\u0652]/g, "");
+
+  // إزالة كل الرموز، النقط، الشرط، السلاش... إلخ
   s = s.replace(/[^\p{L}\p{N}\s]/gu, " ");
+
+  // مسافات متتالية
   s = s.replace(/\s+/g, " ").trim();
+
   return s;
 }
 
-function classifyStoryFromText(text) {
-  const t = normalizeText(text);
-
-  const hasCrime = CRIME_KEYWORDS.some((w) => t.includes(normalizeText(w)));
-  const hasDeath = DEATH_KEYWORDS.some((w) => t.includes(normalizeText(w)));
-  const hasWar = WAR_KEYWORDS.some((w) => t.includes(normalizeText(w)));
-  const hasSpy = SPY_KEYWORDS.some((w) => t.includes(normalizeText(w)));
-
-  if (hasSpy) return { type: "spy", label: "قصة مخابرات / جاسوسية" };
-  if (hasCrime) return { type: "crime", label: "جريمة موثقة" };
-  if (hasWar) return { type: "war", label: "حرب / معركة / حدث عسكري" };
-  if (hasDeath) return { type: "death", label: "وفاة شخصية عامة" };
-
-  return { type: "other", label: "غير مصنف" };
-}
-
-function todayISO() {
+function todayISODate() {
+  // تاريخ اليوم بصيغة YYYY-MM-DD
   return new Date().toISOString().slice(0, 10);
 }
 
-// Cache key helper للـ Worker Cache
-function makeCacheKey(request, extraKey) {
-  const url = new URL(request.url);
-  url.search = "";
-  url.hash = "";
-  if (extraKey) {
-    url.pathname = url.pathname + "::" + extraKey;
-  }
-  return new Request(url.toString(), { method: "GET" });
+function formatDate(dateStr) {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  return d.toISOString().slice(0, 10);
 }
 
-// =====================
-// Bing News Search Helper
-// =====================
-
-async function fetchBingNews(env, query, market, days = 365) {
-  const apiKey = env.BING_API_KEY;
-  if (!apiKey) {
-    // لو مفيش مفتاح، نرجع نتيجة فاضية بس عشان الكود ما يقعش
-    return { value: [], totalEstimatedMatches: 0 };
-  }
-
-  const endpoint = "https://api.bing.microsoft.com/v7.0/news/search";
-
-  const params = new URLSearchParams({
-    q: query,
-    count: "25",
-    mkt: market,
-    freshness: days >= 365 ? "Year" : "Month",
-    textFormat: "Raw",
-    safeSearch: "Off",
-  });
-
-  const url = `${endpoint}?${params.toString()}`;
-  const res = await fetch(url, {
-    headers: {
-      "Ocp-Apim-Subscription-Key": apiKey,
-    },
-  });
-
-  if (!res.ok) {
-    return { value: [], totalEstimatedMatches: 0 };
-  }
-
-  const data = await res.json();
-  return data;
-}
-
-// =====================
-// YouTube Search Helper
-// =====================
-
-async function fetchYoutube(env, query, days = 365, maxResults = 15) {
-  const apiKey = env.YT_API_KEY || DEFAULT_YT_API_KEY;
+function daysDiffFromNow(dateStr) {
+  if (!dateStr) return Infinity;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return Infinity;
   const now = new Date();
-  const past = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
-  const publishedAfter = past.toISOString();
-
-  const endpoint = "https://www.googleapis.com/youtube/v3/search";
-  const params = new URLSearchParams({
-    key: apiKey,
-    part: "snippet",
-    q: query,
-    maxResults: String(maxResults),
-    type: "video",
-    order: "viewCount",
-    publishedAfter,
-  });
-
-  const url = `${endpoint}?${params.toString()}`;
-  const res = await fetch(url);
-
-  if (!res.ok) {
-    return { items: [] };
-  }
-
-  const data = await res.json();
-  return data;
+  return Math.floor((now - d) / (1000 * 60 * 60 * 24));
 }
 
-// =====================
-// Trend Builders
-// =====================
+// ==========================
+// Auto Backup – LocalStorage + Download
+// ==========================
 
-async function buildTrendResults(env, caches, { shortForm = false }) {
-  // shortForm = false → فيديوهات طويلة
-  // shortForm = true → ريلز / Shorts
+function autoDownloadBackup() {
+  const now = Date.now();
+  if (now - lastBackupTime < BACKUP_MIN_INTERVAL_MS) return;
+  lastBackupTime = now;
 
-  const cache = caches.default;
-  const cacheKey = makeCacheKey(
-    new Request("https://example.com/trend"),
-    shortForm ? "short" : "long"
-  );
-  const cached = await cache.match(cacheKey);
-  if (cached) {
-    const data = await cached.json();
-    return data;
+  const backupPayload = {
+    createdAt: new Date().toISOString(),
+    stories,
+    lastStoryId,
+  };
+
+  const json = JSON.stringify(backupPayload, null, 2);
+  const blob = new Blob([json], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  const ts = new Date().toISOString().replace(/[:.]/g, "-");
+  a.download = `stories-backup-${ts}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function saveStoriesToLocalStorage(triggerBackup = true) {
+  const payload = {
+    stories,
+    lastStoryId,
+  };
+  localStorage.setItem(STORAGE_KEY_STORIES, JSON.stringify(payload));
+  if (triggerBackup) {
+    autoDownloadBackup();
+  }
+}
+
+function autoLoadBackupIfExists() {
+  // 1) جرّب Backup من LocalStorage
+  const raw = localStorage.getItem(STORAGE_KEY_STORIES);
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed.stories)) {
+        stories = parsed.stories;
+        lastStoryId = parsed.lastStoryId || getMaxStoryId(stories);
+        console.info("Loaded stories from local backup");
+        renderStoriesTable(stories);
+        return;
+      }
+    } catch (e) {
+      console.warn("Failed to parse local backup, will use stories.json", e);
+    }
   }
 
-  // توزيع 80% عرب + 20% عالم
-  const markets = [
-    ...ARAB_MARKETS.map((m) => ({ ...m, weight: 0.8 / ARAB_MARKETS.length })),
-    ...WORLD_MARKETS.map((m) => ({
-      ...m,
-      weight: 0.2 / WORLD_MARKETS.length,
+  // 2) لو مفيش أو فشل → استخدم stories.json
+  fetch("stories.json")
+    .then((res) => res.json())
+    .then((data) => {
+      if (Array.isArray(data)) {
+        stories = data;
+        lastStoryId = getMaxStoryId(stories);
+        console.info("Loaded stories from stories.json");
+        renderStoriesTable(stories);
+        // خزّن نسخة فورًا محليًا
+        saveStoriesToLocalStorage(false);
+      }
+    })
+    .catch((err) => {
+      console.error("Failed to load stories.json", err);
+    });
+}
+
+function getMaxStoryId(list) {
+  return list.reduce((max, s) => (s.id > max ? s.id : max), 0);
+}
+
+// ==========================
+// AI Results Cache (24h)
+// ==========================
+
+function getAiCache() {
+  const raw = localStorage.getItem(STORAGE_KEY_AI_CACHE);
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
+}
+
+function setAiCache(cache) {
+  localStorage.setItem(STORAGE_KEY_AI_CACHE, JSON.stringify(cache));
+}
+
+function aiCacheKey(action) {
+  const today = todayISODate();
+  return `${action}:${today}`;
+}
+
+function getCachedAi(action) {
+  const cache = getAiCache();
+  const key = aiCacheKey(action);
+  const entry = cache[key];
+  if (!entry) return null;
+  const ageMs = Date.now() - entry.timestamp;
+  if (ageMs > 24 * 60 * 60 * 1000) return null;
+  return entry.data;
+}
+
+function setCachedAi(action, data) {
+  const cache = getAiCache();
+  const key = aiCacheKey(action);
+  cache[key] = {
+    timestamp: Date.now(),
+    data,
+  };
+  setAiCache(cache);
+}
+
+// ==========================
+// Status Pills
+// ==========================
+
+function loadStatusFromLocal() {
+  const raw = localStorage.getItem(STORAGE_KEY_STATUS);
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
+}
+
+function saveStatusToLocal(statusObj) {
+  localStorage.setItem(STORAGE_KEY_STATUS, JSON.stringify(statusObj));
+}
+
+function updateStatusPill(el, text, state) {
+  if (!el) return;
+  el.textContent = text;
+  el.classList.remove("ok", "warn", "muted");
+  el.classList.add(state);
+}
+
+function refreshStatusPills() {
+  const st = loadStatusFromLocal();
+
+  // Google/Bing Trends
+  if (st.trendsUpdatedAt) {
+    const diff = daysDiffFromNow(st.trendsUpdatedAt);
+    if (diff <= 1) {
+      updateStatusPill(
+        statusTrendsEl,
+        `تريندات محركات البحث محدثة (${formatDate(st.trendsUpdatedAt)})`,
+        "ok"
+      );
+    } else if (diff <= 7) {
+      updateStatusPill(
+        statusTrendsEl,
+        `تريندات محركات البحث قديمة نسبيًا (${formatDate(
+          st.trendsUpdatedAt
+        )})`,
+        "warn"
+      );
+    } else {
+      updateStatusPill(
+        statusTrendsEl,
+        "تريندات محركات البحث غير محدثة",
+        "muted"
+      );
+    }
+  }
+
+  // YouTube
+  if (st.youtubeUpdatedAt) {
+    const diff = daysDiffFromNow(st.youtubeUpdatedAt);
+    if (diff <= 1) {
+      updateStatusPill(
+        statusYoutubeEl,
+        `تريندات YouTube محدثة (${formatDate(st.youtubeUpdatedAt)})`,
+        "ok"
+      );
+    } else if (diff <= 7) {
+      updateStatusPill(
+        statusYoutubeEl,
+        `تريندات YouTube قديمة نسبيًا (${formatDate(
+          st.youtubeUpdatedAt
+        )})`,
+        "warn"
+      );
+    } else {
+      updateStatusPill(
+        statusYoutubeEl,
+        "تريندات YouTube غير محدثة",
+        "muted"
+      );
+    }
+  }
+
+  // الوفيات (آخر 48 ساعة)
+  if (st.deathsUpdatedAt) {
+    const diff = daysDiffFromNow(st.deathsUpdatedAt);
+    if (diff <= 2) {
+      updateStatusPill(
+        statusDeathsEl,
+        `وفيات آخر 48 ساعة محدثة (${formatDate(st.deathsUpdatedAt)})`,
+        "ok"
+      );
+    } else {
+      updateStatusPill(
+        statusDeathsEl,
+        "وفيات آخر 48 ساعة غير محدثة",
+        "muted"
+      );
+    }
+  }
+}
+
+// ==========================
+// Worker Calls
+// ==========================
+
+async function callWorker(action, payload = {}, useLocalCache = true) {
+  // جرّب كاش محلي الأول
+  if (useLocalCache) {
+    const cached = getCachedAi(action);
+    if (cached) {
+      console.info(`Using cached AI result for ${action}`);
+      return { fromCache: true, data: cached };
+    }
+  }
+
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        action,
+        payload,
+      }),
+    });
+
+    if (!res.ok) {
+      throw new Error("Worker response not OK");
+    }
+
+    const data = await res.json();
+    setCachedAi(action, data);
+    return { fromCache: false, data };
+  } catch (err) {
+    console.error("Error calling worker:", err);
+    throw err;
+  }
+}
+
+// ==========================
+// Rendering – AI Panel
+// ==========================
+
+function clearAiOutput() {
+  aiOutputEl.innerHTML = "";
+}
+
+function renderTrendResults(results, { title, subtitle } = {}) {
+  clearAiOutput();
+  const container = document.createElement("div");
+
+  if (title) {
+    const h = document.createElement("h3");
+    h.textContent = title;
+    container.appendChild(h);
+  }
+  if (subtitle) {
+    const p = document.createElement("p");
+    p.textContent = subtitle;
+    container.appendChild(p);
+  }
+
+  if (!results || results.length === 0) {
+    const p = document.createElement("p");
+    p.textContent = "لا توجد نتائج مناسبة حسب التريند والفلترة المحددة.";
+    container.appendChild(p);
+    aiOutputEl.appendChild(container);
+    return;
+  }
+
+  results.forEach((item, index) => {
+    const card = document.createElement("div");
+    card.className = "trend-card";
+
+    const rank = document.createElement("div");
+    rank.className = "trend-rank";
+    rank.textContent = `#${index + 1}`;
+    card.appendChild(rank);
+
+    const ttl = document.createElement("div");
+    ttl.className = "trend-title";
+    ttl.textContent = item.title || item.name || "عنوان غير متوفر";
+    card.appendChild(ttl);
+
+    const meta = document.createElement("div");
+    meta.className = "trend-meta";
+    meta.textContent =
+      (item.categoryLabel || item.typeLabel || "") +
+      (item.country ? ` · الدولة/المصدر: ${item.country}` : "") +
+      (item.source ? ` · من: ${item.source}` : "");
+    card.appendChild(meta);
+
+    const scores = document.createElement("div");
+    scores.className = "trend-scores";
+    const pieces = [];
+    if (typeof item.personalScore === "number") {
+      pieces.push(`تقييمك الشخصي: ${item.personalScore}`);
+    }
+    if (typeof item.trendScore === "number") {
+      pieces.push(`قوة التريند: ${item.trendScore}`);
+    }
+    if (typeof item.finalScore === "number") {
+      pieces.push(`النتيجة النهائية: ${item.finalScore}`);
+    }
+    scores.textContent = pieces.join(" | ");
+    card.appendChild(scores);
+
+    if (item.summary) {
+      const summary = document.createElement("p");
+      summary.textContent = item.summary;
+      card.appendChild(summary);
+    }
+
+    if (item.url) {
+      const link = document.createElement("a");
+      link.href = item.url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.className = "trend-link";
+      link.textContent = "🔗 قراءة/مشاهدة المزيد";
+      card.appendChild(link);
+    }
+
+    const addBtn = document.createElement("button");
+    addBtn.className = "add-btn";
+    addBtn.textContent = "➕ إضافة هذه القصة لقائمة القصص";
+    addBtn.addEventListener("click", () => {
+      addStoryFromTrend(item);
+    });
+    card.appendChild(addBtn);
+
+    container.appendChild(card);
+  });
+
+  aiOutputEl.appendChild(container);
+}
+
+function renderRandomStoriesResults(storiesRanked) {
+  renderTrendResults(
+    storiesRanked.map((s) => ({
+      title: s.name,
+      name: s.name,
+      country: s.category || "",
+      source: "قائمة القصص + التريند",
+      personalScore: s.personalScore,
+      trendScore: s.trendScore,
+      finalScore: s.finalScore,
+      summary: s.notes || "",
     })),
+    {
+      title: "🎲 أفضل 10 قصص عشوائية (40% تقييمك الشخصي + 60% قوة التريند)",
+      subtitle:
+        "الأعلى في الأعلى – يمكنك اختيار أي واحدة منها لكتابة سيناريو فيديو طويل.",
+    }
+  );
+}
+
+// ==========================
+// Stories – CRUD + Rendering
+// ==========================
+
+function renderStoriesTable(list) {
+  if (!storiesTbodyEl) return;
+  const rows = [];
+
+  list.forEach((story, idx) => {
+    const tr = document.createElement("tr");
+
+    // #
+    const tdIndex = document.createElement("td");
+    tdIndex.textContent = idx + 1;
+    tr.appendChild(tdIndex);
+
+    // الاسم
+    const tdName = document.createElement("td");
+    tdName.textContent = story.name || "";
+    tr.appendChild(tdName);
+
+    // النوع
+    const tdCategory = document.createElement("td");
+    tdCategory.textContent = story.category || "";
+    tr.appendChild(tdCategory);
+
+    // الدرجة (تقييم شخصي)
+    const tdScore = document.createElement("td");
+    tdScore.textContent =
+      typeof story.score === "number" ? story.score.toString() : "";
+    tr.appendChild(tdScore);
+
+    // الجاذبية – نستخدم نفس الدرجة كبداية
+    const tdAttract = document.createElement("td");
+    tdAttract.textContent =
+      typeof story.score === "number" ? story.score.toString() : "";
+    tr.appendChild(tdAttract);
+
+    // ذكاء – النتيجة النهائية إن وُجدت
+    const tdAiScore = document.createElement("td");
+    if (typeof story.finalScore === "number") {
+      tdAiScore.textContent = story.finalScore.toString();
+    } else {
+      tdAiScore.textContent = "—";
+    }
+    tr.appendChild(tdAiScore);
+
+    // تنفيذ (Done)
+    const tdDone = document.createElement("td");
+    const badge = document.createElement("span");
+    badge.className = story.done ? "badge-done" : "badge-not-done";
+    badge.textContent = story.done ? "✔ تم التنفيذ" : "✖ لم تُنفّذ بعد";
+    tdDone.appendChild(badge);
+    tr.appendChild(tdDone);
+
+    // تاريخ
+    const tdDate = document.createElement("td");
+    tdDate.textContent = story.added ? formatDate(story.added) : "";
+    tr.appendChild(tdDate);
+
+    // ملاحظات
+    const tdNotes = document.createElement("td");
+    tdNotes.textContent = story.notes || "";
+    tr.appendChild(tdNotes);
+
+    // تحكم
+    const tdActions = document.createElement("td");
+    tdActions.className = "table-actions";
+
+    const btnShow = document.createElement("button");
+    btnShow.textContent = "👁 عرض";
+    btnShow.addEventListener("click", () => showStoryDetails(story.id));
+    tdActions.appendChild(btnShow);
+
+    const btnEdit = document.createElement("button");
+    btnEdit.textContent = "✏ تعديل";
+    btnEdit.addEventListener("click", () => startEditStory(story.id));
+    tdActions.appendChild(btnEdit);
+
+    const btnToggleDone = document.createElement("button");
+    btnToggleDone.textContent = story.done ? "↩ إلغاء تنفيذ" : "✅ تم التنفيذ";
+    btnToggleDone.addEventListener("click", () => toggleStoryDone(story.id));
+    tdActions.appendChild(btnToggleDone);
+
+    const btnDelete = document.createElement("button");
+    btnDelete.textContent = "🗑 حذف";
+    btnDelete.addEventListener("click", () => deleteStory(story.id));
+    tdActions.appendChild(btnDelete);
+
+    tr.appendChild(tdActions);
+    rows.push(tr);
+  });
+
+  storiesTbodyEl.innerHTML = "";
+  rows.forEach((r) => storiesTbodyEl.appendChild(r));
+}
+
+function addStoryFromTrend(item) {
+  const name = item.title || item.name;
+  if (!name) return;
+
+  const exists = stories.some(
+    (s) => normalizeArabic(s.name) === normalizeArabic(name)
+  );
+  if (exists) {
+    alert("هذه القصة موجودة بالفعل في قائمة القصص.");
+    return;
+  }
+
+  lastStoryId += 1;
+  const newStory = {
+    id: lastStoryId,
+    name,
+    score: typeof item.personalScore === "number" ? item.personalScore : 80,
+    done: false,
+    category: item.categoryLabel || "",
+    added: todayISODate(),
+    notes: item.url ? `رابط مرجع: ${item.url}` : "",
+    analysis: null,
+  };
+
+  stories.push(newStory);
+  saveStoriesToLocalStorage(true);
+  renderStoriesTable(stories);
+}
+
+function addStoryManual() {
+  const name = manualNameEl.value.trim();
+  if (!name) {
+    alert("من فضلك اكتب اسم القصة.");
+    return;
+  }
+  const category = manualTypeEl.value || "";
+  const score = parseInt(manualScoreEl.value || "0", 10);
+  const notes = manualNotesEl.value.trim();
+
+  if (editingStoryId != null) {
+    // تعديل
+    const idx = stories.findIndex((s) => s.id === editingStoryId);
+    if (idx !== -1) {
+      stories[idx].name = name;
+      stories[idx].category = category;
+      stories[idx].score = isNaN(score) ? 0 : score;
+      stories[idx].notes = notes;
+    }
+    editingStoryId = null;
+  } else {
+    // إضافة جديدة
+    lastStoryId += 1;
+    stories.push({
+      id: lastStoryId,
+      name,
+      score: isNaN(score) ? 0 : score,
+      done: false,
+      category,
+      added: todayISODate(),
+      notes,
+      analysis: null,
+    });
+  }
+
+  manualNameEl.value = "";
+  manualTypeEl.value = "";
+  manualScoreEl.value = "80";
+  manualNotesEl.value = "";
+
+  saveStoriesToLocalStorage(true);
+  renderStoriesTable(stories);
+}
+
+function parseRawInput() {
+  const text = rawInputEl.value || "";
+  const lines = text.split("\n").map((l) => l.trim());
+  let addedCount = 0;
+
+  lines.forEach((line) => {
+    if (!line) return;
+    const exists = stories.some(
+      (s) => normalizeArabic(s.name) === normalizeArabic(line)
+    );
+    if (exists) return;
+
+    lastStoryId += 1;
+    stories.push({
+      id: lastStoryId,
+      name: line,
+      score: 80,
+      done: false,
+      category: "",
+      added: todayISODate(),
+      notes: "",
+      analysis: null,
+    });
+    addedCount++;
+  });
+
+  if (addedCount > 0) {
+    saveStoriesToLocalStorage(true);
+    renderStoriesTable(stories);
+  }
+
+  alert(`تم إضافة ${addedCount} قصة جديدة من النص الخام.`);
+}
+
+function showStoryDetails(id) {
+  const story = stories.find((s) => s.id === id);
+  if (!story) return;
+
+  clearAiOutput();
+  const container = document.createElement("div");
+
+  const h = document.createElement("h3");
+  h.textContent = `تفاصيل القصة: ${story.name}`;
+  container.appendChild(h);
+
+  const ul = document.createElement("ul");
+  const items = [
+    ["النوع", story.category || "غير محدد"],
+    ["تقييمك الشخصي", story.score],
+    ["تم التنفيذ", story.done ? "نعم" : "لا"],
+    ["تاريخ الإضافة", formatDate(story.added)],
+    ["الملاحظات", story.notes || "—"],
+    [
+      "نتيجة الذكاء (إن وجدت)",
+      typeof story.finalScore === "number"
+        ? story.finalScore
+        : "لم يتم حسابها بعد",
+    ],
   ];
 
-  // كلمات بحث عامة للأربع أنواع
-  const baseQuery = [
-    "جريمة",
-    "اغتيال",
-    "وفاة",
-    "حرب",
-    "معركة",
-    "جاسوس",
-    "murder",
-    "war",
-    "spy",
-  ].join(" OR ");
-
-  const allNewsItems = [];
-
-  for (const m of markets) {
-    const data = await fetchBingNews(env, baseQuery, m.code, 365);
-    if (Array.isArray(data.value)) {
-      data.value.forEach((v) => {
-        allNewsItems.push({
-          ...v,
-          _market: m,
-        });
-      });
-    }
-  }
-
-  // فلترة حسب نوع القصة
-  const filtered = allNewsItems
-    .map((item) => {
-      const text = `${item.name || ""} ${item.description || ""}`;
-      const cls = classifyStoryFromText(text);
-      return {
-        ...item,
-        _cls: cls,
-      };
-    })
-    .filter((item) => ["crime", "death", "war", "spy"].includes(item._cls.type));
-
-  // مزج مع YouTube – نستخدم عنوان الخبر كـ Query
-  const topForYT = filtered.slice(0, 30); // لتقليل عدد الطلبات
-
-  const ytScores = new Map(); // key=normalized title, value=hits count
-
-  for (const item of topForYT) {
-    const q = item.name || "";
-    const ytData = await fetchYoutube(env, q, 365, shortForm ? 10 : 15);
-    const hits = Array.isArray(ytData.items) ? ytData.items.length : 0;
-    const key = normalizeText(q);
-    ytScores.set(key, (ytScores.get(key) || 0) + hits);
-  }
-
-  // حساب Score بسيط: 60% من سوق الأخبار (التكرار) + 40% من YouTube
-  const countByTitle = new Map();
-  filtered.forEach((item) => {
-    const key = normalizeText(item.name || "");
-    countByTitle.set(key, (countByTitle.get(key) || 0) + 1);
+  items.forEach(([label, value]) => {
+    const li = document.createElement("li");
+    li.textContent = `${label}: ${value}`;
+    ul.appendChild(li);
   });
 
-  const entries = [];
-  for (const item of filtered) {
-    const key = normalizeText(item.name || "");
-    const newsCount = countByTitle.get(key) || 0;
-    const ytCount = ytScores.get(key) || 0;
-    entries.push({
-      title: item.name,
-      summary: item.description || "",
-      country: item._market.country,
-      source: "محركات البحث + أخبار",
-      categoryLabel: item._cls.label,
-      clsType: item._cls.type,
-      url: item.url,
-      newsCount,
-      ytCount,
-    });
-  }
-
-  if (entries.length === 0) {
-    const fallback = { results: [] };
-    // خزّن حتى لو فاضي عشان ما نكرر الطلبات
-    await cache.put(cacheKey, new Response(JSON.stringify(fallback), { headers: { "Content-Type": "application/json" } }));
-    return fallback;
-  }
-
-  const maxNews = Math.max(...entries.map((e) => e.newsCount));
-  const maxYt = Math.max(...entries.map((e) => e.ytCount));
-
-  const scored = entries.map((e) => {
-    const newsScore = maxNews > 0 ? e.newsCount / maxNews : 0;
-    const ytScore = maxYt > 0 ? e.ytCount / maxYt : 0;
-    const finalScore = Math.round((newsScore * 0.6 + ytScore * 0.4) * 100);
-    return {
-      ...e,
-      trendScore: finalScore,
-    };
-  });
-
-  // لو فيديوهات قصيرة نفضّل الأخبار الأحدث (30 يوم مثلًا)
-  let sorted = scored;
-  if (shortForm) {
-    sorted = scored.sort((a, b) => b.trendScore - a.trendScore);
-  } else {
-    sorted = scored.sort((a, b) => b.trendScore - a.trendScore);
-  }
-
-  const results = sorted.slice(0, 5);
-  const payload = { results };
-
-  await cache.put(
-    cacheKey,
-    new Response(JSON.stringify(payload), {
-      headers: { "Content-Type": "application/json" },
-    })
-  );
-
-  return payload;
+  container.appendChild(ul);
+  aiOutputEl.appendChild(container);
 }
 
-// =====================
-// Random Stories Scoring
-// =====================
+function startEditStory(id) {
+  const story = stories.find((s) => s.id === id);
+  if (!story) return;
 
-async function scoreStories(env, caches, storiesInput, maxResults) {
-  const cache = caches.default;
+  editingStoryId = id;
+  manualNameEl.value = story.name || "";
+  manualTypeEl.value = story.category || "";
+  manualScoreEl.value =
+    typeof story.score === "number" ? story.score.toString() : "80";
+  manualNotesEl.value = story.notes || "";
 
-  if (!Array.isArray(storiesInput)) {
-    return { rankedStories: [] };
-  }
-
-  // استبعد التي تم تنفيذها إن لم تكن مصفّاة بالفعل
-  const candidates = storiesInput.filter((s) => !s.done);
-
-  // لأسباب عملية، لا نزيد عن 50 قصة في المرّة
-  const limited = candidates.slice(0, 50);
-
-  const scores = [];
-
-  for (const story of limited) {
-    const name = story.name || "";
-    const normName = normalizeText(name);
-    if (!normName) continue;
-
-    const cacheKey = makeCacheKey(
-      new Request("https://example.com/story"),
-      "storytrend:" + normName + ":" + todayISO()
-    );
-    const cached = await cache.match(cacheKey);
-    let trendData;
-
-    if (cached) {
-      trendData = await cached.json();
-    } else {
-      // Bing + YouTube بعدد نتائج بسيط
-      const bingData = await fetchBingNews(env, `"${name}"`, "ar-EG", 365);
-      const newsMatches =
-        typeof bingData.totalEstimatedMatches === "number"
-          ? bingData.totalEstimatedMatches
-          : (Array.isArray(bingData.value) ? bingData.value.length : 0);
-
-      const ytData = await fetchYoutube(env, name, 365, 10);
-      const ytHits = Array.isArray(ytData.items) ? ytData.items.length : 0;
-
-      trendData = {
-        newsMatches,
-        ytHits,
-      };
-
-      await cache.put(
-        cacheKey,
-        new Response(JSON.stringify(trendData), {
-          headers: { "Content-Type": "application/json" },
-        })
-      );
-    }
-
-    scores.push({
-      id: story.id,
-      name: story.name,
-      personalScore:
-        typeof story.score === "number" ? story.score : 0,
-      newsMatches: trendData.newsMatches || 0,
-      ytHits: trendData.ytHits || 0,
-      category: story.category || "",
-      notes: story.notes || "",
-    });
-  }
-
-  if (scores.length === 0) {
-    return { rankedStories: [] };
-  }
-
-  const maxNews = Math.max(...scores.map((s) => s.newsMatches));
-  const maxYt = Math.max(...scores.map((s) => s.ytHits));
-
-  const enriched = scores.map((s) => {
-    const newsScore = maxNews > 0 ? s.newsMatches / maxNews : 0;
-    const ytScore = maxYt > 0 ? s.ytHits / maxYt : 0;
-    const trendScore = Math.round((newsScore * 0.6 + ytScore * 0.4) * 100);
-
-    const finalScore = Math.round(
-      (s.personalScore || 0) * 0.4 + trendScore * 0.6
-    );
-
-    return {
-      ...s,
-      trendScore,
-      finalScore,
-    };
-  });
-
-  const rankedStories = enriched
-    .sort((a, b) => b.finalScore - a.finalScore)
-    .slice(0, maxResults || 10);
-
-  return { rankedStories };
+  window.scrollTo({ top: manualNameEl.offsetTop - 80, behavior: "smooth" });
 }
 
-// =====================
-// update_trends (مجرد تحديث timestamps)
-// =====================
+function toggleStoryDone(id) {
+  const idx = stories.findIndex((s) => s.id === id);
+  if (idx === -1) return;
+  stories[idx].done = !stories[idx].done;
+  saveStoriesToLocalStorage(true);
+  renderStoriesTable(stories);
+}
 
-async function updateTrends(env, caches) {
-  const today = todayISO();
-  return {
-    trendsUpdatedAt: today,
-    youtubeUpdatedAt: today,
-    deathsUpdatedAt: today, // ممكن لاحقًا تضيف لوجيك خاص بالوفيات
+function deleteStory(id) {
+  const story = stories.find((s) => s.id === id);
+  if (!story) return;
+  if (!confirm(`هل تريد حذف القصة: "${story.name}"؟`)) return;
+  stories = stories.filter((s) => s.id !== id);
+  saveStoriesToLocalStorage(true);
+  renderStoriesTable(stories);
+}
+
+// ==========================
+// Import / Export
+// ==========================
+
+function exportStories() {
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    stories,
+    lastStoryId,
   };
+  const json = JSON.stringify(payload, null, 2);
+  const blob = new Blob([json], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  const ts = new Date().toISOString().replace(/[:.]/g, "-");
+  a.download = `stories-export-${ts}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
-// =====================
-// Worker fetch
-// =====================
+function importStoriesFromFile(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const text = e.target.result;
+      const parsed = JSON.parse(text);
+      let importedStories = [];
 
-export default {
-  async fetch(request, env, ctx) {
-    if (request.method === "OPTIONS") {
-      return new Response(null, {
-        status: 204,
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type",
-        },
+      if (Array.isArray(parsed)) {
+        importedStories = parsed;
+      } else if (Array.isArray(parsed.stories)) {
+        importedStories = parsed.stories;
+      } else {
+        alert("ملف الاستيراد غير مفهوم، يُفضّل أن يكون Array أو {stories:[]}");
+        return;
+      }
+
+      let maxId = getMaxStoryId(stories);
+      const normalizedExisting = new Set(
+        stories.map((s) => normalizeArabic(s.name))
+      );
+
+      importedStories.forEach((imp) => {
+        const nName = normalizeArabic(imp.name || "");
+        if (!nName || normalizedExisting.has(nName)) return;
+        maxId += 1;
+        stories.push({
+          id: maxId,
+          name: imp.name || "",
+          score: typeof imp.score === "number" ? imp.score : 80,
+          done: !!imp.done,
+          category: imp.category || "",
+          added: imp.added || todayISODate(),
+          notes: imp.notes || "",
+          analysis: imp.analysis || null,
+        });
       });
-    }
 
-    if (request.method !== "POST") {
-      return jsonResponse(
-        { error: "Only POST is allowed for this endpoint." },
-        405
-      );
-    }
-
-    let body;
-    try {
-      body = await request.json();
-    } catch {
-      return jsonResponse(
-        { error: "Invalid JSON. Expected {action, payload}." },
-        400
-      );
-    }
-
-    const action = body.action;
-    const payload = body.payload || {};
-    const cachesObj = caches;
-
-    try {
-      if (action === "pick_long_trend") {
-        const data = await buildTrendResults(env, cachesObj, {
-          shortForm: false,
-        });
-        return jsonResponse(data);
-      }
-
-      if (action === "pick_short_trend") {
-        const data = await buildTrendResults(env, cachesObj, {
-          shortForm: true,
-        });
-        return jsonResponse(data);
-      }
-
-      if (action === "score_stories") {
-        const { stories, maxResults } = payload;
-        const data = await scoreStories(env, cachesObj, stories, maxResults);
-        return jsonResponse(data);
-      }
-
-      if (action === "update_trends") {
-        const data = await updateTrends(env, cachesObj);
-        return jsonResponse(data);
-      }
-
-      return jsonResponse({ error: "Unknown action" }, 400);
+      lastStoryId = getMaxStoryId(stories);
+      saveStoriesToLocalStorage(true);
+      renderStoriesTable(stories);
+      alert("تم استيراد القصص بنجاح.");
     } catch (err) {
-      console.error("Worker error:", err);
-      return jsonResponse(
-        { error: "Internal error in worker", details: String(err) },
-        500
-      );
+      console.error(err);
+      alert("حدث خطأ أثناء قراءة ملف القصص.");
     }
-  },
-};
+  };
+  reader.readAsText(file, "utf-8");
+}
+
+// ==========================
+// Search + Suggestions
+// ==========================
+
+function ensureSuggestionsBox() {
+  if (suggestionsBoxEl) return;
+  const searchRow = searchInputEl.parentElement;
+  const box = document.createElement("div");
+  box.id = "search-suggestions";
+  box.style.marginTop = "6px";
+  box.style.background = "#fff";
+  box.style.border = "1px solid #ddd";
+  box.style.borderRadius = "8px";
+  box.style.maxHeight = "150px";
+  box.style.overflowY = "auto";
+  box.style.fontSize = "0.85rem";
+  box.style.padding = "4px 0";
+  box.style.display = "none";
+  searchRow.appendChild(box);
+  suggestionsBoxEl = box;
+}
+
+function renderSuggestions(matches) {
+  ensureSuggestionsBox();
+  if (!matches || matches.length === 0) {
+    suggestionsBoxEl.style.display = "none";
+    suggestionsBoxEl.innerHTML = "";
+    return;
+  }
+
+  suggestionsBoxEl.innerHTML = "";
+  matches.slice(0, 10).forEach((story) => {
+    const item = document.createElement("div");
+    item.style.padding = "4px 10px";
+    item.style.cursor = "pointer";
+    item.textContent = story.name;
+    item.addEventListener("click", () => {
+      searchInputEl.value = story.name;
+      suggestionsBoxEl.style.display = "none";
+      filterStoriesBySearch();
+    });
+    suggestionsBoxEl.appendChild(item);
+  });
+  suggestionsBoxEl.style.display = "block";
+}
+
+function filterStoriesBySearch() {
+  const query = normalizeArabic(searchInputEl.value || "");
+  if (!query) {
+    renderStoriesTable(stories);
+    renderSuggestions([]);
+    return;
+  }
+
+  const matches = stories.filter((s) =>
+    normalizeArabic(s.name).includes(query)
+  );
+  renderStoriesTable(matches);
+  renderSuggestions(matches);
+}
+
+// ==========================
+// Panel Switching
+// ==========================
+
+function setLayoutMode(mode) {
+  // modes: "both" | "ai" | "stories"
+  if (!aiPanelEl || !storiesPanelEl) return;
+  if (mode === "ai") {
+    aiPanelEl.style.display = "";
+    storiesPanelEl.style.display = "none";
+  } else if (mode === "stories") {
+    aiPanelEl.style.display = "none";
+    storiesPanelEl.style.display = "";
+  } else {
+    aiPanelEl.style.display = "";
+    storiesPanelEl.style.display = "";
+  }
+  localStorage.setItem(STORAGE_KEY_LAYOUT, mode);
+}
+
+function restoreLayoutMode() {
+  const mode = localStorage.getItem(STORAGE_KEY_LAYOUT) || "both";
+  setLayoutMode(mode);
+}
+
+// ==========================
+// Button Handlers – Trend & Random
+// ==========================
+
+async function handlePickLongFromTrend() {
+  clearAiOutput();
+  aiOutputEl.innerHTML = "<p>⏳ جاري جلب أفضل 5 قصص لفيديو طويل من التريند...</p>";
+
+  try {
+    const { data } = await callWorker("pick_long_trend", {});
+    if (data && Array.isArray(data.results)) {
+      // تحديث Status
+      const st = loadStatusFromLocal();
+      st.trendsUpdatedAt = todayISODate();
+      st.youtubeUpdatedAt = todayISODate();
+      saveStatusToLocal(st);
+      refreshStatusPills();
+
+      renderTrendResults(data.results, {
+        title: "🗓 أفضل قصص لفيديو طويل بناءً على التريند (آخر سنة)",
+        subtitle:
+          "النتائج مختارة من الدول العربية (80%) + دول عالمية (20%)، ومناسبة لفيديوهات طويلة مليانة تفاصيل.",
+      });
+    } else {
+      aiOutputEl.innerHTML =
+        "<p>لم يتم العثور على نتائج مناسبة من الـ Worker.</p>";
+    }
+  } catch (err) {
+    aiOutputEl.innerHTML =
+      "<p>حدث خطأ أثناء الاتصال بالـ Worker. تأكد أن الـ Worker شغال.</p>";
+  }
+}
+
+async function handlePickShortFromTrend() {
+  clearAiOutput();
+  aiOutputEl.innerHTML =
+    "<p>⏳ جاري جلب أفضل 5 قصص قصيرة (ريلز/Shorts) من التريند...</p>";
+
+  try {
+    const { data } = await callWorker("pick_short_trend", {});
+    if (data && Array.isArray(data.results)) {
+      const st = loadStatusFromLocal();
+      st.trendsUpdatedAt = todayISODate();
+      st.youtubeUpdatedAt = todayISODate();
+      saveStatusToLocal(st);
+      refreshStatusPills();
+
+      renderTrendResults(data.results, {
+        title: "⚡ أفضل قصص لفيديوهات ريلز/Shorts بناءً على التريند",
+        subtitle:
+          "أحداث بسيطة يمكن تلخيصها في فيديو لا يزيد عن 3 دقائق، ضمن الجرائم/الوفيات/الحروب/الجاسوسية.",
+      });
+    } else {
+      aiOutputEl.innerHTML =
+        "<p>لم يتم العثور على نتائج مناسبة من الـ Worker.</p>";
+    }
+  } catch (err) {
+    aiOutputEl.innerHTML =
+      "<p>حدث خطأ أثناء الاتصال بالـ Worker. تأكد أن الـ Worker شغال.</p>";
+  }
+}
+
+async function handleRandomStory() {
+  clearAiOutput();
+  aiOutputEl.innerHTML =
+    "<p>⏳ جاري حساب أفضل القصص عشوائيًا (40% تقييمك الشخصي + 60% قوة التريند)...</p>";
+
+  // استبعد القصص التي تم تنفيذها
+  const candidateStories = stories.filter((s) => !s.done);
+
+  try {
+    const { data } = await callWorker("score_stories", {
+      stories: candidateStories,
+      maxResults: 10,
+    });
+
+    if (data && Array.isArray(data.rankedStories)) {
+      // حدّث الـ stories بالـ finalScore/trendScore
+      const mapByName = new Map();
+      data.rankedStories.forEach((rs) => {
+        mapByName.set(normalizeArabic(rs.name), rs);
+      });
+
+      stories = stories.map((s) => {
+        const m = mapByName.get(normalizeArabic(s.name));
+        if (m) {
+          return {
+            ...s,
+            personalScore: m.personalScore,
+            trendScore: m.trendScore,
+            finalScore: m.finalScore,
+          };
+        }
+        return s;
+      });
+
+      saveStoriesToLocalStorage(false);
+      renderStoriesTable(stories);
+      renderRandomStoriesResults(data.rankedStories);
+    } else {
+      aiOutputEl.innerHTML =
+        "<p>لم يتم استلام نتائج تقييم القصص من الـ Worker.</p>";
+    }
+  } catch (err) {
+    console.error(err);
+    aiOutputEl.innerHTML =
+      "<p>حدث خطأ أثناء الاتصال بالـ Worker أثناء تقييم القصص.</p>";
+  }
+}
+
+async function handleUpdateTrends() {
+  clearAiOutput();
+  aiOutputEl.innerHTML =
+    "<p>⏳ جاري تحديث التريندات الكاملة (محركات البحث + YouTube + الوفيات)...</p>";
+
+  try {
+    const { data } = await callWorker("update_trends", {});
+    // نتوقّع أن يرجع worker: {trendsUpdatedAt, youtubeUpdatedAt, deathsUpdatedAt}
+    const st = loadStatusFromLocal();
+    if (data.trendsUpdatedAt) st.trendsUpdatedAt = data.trendsUpdatedAt;
+    if (data.youtubeUpdatedAt) st.youtubeUpdatedAt = data.youtubeUpdatedAt;
+    if (data.deathsUpdatedAt) st.deathsUpdatedAt = data.deathsUpdatedAt;
+    saveStatusToLocal(st);
+    refreshStatusPills();
+
+    aiOutputEl.innerHTML =
+      "<p>✅ تم تحديث التريندات بنجاح (حسب ما تمكن الـ Worker من الوصول إليه).</p>";
+  } catch (err) {
+    console.error(err);
+    aiOutputEl.innerHTML =
+      "<p>حدث خطأ أثناء تحديث التريندات من الـ Worker.</p>";
+  }
+}
+
+// ==========================
+// Init
+// ==========================
+
+document.addEventListener("DOMContentLoaded", () => {
+  // ربط العناصر
+  aiOutputEl = document.getElementById("ai-output");
+  storiesTbodyEl = document.getElementById("stories-tbody");
+  rawInputEl = document.getElementById("raw-input");
+  manualNameEl = document.getElementById("manual-name");
+  manualTypeEl = document.getElementById("manual-type");
+  manualScoreEl = document.getElementById("manual-score");
+  manualNotesEl = document.getElementById("manual-notes");
+  importFileEl = document.getElementById("import-file");
+  searchInputEl = document.getElementById("stories-search");
+  statusTrendsEl = document.getElementById("status-trends");
+  statusYoutubeEl = document.getElementById("status-youtube");
+  statusDeathsEl = document.getElementById("status-deaths");
+  aiPanelEl = document.querySelector(".ai-panel");
+  storiesPanelEl = document.querySelector(".stories-panel");
+
+  // أزرار
+  const btnPickToday = document.getElementById("btn-pick-today");
+  const btnPickLong = document.getElementById("btn-pick-long");
+  const btnPickShort = document.getElementById("btn-pick-short");
+  const btnUpdateTrends = document.getElementById("btn-update-trends");
+
+  const btnParseRaw = document.getElementById("btn-parse-raw");
+  const btnAddManual = document.getElementById("btn-add-manual");
+  const btnExport = document.getElementById("btn-export");
+
+  const btnShowStoriesOnly = document.getElementById(
+    "btn-show-stories-only"
+  );
+  const btnShowBoth = document.getElementById("btn-show-both");
+  const btnShowAiOnly = document.getElementById("btn-show-ai-only");
+
+  // أحداث الأزرار
+  if (btnPickToday) btnPickToday.addEventListener("click", handlePickLongFromTrend);
+  if (btnPickShort) btnPickShort.addEventListener("click", handlePickShortFromTrend);
+  if (btnPickLong) btnPickLong.addEventListener("click", handleRandomStory);
+  if (btnUpdateTrends) btnUpdateTrends.addEventListener("click", handleUpdateTrends);
+
+  if (btnParseRaw) btnParseRaw.addEventListener("click", parseRawInput);
+  if (btnAddManual) btnAddManual.addEventListener("click", addStoryManual);
+  if (btnExport) btnExport.addEventListener("click", exportStories);
+
+  if (importFileEl) {
+    importFileEl.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        importStoriesFromFile(file);
+        importFileEl.value = "";
+      }
+    });
+  }
+
+  if (searchInputEl) {
+    searchInputEl.addEventListener("input", filterStoriesBySearch);
+  }
+
+  if (btnShowStoriesOnly)
+    btnShowStoriesOnly.addEventListener("click", () =>
+      setLayoutMode("stories")
+    );
+  if (btnShowBoth)
+    btnShowBoth.addEventListener("click", () => setLayoutMode("both"));
+  if (btnShowAiOnly)
+    btnShowAiOnly.addEventListener("click", () => setLayoutMode("ai"));
+
+  // تحميل البيانات
+  autoLoadBackupIfExists();
+  refreshStatusPills();
+  restoreLayoutMode();
+});
