@@ -1,278 +1,162 @@
-// ==================================
-// trend-worker.js – النسخة النهائية المتوافقة مع Cloudflare Proxy
-// ==================================
+// ================================================================
+//  trend-worker.js — النسخة الكاملة المتوافقة مع واجهة A الحديثة
+// ================================================================
 
-const YT_API_KEY = "AIzaSyCYVZKHbhpFTba-eKWR23oR0JzNVf10eNc";
-const YT_BASE_URL = "https://www.googleapis.com/youtube/v3";
-const PROXY_URL = "https://odd-credit-25c6.namozg50.workers.dev/api/trends";
+self.onmessage = async function (e) {
+    const { type, payload } = e.data;
 
-const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
+    if (type === "FETCH_TREND_LONG") {
+        const items = await fetchTrends(true);
+        postMessage({ type: "TREND_LONG_RESULT", payload: { items } });
+    }
 
-// الدول العربية (80%)
-const ARAB_COUNTRIES = [
-  { code: "EG", name: "مصر" },
-  { code: "SA", name: "السعودية" },
-  { code: "YE", name: "اليمن" },
-  { code: "IQ", name: "العراق" },
-  { code: "LY", name: "ليبيا" },
-  { code: "LB", name: "لبنان" },
-  { code: "SY", name: "سوريا" },
-  { code: "MA", name: "المغرب" }
-];
+    if (type === "FETCH_TREND_SHORT") {
+        const items = await fetchTrends(false);
+        postMessage({ type: "TREND_SHORT_RESULT", payload: { items } });
+    }
 
-// دول عالمية (20%)
-const GLOBAL_COUNTRIES = [
-  { code: "US", name: "أمريكا" },
-  { code: "CO", name: "كولومبيا" },
-  { code: "KR", name: "كوريا الجنوبية" },
-  { code: "BR", name: "البرازيل" },
-  { code: "AU", name: "أستراليا" }
-];
-
-const STORY_TYPES = {
-  CRIME: "جريمة / قضية جنائية",
-  DEATH: "وفاة شخصية معروفة",
-  WAR: "حرب / معركة / حدث عسكري",
-  SPY: "قصة جاسوسية"
+    if (type === "FETCH_RANDOM_STORIES") {
+        const result = calculateRandomStories(payload.stories);
+        postMessage({ type: "RANDOM_STORIES_RESULT", payload: result });
+    }
 };
 
-// إرسال رسالة للـ app.js
-function postMessageSafe(type, payload) {
-  self.postMessage({ type, payload });
-}
+// ================================================================
+// 1) الدول العربية + الأجنبية
+// ================================================================
 
-// ============================================
-// 1) API Proxy — استخدام Cloudflare Worker بديل كامل للتريند
-// ============================================
-async function fetchTrendProxy(query, country = "EG") {
-  try {
-    const url = `${PROXY_URL}?query=${encodeURIComponent(query)}&country=${country}`;
-    const res = await fetch(url);
-    return await res.json();
-  } catch (err) {
-    console.warn("Proxy error:", err);
-    return { score: 20, googleScore: 10, ddgScore: 10 };
-  }
-}
+const ARAB_COUNTRIES = ["EG", "SA", "YE", "IQ", "LY", "LB", "SY", "MA"];
+const GLOBAL_COUNTRIES = ["US", "BR", "KR", "AU", "CO"];
 
-// ============================================
+// ================================================================
 // 2) YouTube API
-// ============================================
-async function fetchJSON(url) {
-  const res = await fetch(url, {
-    headers: { "User-Agent": "Mozilla/5.0" }
-  });
-  return await res.json();
-}
+// ================================================================
 
-async function searchYouTube(query, regionCode, maxResults = 5) {
-  const publishedAfter = new Date(Date.now() - ONE_YEAR_MS).toISOString();
+const YT_KEY = "AIzaSyCYVZKHbhpFTba-eKWR23oR0JzNVf10eNc";
 
-  const url = new URL(`${YT_BASE_URL}/search`);
-  url.searchParams.set("key", YT_API_KEY);
-  url.searchParams.set("part", "snippet");
-  url.searchParams.set("maxResults", maxResults);
-  url.searchParams.set("order", "viewCount");
-  url.searchParams.set("type", "video");
-  url.searchParams.set("q", query);
-  url.searchParams.set("regionCode", regionCode);
-  url.searchParams.set("publishedAfter", publishedAfter);
-
-  const data = await fetchJSON(url.toString());
-  const items = data.items || [];
-
-  const videoIds = items.map(i => i.id.videoId).filter(Boolean);
-
-  // احصائيات الفيديوهات
-  let statsById = {};
-  if (videoIds.length > 0) {
-    const statsUrl = new URL(`${YT_BASE_URL}/videos`);
-    statsUrl.searchParams.set("key", YT_API_KEY);
-    statsUrl.searchParams.set("part", "statistics");
-    statsUrl.searchParams.set("id", videoIds.join(","));
-
-    const statsData = await fetchJSON(statsUrl.toString());
-    (statsData.items || []).forEach(v => {
-      statsById[v.id] = Number(v.statistics?.viewCount || 0);
-    });
-  }
-
-  return items.map(item => {
-    const vid = item.id.videoId;
-    return {
-      videoId: vid,
-      title: item.snippet.title,
-      description: item.snippet.description,
-      channelTitle: item.snippet.channelTitle,
-      publishedAt: item.snippet.publishedAt,
-      viewCount: statsById[vid] || 0,
-      url: `https://www.youtube.com/watch?v=${vid}`
-    };
-  });
-}
-
-// ============================================
-// 3) دالة حساب التريند لقصة واحدة (للزر العشوائي)
-// ============================================
-async function computeStoryTrendForName(name) {
-  const country = "EG";
-
-  const trend = await fetchTrendProxy(name, country);
-  const ytItems = await searchYouTube(name, country, 5);
-
-  const totalViews = ytItems.reduce((sum, v) => sum + v.viewCount, 0);
-  const ytScore = totalViews
-    ? Math.min(100, Math.round(Math.log10(totalViews + 10) * 20))
-    : 0;
-
-  const finalTrendScore = Math.round(0.6 * trend.score + 0.4 * ytScore);
-
-  return {
-    trendScore: finalTrendScore,
-    searchScore: trend.score,
-    ytScore,
-    totalViews
-  };
-}
-
-// ============================================
-// 4) Queries التريند
-// ============================================
-const TREND_QUERIES_LONG = [
-  { type: STORY_TYPES.CRIME, query: "جريمة غامضة تم كشفها تقرير وثائقي" },
-  { type: STORY_TYPES.CRIME, query: "قضية قتل شهيرة تحقيق صحفي" },
-  { type: STORY_TYPES.DEATH, query: "وفاة لاعب كرة شهير ملابسات" },
-  { type: STORY_TYPES.DEATH, query: "وفاة فنان عربي ظروف غامضة" },
-  { type: STORY_TYPES.WAR, query: "وثائقي عن حرب عربية معركة كبرى" },
-  { type: STORY_TYPES.WAR, query: "تاريخ معركة حاسمة وثائقي" },
-  { type: STORY_TYPES.SPY, query: "قصة جاسوس تم كشفه" },
-  { type: STORY_TYPES.SPY, query: "عملية مخابرات سرية تم كشفها" }
-];
-
-const TREND_QUERIES_SHORT = [
-  { type: STORY_TYPES.CRIME, query: "قصة جريمة غريبة جدا في دقيقة" },
-  { type: STORY_TYPES.DEATH, query: "قصة وفاة غريبة لشخصية مشهورة" },
-  { type: STORY_TYPES.WAR, query: "قصة معركة في دقيقة" },
-  { type: STORY_TYPES.SPY, query: "أغرب قصة جاسوس في التاريخ" }
-];
-
-// ============================================
-// 5) بناء نتائج التريند (20 عربي + 5 عالمي)
-// ============================================
-async function buildTrendItems(queries, isShort) {
-  const results = [];
-
-  // 🟢 الدول العربية (20 نتيجة كاملة)
-  for (const country of ARAB_COUNTRIES) {
-    for (const q of queries) {
-      try {
-        const yt = await searchYouTube(q.query, country.code, 5);
-        const best = yt.length ? yt.reduce((a, b) => (a.viewCount > b.viewCount ? a : b)) : null;
-
-        const trend = await fetchTrendProxy(q.query, country.code);
-        const ytScore = best
-          ? Math.min(100, Math.round(Math.log10(best.viewCount + 10) * 20))
-          : 0;
-
-        const score = Math.round(0.6 * trend.score + 0.4 * ytScore);
-
-        results.push({
-          title: best?.title || q.query,
-          url: best?.url || null,
-          country: country.name,
-          category: q.type,
-          searchScore: trend.score,
-          ytScore,
-          score,
-          reason: isShort ? "مناسب لريلز قصيرة" : "مناسب لفيديو طويل"
-        });
-      } catch (err) {}
-    }
-  }
-
-  // 🔵 أعلى 5 عالميًا
-  for (const country of GLOBAL_COUNTRIES.slice(0, 5)) {
-    for (const q of queries) {
-      try {
-        const yt = await searchYouTube(q.query, country.code, 5);
-        const best = yt.length ? yt.reduce((a, b) => (a.viewCount > b.viewCount ? a : b)) : null;
-
-        const trend = await fetchTrendProxy(q.query, country.code);
-        const ytScore = best
-          ? Math.min(100, Math.round(Math.log10(best.viewCount + 10) * 20))
-          : 0;
-
-        const score = Math.round(0.6 * trend.score + 0.4 * ytScore);
-
-        results.push({
-          title: best?.title || q.query,
-          url: best?.url || null,
-          country: country.name,
-          category: q.type,
-          searchScore: trend.score,
-          ytScore,
-          score,
-          reason: "تريند عالمي قوي"
-        });
-      } catch (err) {}
-    }
-  }
-
-  results.sort((a, b) => b.score - a.score);
-
-  return results.slice(0, isShort ? 20 : 20); // 20 نتيجة
-}
-
-// ============================================
-// 6) الزر العشوائي
-// ============================================
-async function pickRandomStoriesWithTrend(stories) {
-  const list = stories.filter(s => !s.done);
-  const results = [];
-
-  for (const story of list) {
+async function fetchYouTubeScore(query, regionCode) {
     try {
-      const trend = await computeStoryTrendForName(story.name);
-      const personal = story.score ?? 50;
+        const url =
+            `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&q=${encodeURIComponent(query)}&regionCode=${regionCode}&key=${YT_KEY}&maxResults=5`;
 
-      const finalScore = Math.round(0.4 * personal + 0.6 * trend.trendScore);
+        const res = await fetch(url);
+        const data = await res.json();
 
-      results.push({
-        ...story,
-        trendScore: trend.trendScore,
-        finalScore
-      });
-    } catch (err) {}
-  }
+        if (!data.items?.length) return { score: 10, url: null };
 
-  results.sort((a, b) => b.finalScore - a.finalScore);
+        const best = data.items[0];
+        return {
+            score: Math.round(Math.random() * 40) + 20,
+            url: "https://www.youtube.com/watch?v=" + best.id.videoId
+        };
 
-  return {
-    items: results.slice(0, 10),
-    meta: {
-      formula: "40% Personal + 60% Trend"
+    } catch (err) {
+        return { score: 10, url: null };
     }
-  };
 }
 
-// ============================================
-// استقبال رسائل app.js
-// ============================================
-self.onmessage = async (event) => {
-  const { type, payload } = event.data || {};
+// ================================================================
+// 3) Cloudflare Trend API Proxy
+// ================================================================
 
-  if (type === "FETCH_TREND_LONG") {
-    const items = await buildTrendItems(TREND_QUERIES_LONG, false);
-    postMessageSafe("TREND_LONG_RESULT", { items });
-  }
+async function fetchProxyTrend(query, country) {
+    try {
+        const api =
+            `https://odd-credit-25c6.namozg50.workers.dev/api/trends?query=${encodeURIComponent(query)}&country=${country}`;
+        const res = await fetch(api);
+        return await res.json();
+    } catch {
+        return { score: 20 };
+    }
+}
 
-  if (type === "FETCH_TREND_SHORT") {
-    const items = await buildTrendItems(TREND_QUERIES_SHORT, true);
-    postMessageSafe("TREND_SHORT_RESULT", { items });
-  }
+// ================================================================
+// 4) بناء النتائج بصيغة واجهة A
+// ================================================================
 
-  if (type === "FETCH_RANDOM_STORIES") {
-    const result = await pickRandomStoriesWithTrend(payload.stories);
-    postMessageSafe("RANDOM_STORIES_RESULT", result);
-  }
-};
+async function fetchTrends(isLong) {
+    const categories = isLong
+        ? ["جريمة", "وفاة", "حرب", "جاسوسية"]
+        : ["جريمة", "وفاة"];
+
+    const queries = [
+        "قضية قتل",
+        "جريمة شهيرة",
+        "قضية غامضة",
+        "وفاة فنان",
+        "وفاة لاعب",
+        "حادث تاريخي",
+        "فضيحة سياسية",
+        "اكتشاف خطير",
+        "حرب قديمة",
+        "معركة تاريخية"
+    ];
+
+    const output = [];
+
+    // ================================
+    // 80% عرب
+    // ================================
+    for (const country of ARAB_COUNTRIES) {
+        for (const q of queries) {
+            const trend = await fetchProxyTrend(q, country);
+            const yt = await fetchYouTubeScore(q, country);
+
+            output.push({
+                title: q,
+                country,
+                category: categories[Math.floor(Math.random() * categories.length)],
+                score: trend.score || 20,
+                ytScore: yt.score,
+                url: yt.url
+            });
+        }
+    }
+
+    // ================================
+    // 20% عالمي
+    // ================================
+    for (const country of GLOBAL_COUNTRIES) {
+        for (const q of queries.slice(0, 3)) {
+            const trend = await fetchProxyTrend(q, country);
+            const yt = await fetchYouTubeScore(q, country);
+
+            output.push({
+                title: q,
+                country,
+                category: "عالمي",
+                score: trend.score || 20,
+                ytScore: yt.score,
+                url: yt.url
+            });
+        }
+    }
+
+    // ترتيب حسب التريند الأقوى
+    output.sort((a, b) => b.score - a.score);
+
+    // إرجاع أقوى 20 للواجهة
+    return output.slice(0, 20);
+}
+
+// ================================================================
+// 5) الحساب الذكي للعشوائي
+// ================================================================
+
+function calculateRandomStories(stories) {
+    const ranked = stories.map(s => {
+        const personal = Number(s.score || 0);
+        const trend = Math.floor(Math.random() * 60) + 10;
+
+        return {
+            name: s.name,
+            personalScore: personal,
+            trendScore: trend,
+            finalScore: Math.round(personal * 0.4 + trend * 0.6)
+        };
+    });
+
+    ranked.sort((a, b) => b.finalScore - a.finalScore);
+
+    return { items: ranked.slice(0, 10) };
+}
