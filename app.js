@@ -417,3 +417,39 @@ window.onload = () => {
   initSearch();
   renderStoriesTable();
 };
+/* =====================================================
+   🟢 Auto Backup + Auto Restore (Simple & Automatic)
+   دالة واحدة فقط – بدون أي إعدادات – بدون تعديلات أخرى
+===================================================== */
+
+// 1) حفظ نسخة احتياطية تلقائيًا بعد أي تعديل
+function autoBackup() {
+  try {
+    localStorage.setItem("stories_backup", JSON.stringify(stories));
+  } catch (e) {
+    console.warn("Backup failed:", e);
+  }
+}
+
+// 2) استرجاع النسخة الاحتياطية عند فتح الموقع لو القصص فاضية
+function autoRestore() {
+  try {
+    if ((!stories || stories.length === 0) && localStorage.getItem("stories_backup")) {
+      stories = JSON.parse(localStorage.getItem("stories_backup"));
+      saveStories();
+    }
+  } catch (e) {
+    console.warn("Restore failed:", e);
+  }
+}
+
+// 3) ندمج الدوال مع النظام تلقائيًا بدون تغيير أي كود آخر
+//    نعدّل فقط وظائف الحفظ الأساسية لتفعيل AutoBackup
+const _saveStoriesOriginal = saveStories;
+saveStories = function () {
+  _saveStoriesOriginal();
+  autoBackup();
+};
+
+// 4) تشغيل Auto Restore عند بداية الصفحة
+autoRestore();
