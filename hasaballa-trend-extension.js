@@ -23,27 +23,26 @@ document.addEventListener("DOMContentLoaded", () => {
                 <div class="trend-title">${item.title}</div>
 
                 <div class="trend-meta">
-                    <span>🌍 الدولة: ${item.country}</span> |
-                    <span>📌 التصنيف: ${item.category}</span>
+                    <span>🌍 الدولة: ${item.country}</span>
                 </div>
 
                 <div class="trend-scores">
-                    <span>📊 تريند: ${item.score}</span>
-                    <span>🔥 YouTube: ${item.ytScore}</span>
-                    ${item.views ? `<span>👁 ظهور: ${item.views}</span>` : ""}
+                    <span>📊 درجة التريند: ${item.score}</span>
                 </div>
+
+                ${item.snippet ? `<div class="trend-snippet">${item.snippet}</div>` : ""}
 
                 <button class="add-trend-btn" data-index="${index}">
                     ➕ إضافة للقائمة
                 </button>
 
-                ${item.url ? `<a href="${item.url}" class="trend-link" target="_blank">🔗 رابط الفيديو</a>` : ""}
+                ${item.url ? `<a href="${item.url}" class="trend-link" target="_blank">🔗 رابط الخبر</a>` : ""}
             `;
 
             output.appendChild(card);
         });
 
-        // ربط زر الإضافة +
+        // ربط زر الإضافة
         document.querySelectorAll(".add-trend-btn").forEach(btn => {
             btn.addEventListener("click", () => {
                 const idx = btn.getAttribute("data-index");
@@ -53,14 +52,13 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     // ================================================================
-    // 2) إضافة قصة من التريند (فيديو طويل أو ريلز)
+    // 2) إضافة قصة من التريند
     // ================================================================
     window.addStoryFromTrend = function (item, isShort = false) {
         if (!window.stories) return;
 
         const storyName = item.title.trim();
 
-        // منع التكرار
         if (window.stories.some(s => s.name === storyName)) {
             alert("⚠️ القصة موجودة بالفعل!");
             return;
@@ -73,7 +71,7 @@ document.addEventListener("DOMContentLoaded", () => {
             score: 50,
             attraction: "-",
             analysis: "-",
-            notes: `من التريند (${item.country}) — ${item.category}`,
+            notes: `من التريند`,
             added: new Date().toISOString().split("T")[0],
             done: false,
             link: item.url || ""
@@ -87,7 +85,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     // ================================================================
-    // 3) اعتراض رسائل الـ Worker وربطها بواجهة العرض الجديدة
+    // 3) اعتراض رسائل الـ Worker
     // ================================================================
     if (window.worker) {
         const oldHandler = window.worker.onmessage;
@@ -102,25 +100,20 @@ document.addEventListener("DOMContentLoaded", () => {
                 window.renderAIResults(payload.items, true);
             }
 
-            // نمرر الرسائل القديمة لو موجودة
             if (typeof oldHandler === "function") oldHandler(e);
         };
     }
 
     // ================================================================
-    // 4) 🚀 Override كامل لـ renderTrendResult (لإلغاء طريقة العرض القديمة)
+    // 4) 🚀 Override الكامل للدالة القديمة
     // ================================================================
     window.renderTrendResult = function (title, items) {
-        // تجاهل التايتل القديم واستبداله بالعرض الجديد
-        const box = document.getElementById("ai-output");
-        box.innerHTML = "";
-
-        // استخدم الكروت الجديدة
+        // تجاهل نظام العرض القديم تماماً
         window.renderAIResults(items, false);
     };
 
     // ================================================================
-    // 5) تصميم مخصص للكروت (Injected CSS)
+    // 5) CSS Inject
     // ================================================================
     const style = document.createElement("style");
     style.innerHTML = `
@@ -142,10 +135,10 @@ document.addEventListener("DOMContentLoaded", () => {
             font-weight: bold;
             margin: 6px 0;
         }
-        .trend-meta {
-            color: #666;
+        .trend-snippet {
             font-size: 14px;
-            margin-bottom: 8px;
+            color: #444;
+            margin: 8px 0;
         }
         .trend-scores span {
             display: inline-block;
@@ -158,8 +151,8 @@ document.addEventListener("DOMContentLoaded", () => {
         .add-trend-btn {
             padding: 6px 14px;
             background: #28a745;
-            border: none;
             color: white;
+            border: none;
             border-radius: 6px;
             cursor: pointer;
             margin-top: 10px;
@@ -168,10 +161,6 @@ document.addEventListener("DOMContentLoaded", () => {
             display: inline-block;
             margin-top: 10px;
             color: #0277bd;
-            text-decoration: none;
-        }
-        .trend-link:hover {
-            text-decoration: underline;
         }
     `;
     document.body.appendChild(style);
