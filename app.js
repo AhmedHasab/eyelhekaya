@@ -1,18 +1,17 @@
-// app.js
+// app.js V6
 // ذكاء اختيار القصص – "إيه الحكاية؟"
 
 // =========================
 // إعداد متغيرات عامة
 // =========================
 
-const TREND_API_URL = "/api/story-all"; 
-// 🔧 لو الـ Worker على دومين مستقل:
-// const TREND_API_URL = "https://odd-credit-25c6.namozg50.workers.dev";
+// 🔴 غيّر هذا الرابط لو الدومين مختلف
+const TREND_BASE_URL = "https://odd-credit-25c6.namozg50.workers.dev";
 
-let stories = [];       // كل القصص من stories.json + الإضافات
-let trendData = null;   // بيانات التريند من الـ Worker
+const TREND_API_URL = `${TREND_BASE_URL}/api/story-all`;     // للتريند (زر 1 و 2)
+const TREND_SCORE_API_URL = `${TREND_BASE_URL}/api/story-score`; // لتقييم كل قصة (زر العشوائي)
 
-// عناصر DOM
+let stories = [];     // كل القصص من stories.json + الإضافات
 let aiOutput;
 let storiesTbody;
 let rawInput;
@@ -26,7 +25,6 @@ let aiPanel, storiesPanel;
 // أدوات مساعدة
 // =========================
 
-// حماية من إدخال HTML
 function escapeHtml(text) {
   if (!text && text !== 0) return "";
   return String(text)
@@ -36,12 +34,10 @@ function escapeHtml(text) {
     .replace(/"/g, "&quot;");
 }
 
-// تحديث صندوق نتائج الذكاء
 function setAI(html) {
   aiOutput.innerHTML = html;
 }
 
-// label للجاذبية حسب الـ score
 function getAttractivenessLabel(score) {
   const s = Number(score) || 0;
   if (s >= 95) return "🔥 جذابة جدًا ومضمونة";
@@ -51,7 +47,6 @@ function getAttractivenessLabel(score) {
   return "🕊 فكرة تجريبية";
 }
 
-// مبدئيًا: ذكاء = نفس السكور (تحسب لاحقًا مع تكامل جوجل/يوتيوب)
 function getAIScoreLabel(score) {
   const s = Number(score) || 0;
   if (s >= 95) return "A+ – أولوية قصوى";
@@ -61,12 +56,10 @@ function getAIScoreLabel(score) {
   return "D – ضعيفة";
 }
 
-// تاريخ اليوم بصيغة YYYY-MM-DD
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
 
-// الحصول على ID جديد للقصص
 function getNextStoryId() {
   if (!stories.length) return 1;
   return Math.max(...stories.map((s) => Number(s.id) || 0)) + 1;
@@ -92,7 +85,6 @@ async function loadStories() {
   }
 }
 
-// رسم جدول القصص
 function renderStoriesTable(list) {
   const rows = list.map((s, index) => {
     const done = !!s.done;
@@ -133,7 +125,6 @@ function renderStoriesTable(list) {
   attachRowEvents();
 }
 
-// ربط أزرار كل سطر
 function attachRowEvents() {
   storiesTbody
     .querySelectorAll(".js-show-story")
@@ -146,7 +137,6 @@ function attachRowEvents() {
     .forEach((btn) => btn.addEventListener("click", onRowDeleteStory));
 }
 
-// جلب قصة من ID
 function findStoryByRow(btn) {
   const tr = btn.closest("tr");
   if (!tr) return null;
@@ -154,14 +144,12 @@ function findStoryByRow(btn) {
   return stories.find((s) => Number(s.id) === id) || null;
 }
 
-// عرض تفاصيل قصة من الجدول
 function onRowShowStory(e) {
   const story = findStoryByRow(e.target);
   if (!story) return;
   showStoryDetails(story);
 }
 
-// تغيير حالة التنفيذ
 function onRowToggleDone(e) {
   const story = findStoryByRow(e.target);
   if (!story) return;
@@ -169,7 +157,6 @@ function onRowToggleDone(e) {
   renderStoriesTable(stories);
 }
 
-// حذف قصة
 function onRowDeleteStory(e) {
   const story = findStoryByRow(e.target);
   if (!story) return;
@@ -181,7 +168,6 @@ function onRowDeleteStory(e) {
   renderStoriesTable(stories);
 }
 
-// عرض القصة في لوحة "نتائج الذكاء"
 function showStoryDetails(story) {
   const cat = story.category || "غير محددة";
   const score = story.score ?? "—";
@@ -208,7 +194,6 @@ function showStoryDetails(story) {
 // إدخال خام + إدخال يدوي
 // =========================
 
-// تحويل النص الخام إلى قصص
 function handleParseRaw() {
   const text = rawInput.value || "";
   const lines = text
@@ -232,7 +217,6 @@ function handleParseRaw() {
       category: "",
       added: todayISO(),
       notes: "",
-      analysis: null,
     };
     stories.push(story);
   });
@@ -244,7 +228,6 @@ function handleParseRaw() {
   );
 }
 
-// إضافة قصة يدويًا
 function handleAddManual() {
   const name = (manualName.value || "").trim();
   const type = manualType.value || "";
@@ -264,7 +247,6 @@ function handleAddManual() {
     category: type,
     added: todayISO(),
     notes,
-    analysis: null,
   };
 
   stories.push(story);
@@ -309,9 +291,7 @@ function handleImportStories(event) {
       if (!Array.isArray(data)) throw new Error("not array");
       stories = data;
       renderStoriesTable(stories);
-      setAI(
-        `<p>✅ تم استيراد ${stories.length} قصة من الملف بنجاح.</p>`
-      );
+      setAI(`<p>✅ تم استيراد ${stories.length} قصة من الملف بنجاح.</p>`);
     } catch (err) {
       console.error(err);
       alert("⚠ ملف غير صالح. تأكد أنه JSON يحتوي على مصفوفة قصص.");
@@ -358,7 +338,6 @@ function handleSearchInput() {
   const q = (searchInput.value || "").trim();
   if (!q) {
     suggestionsBox.style.display = "none";
-    // رجّع الجدول كما هو
     renderStoriesTable(stories);
     return;
   }
@@ -367,10 +346,8 @@ function handleSearchInput() {
     s.name.toLowerCase().includes(q.toLowerCase())
   );
 
-  // تحديث الجدول طبقًا للبحث
   renderStoriesTable(matches);
 
-  // بناء القائمة المنسدلة
   if (!matches.length) {
     suggestionsBox.innerHTML =
       '<div style="padding:6px 10px;color:#777;">لا توجد نتائج مطابقة.</div>';
@@ -378,72 +355,77 @@ function handleSearchInput() {
     return;
   }
 
-  const items = matches.slice(0, 20).map(
-    (s) => `
+  const items = matches
+    .slice(0, 20)
+    .map(
+      (s) => `
       <div class="suggestion-item" data-id="${s.id}"
            style="padding:6px 10px; cursor:pointer; border-bottom:1px solid #f3f3f3;">
         ${escapeHtml(s.name)}
       </div>
     `
-  );
+    );
   suggestionsBox.innerHTML = items.join("");
   suggestionsBox.style.display = "block";
 }
 
 // =========================
-// التريند – جلب من الـ Worker
+// حالة التريند (Status Pills)
 // =========================
 
+function setTrendStatusesInitial() {
+  statusTrends.textContent = "تريندات Google غير محدثة بعد";
+  statusYoutube.textContent = "تريندات YouTube غير محدثة بعد";
+  statusDeaths.textContent = "وفيات آخر 48 ساعة غير محدثة";
+
+  statusTrends.className = "status-pill muted";
+  statusYoutube.className = "status-pill muted";
+  statusDeaths.className = "status-pill muted";
+}
+
 function setTrendStatusesLoading() {
-  statusTrends.textContent = "⏳ جاري تحميل تريندات Google/YouTube...";
-  statusTrends.classList.remove("muted", "ok");
-  statusTrends.classList.add("warn");
+  statusTrends.textContent = "⏳ يتم الآن تحميل تريندات Google/YouTube لآخر سنة…";
+  statusTrends.className = "status-pill warn";
 
   statusYoutube.textContent = "⏳ يتم الآن استخدام بيانات YouTube مع Google";
-  statusYoutube.classList.remove("muted", "ok");
-  statusYoutube.classList.add("warn");
+  statusYoutube.className = "status-pill warn";
 }
 
 function setTrendStatusesOK(updatedDateText) {
   statusTrends.textContent =
     "✅ تم تحميل تريندات Google/YouTube لآخر سنة " +
     (updatedDateText ? `(${updatedDateText})` : "");
-  statusTrends.classList.remove("muted", "warn");
-  statusTrends.classList.add("ok");
+  statusTrends.className = "status-pill ok";
 
   statusYoutube.textContent = "✅ نتائج YouTube مدمجة في التحليل";
-  statusYoutube.classList.remove("muted", "warn");
-  statusYoutube.classList.add("ok");
+  statusYoutube.className = "status-pill ok";
 
   statusDeaths.textContent = "ℹ لم يتم ربط وفيات آخر 48 ساعة بعد";
-  statusDeaths.classList.remove("ok");
-  statusDeaths.classList.add("warn");
+  statusDeaths.className = "status-pill warn";
 }
 
 function setTrendStatusesError() {
   statusTrends.textContent = "⚠ تعذر تحميل التريندات – تحقق من رابط الـ Worker.";
-  statusTrends.classList.remove("ok", "muted");
-  statusTrends.classList.add("warn");
+  statusTrends.className = "status-pill warn";
 
   statusYoutube.textContent = "⚠ لم يتم تحديث تريندات YouTube.";
-  statusYoutube.classList.remove("ok", "muted");
-  statusYoutube.classList.add("warn");
+  statusYoutube.className = "status-pill warn";
 }
 
-async function ensureTrendsLoaded() {
-  if (trendData) return trendData;
-
+// كل ضغط زر = طلب جديد من الـ Worker (بدون كاش)
+async function fetchTrends() {
   try {
     setTrendStatusesLoading();
-    const res = await fetch(TREND_API_URL, { cache: "no-cache" });
+    const res = await fetch(`${TREND_API_URL}?t=${Date.now()}`, {
+      cache: "no-store",
+    });
     if (!res.ok) throw new Error("Trend API not OK");
     const data = await res.json();
-    trendData = data;
     const updatedText = data.updated
       ? new Date(data.updated).toLocaleString("ar-EG")
       : "";
     setTrendStatusesOK(updatedText);
-    return trendData;
+    return data;
   } catch (err) {
     console.error(err);
     setTrendStatusesError();
@@ -455,38 +437,40 @@ async function ensureTrendsLoaded() {
 async function handleUpdateTrends() {
   try {
     setAI(`<p>⏳ جاري تحديث التريندات من Google و YouTube لآخر سنة...</p>`);
-    trendData = null;
-    const data = await ensureTrendsLoaded();
+    const data = await fetchTrends();
     const totalBlocks = (data.countries || []).length;
 
     setAI(`
-      <h3>📈 تم تحديث بيانات التريند بنجاح</h3>
-      <p>تم جلب القصص من <strong>${totalBlocks}</strong> منطقة (دول عربية + مناطق عالمية).</p>
+      <h3>📈 تم تحديث التريندات بنجاح</h3>
+      <p>✅ عدد المناطق التي تم تحليلها: ${totalBlocks}</p>
       <p>يمكنك الآن الضغط على:
-        <br>🎬 "اختيار قصة فيديو طويل وفقا للترند"
-        <br>⚡ "اختيار فيديو (ريلز) من الترند"
-        لاختيار القصص الأنسب تلقائيًا.</p>
+        <br>• زر "🗓 اختيار قصة فيديو طويل وفقا للترند"
+        <br>• زر "⚡ اختيار فيديو (ريلز) من الترند"
+      للحصول على اقتراحات تفصيلية.</p>
     `);
   } catch {
-    // الحالة تم التعامل معها بالفعل في setTrendStatusesError
+    // الرسالة تم ضبطها في setTrendStatusesError
   }
 }
 
-// اختيار قصص لفيديوهات طويلة من التريند
+// =========================
+// زر 1 – اختيار قصص لفيديوهات طويلة من التريند
+// =========================
+
 async function handlePickTrendLongVideo() {
   try {
     setAI(`<p>⏳ جاري تحليل التريند لاختيار قصص لفيديو طويل...</p>`);
-    const data = await ensureTrendsLoaded();
+    const data = await fetchTrends();
 
     const blocks = [];
     (data.countries || []).forEach((block) => {
-      const stories = block.stories || [];
-      if (!stories.length) return;
+      const storiesBlock = block.stories || [];
+      if (!storiesBlock.length) return;
 
       const title = block.country || block.region || "منطقة";
       const typeLabel = block.type === "arab" ? "منطقة عربية" : "منطقة عالمية";
 
-      const listHtml = stories
+      const listHtml = storiesBlock
         .slice(0, 5)
         .map(
           (s, idx) => `
@@ -522,15 +506,20 @@ async function handlePickTrendLongVideo() {
       <p>💡 اختَر قصة واحدة أو أكثر، ثم ارجع لقائمة القصص داخل الموقع لتسجّلها وتربطها بمشروع فيديو فعلي.</p>
     `);
   } catch {
-    // تم التعامل مع الخطأ مسبقًا
+    // الخطأ ظاهر في الـ Status
   }
 }
 
-// اختيار قصص ريلز من التريند
+// =========================
+// زر 2 – اختيار قصص ريلز من التريند
+// =========================
+
 async function handlePickTrendReels() {
   try {
-    setAI(`<p>⏳ جاري تحليل التريند لاختيار قصص مناسبة للريلز (حتى 3 دقائق)...</p>`);
-    const data = await ensureTrendsLoaded();
+    setAI(
+      `<p>⏳ جاري تحليل التريند لاختيار قصص مناسبة للريلز (حتى 3 دقائق)...</p>`
+    );
+    const data = await fetchTrends();
 
     const all = [];
     (data.countries || []).forEach((block) => {
@@ -575,57 +564,99 @@ async function handlePickTrendReels() {
       .join("");
 
     setAI(`
-      <h3>⚡ ترشيحات ريلز (قصص تصلح لفيديوهات قصيرة حتى 3 دقائق)</h3>
-      <p>الاختيار مبني على:
-        <br>• قوة التريند خلال سنة كاملة (Google + YouTube)
-        <br>• وضوح الحدث وسهولة تلخيصه في مدة قصيرة
-        <br>• تفضيل العناوين الأقصر والأكثر مباشرة
+      <h3>⚡ أفضل القصص المقترحة لفيديوهات ريلز (حتى 3 دقائق)</h3>
+      <p>تم اختيار القصص بناءً على:
+        <br>• قوة التريند خلال آخر سنة (Google + YouTube)
+        <br>• ملاءمة الفكرة للتقديم في مدة قصيرة
+        <br>• الانتماء للأنواع الثلاثة (جرائم – وفيات – حروب/صراعات)
       </p>
       <ol>${items}</ol>
-      <p>🎯 استخدم هذه القائمة لاختيار ريلز سريع، ثم ارجع لقائمة القصص عندك لتسجيل الفكرة وتطويرها.</p>
+      <p>💡 يمكنك تحويل أي من هذه القصص إلى ريلز تمهيد لعمل فيديو طويل لاحقًا.</p>
     `);
   } catch {
-    // تم التعامل مع الخطأ مسبقًا
+    // الخطأ ظاهر في الـ Status
   }
 }
 
 // =========================
-// اختيار قصة عشوائية من القصص المسجَّلة
+// زر "اختيار قصة عشوائية" – 40% تقييمك + 60% ترند
 // =========================
 
-// اختيار عشوائي بوزن الـ score
-function pickWeightedRandomStory(list) {
+function pickWeightedRandomByField(list, field) {
   if (!list.length) return null;
-  const total = list.reduce((sum, s) => sum + (Number(s.score) || 0), 0);
+  const total = list.reduce(
+    (sum, item) => sum + (Number(item[field]) || 0),
+    0
+  );
   if (!total) {
-    // لو كلهم 0 – نختار عشوائي عادي
     return list[Math.floor(Math.random() * list.length)];
   }
   let r = Math.random() * total;
-  for (const s of list) {
-    r -= Number(s.score) || 0;
-    if (r <= 0) return s;
+  for (const item of list) {
+    r -= Number(item[field]) || 0;
+    if (r <= 0) return item;
   }
   return list[list.length - 1];
 }
 
-function handlePickRandomStory() {
+async function fetchStoryTrendScore(name) {
+  try {
+    const url = `${TREND_SCORE_API_URL}?q=${encodeURIComponent(
+      name
+    )}&t=${Date.now()}`;
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) throw new Error("score api error");
+    const data = await res.json();
+    return Number(data.trend_score) || 0; // 0–100
+  } catch (err) {
+    console.error("Trend score error for", name, err);
+    return 0;
+  }
+}
+
+async function handlePickRandomStory() {
   if (!stories.length) {
     alert("لا توجد قصص في القائمة بعد. أضف بعض القصص أولًا.");
     return;
   }
 
-  const picked = pickWeightedRandomStory(stories);
-  const top10 = [...stories]
-    .sort((a, b) => (b.score || 0) - (a.score || 0))
+  setAI(
+    `<p>⏳ جاري حساب التقييم الإجمالي لكل القصص (40% من تقييمك الشخصي + 60% من ترند Google/YouTube خلال آخر سنة)...</p>`
+  );
+
+  // نعمل نسخة مستقلة حتى لا نعدّل مصفوفة stories الأصلية
+  const list = [...stories];
+
+  // نجلب ترند لكل قصة (بحث مباشر باسم القصة فقط)
+  const scored = await Promise.all(
+    list.map(async (s) => {
+      const personal = Number(s.score) || 0;
+      const trend = await fetchStoryTrendScore(s.name); // 0–100
+      const finalScore = Math.round(trend * 0.6 + personal * 0.4); // 60% + 40%
+      return {
+        ...s,
+        personalScore: personal,
+        trendScore: trend,
+        finalScore,
+      };
+    })
+  );
+
+  // اختيار عشوائي بوزن finalScore
+  const picked = pickWeightedRandomByField(scored, "finalScore");
+
+  // أعلى 10 قصص للتخطيط
+  const top10 = [...scored]
+    .sort((a, b) => (b.finalScore || 0) - (a.finalScore || 0))
     .slice(0, 10);
 
-  let topListHtml = top10
+  const topListHtml = top10
     .map(
       (s, idx) => `
       <li>
         <strong>${idx + 1}. ${escapeHtml(s.name)}</strong>
-        – درجة: ${escapeHtml(s.score ?? "—")}
+        – التقييم الإجمالي: ${s.finalScore}
+        (ترند: ${s.trendScore} – شخصي: ${s.personalScore})
         – فئة: ${escapeHtml(s.category || "غير محددة")}
       </li>
     `
@@ -634,12 +665,18 @@ function handlePickRandomStory() {
 
   setAI(`
     <h3>🎲 اختيار قصة عشوائية من القصص المسجَّلة بالموقع (فيديو طويل)</h3>
-    <p>✅ تم اختيار القصة التالية بناءً على مزيج من تقييمك الشخصي (الدرجة) واحتمالية الجذب:</p>
+    <p>✅ تم الحساب وفق المعادلة التالية:
+      <br>التقييم الإجمالي = 60% ترند Google/YouTube آخر سنة + 40% تقييمك الشخصي.
+    </p>
     <p style="font-size:1.1rem;"><strong>القصة المختارة:</strong> ${escapeHtml(
       picked.name
     )}</p>
-    <p><strong>الفئة:</strong> ${escapeHtml(picked.category || "غير محددة")}</p>
-    <p><strong>الدرجة:</strong> ${escapeHtml(picked.score ?? "—")}</p>
+    <p><strong>الفئة:</strong> ${escapeHtml(
+      picked.category || "غير محددة"
+    )}</p>
+    <p><strong>تقييمك الشخصي:</strong> ${picked.personalScore}</p>
+    <p><strong>ترند Google/YouTube (آخر سنة):</strong> ${picked.trendScore}</p>
+    <p><strong>التقييم الإجمالي:</strong> ${picked.finalScore}</p>
     <hr>
     <h4>🏆 أعلى 10 قصص في التقييم الإجمالي (للتخطيط المستقبلي):</h4>
     <ol>${topListHtml}</ol>
@@ -670,7 +707,6 @@ function handleShowAIOnly() {
 // =========================
 
 function init() {
-  // عناصر DOM
   aiOutput = document.getElementById("ai-output");
   storiesTbody = document.getElementById("stories-tbody");
   rawInput = document.getElementById("raw-input");
@@ -691,16 +727,16 @@ function init() {
   // أزرار أعلى الصفحة
   document
     .getElementById("btn-pick-today")
-    .addEventListener("click", () => handlePickTrendLongVideo());
+    .addEventListener("click", handlePickTrendLongVideo);
   document
     .getElementById("btn-pick-long")
-    .addEventListener("click", () => handlePickRandomStory());
+    .addEventListener("click", handlePickRandomStory);
   document
     .getElementById("btn-pick-short")
-    .addEventListener("click", () => handlePickTrendReels());
+    .addEventListener("click", handlePickTrendReels);
   document
     .getElementById("btn-update-trends")
-    .addEventListener("click", () => handleUpdateTrends());
+    .addEventListener("click", handleUpdateTrends);
 
   // أزرار التحكم في اللوحين
   document
@@ -732,15 +768,15 @@ function init() {
   searchInput.addEventListener("input", handleSearchInput);
 
   // حالة مبدئية للـ Status
-  statusTrends.textContent = "تريندات Google غير محدثة بعد";
-  statusYoutube.textContent = "تريندات YouTube غير محدثة بعد";
-  statusDeaths.textContent = "وفيات آخر 48 ساعة غير محدثة";
+  setTrendStatusesInitial();
 
   // تحميل القصص من stories.json
   loadStories();
 
   // رسالة افتراضية
-  setAI("<p>اضغط على أحد الأزرار بالأعلى لبدء التحليل أو لاختيار قصة من قائمتك.</p>");
+  setAI(
+    "<p>اضغط على أحد الأزرار بالأعلى لبدء التحليل أو لاختيار قصة من قائمتك.</p>"
+  );
 }
 
 document.addEventListener("DOMContentLoaded", init);
