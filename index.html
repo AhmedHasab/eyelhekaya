@@ -148,6 +148,24 @@
   </div>
 
   <script src="app.js"></script>
+<script>
+// تعطيل الكاش بالكامل بدون تعديل app.js
+
+(function() {
+    console.log("⛔ Cache Override Activated (AI Cache Disabled)");
+
+    // إلغاء وظيفة القراءة من الكاش
+    window.getCachedAi = function () {
+        console.log("Cache read blocked");
+        return null;
+    };
+
+    // إلغاء وظيفة الكتابة إلى الكاش
+    window.setCachedAi = function () {
+        console.log("Cache write blocked");
+    };
+})();
+</script>
 
   <script>
     if ("serviceWorker" in navigator) {
