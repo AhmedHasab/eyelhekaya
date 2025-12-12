@@ -16,7 +16,7 @@
   // ===============================
 
   const WORKER_BASE_URL =
-    "https://odd-credit-25c6.namozg50.workers.dev/api"; // عدل لو غيرت المسار داخل الـ Worker
+    "https://odd-credit-25c6.namozg50.workers.dev"; // عدل لو غيرت المسار داخل الـ Worker
 
   const STORAGE_KEYS = {
     STORIES: "hasaballa_stories_v1",
