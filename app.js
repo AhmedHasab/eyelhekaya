@@ -154,7 +154,17 @@
    await loadStoriesFromServer();
    if (isAutoBackupEnabled()) autoBackupDownloadSilent();
  }
- 
+ async function addStoryToToday(story) {
+    return postToWorker({
+      action: "add_story_today",
+      payload: {
+        id: story.id,
+        tmpId: story.tmpId,
+      },
+    });
+  }
+  
+  
  async function updateStoryOnServer(id, updates) {
    await postToWorker({
      action: "update_story",
