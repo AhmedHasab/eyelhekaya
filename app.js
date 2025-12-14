@@ -877,34 +877,35 @@
     INIT: WIRE ALL HTML INTERACTIVE ELEMENTS
  ========================= */
  function wireEventListeners() {
-   // Top buttons :contentReference[oaicite:2]{index=2}
-   $("btn-pick-today")?.addEventListener("click", handlePickTodayTrendLong);
-   $("btn-pick-long")?.addEventListener("click", handlePickRandomFromSavedLong);
-   $("btn-pick-short")?.addEventListener("click", handlePickTrendShortReels);
-   $("btn-update-trends")?.addEventListener("click", handleUpdateTrendsAll);
- 
-   // Layout controls :contentReference[oaicite:3]{index=3}
-   $("btn-show-stories-only")?.addEventListener("click", showStoriesOnly);
-   $("btn-show-both")?.addEventListener("click", showBothPanels);
-   $("btn-show-ai-only")?.addEventListener("click", showAiOnly);
- 
-   // Raw parse :contentReference[oaicite:4]{index=4}
-   $("btn-parse-raw")?.addEventListener("click", parseRawToStories);
- 
-   // Manual add / edit :contentReference[oaicite:5]{index=5}
-   $("btn-add-manual")?.addEventListener("click", handleManualAddOrEdit);
- 
-   // Export / Import :contentReference[oaicite:6]{index=6}
-   $("btn-export")?.addEventListener("click", exportStoriesToFile);
-   $("import-file")?.addEventListener("change", (e) => {
-     const f = e.target.files?.[0];
-     if (f) importStoriesFromFile(f);
-     e.target.value = "";
-   });
- 
-   // Search :contentReference[oaicite:7]{index=7}
-   $("stories-search")?.addEventListener("input", handleSearchInput);
- }
+    // Top buttons
+    $("btn-pick-today")?.addEventListener("click", handlePickTodayTrendLong);
+    $("btn-pick-long")?.addEventListener("click", handlePickRandomFromSavedLong);
+    $("btn-update-trends")?.addEventListener("click", handleUpdateTrendsAll);
+    // ⚠️ ملحوظة: زر الريلز (btn-pick-short) НЕ يتم ربطه هنا
+  
+    // Layout controls
+    $("btn-show-stories-only")?.addEventListener("click", showStoriesOnly);
+    $("btn-show-both")?.addEventListener("click", showBothPanels);
+    $("btn-show-ai-only")?.addEventListener("click", showAiOnly);
+  
+    // Raw parse
+    $("btn-parse-raw")?.addEventListener("click", parseRawToStories);
+  
+    // Manual add / edit
+    $("btn-add-manual")?.addEventListener("click", handleManualAddOrEdit);
+  
+    // Export / Import
+    $("btn-export")?.addEventListener("click", exportStoriesToFile);
+    $("import-file")?.addEventListener("change", (e) => {
+      const f = e.target.files?.[0];
+      if (f) importStoriesFromFile(f);
+      e.target.value = "";
+    });
+  
+    // Search
+    $("stories-search")?.addEventListener("input", handleSearchInput);
+  }
+  
  
 /* =========================
    BOOTSTRAP (FINAL & CLEAN)
@@ -960,12 +961,42 @@ async function bootstrapApp() {
   
     console.log("🚀 App bootstrap completed");
   }
+
+// =========================
+// PICK REELS PRO (FIXED)
+// =========================
+async function handlePickReelsPro() {
+    console.log("🔥 REELS PRO BUTTON CLICKED");
+  
+    setHtml($("ai-output"), "<p>⏳ جاري جلب تريندات الريلز...</p>");
+  
+    try {
+      const res = await postToWorker({
+        action: "get_reels_pro",
+      });
+  
+      if (!res || !Array.isArray(res.results) || !res.results.length) {
+        setHtml($("ai-output"), "<p>❌ لا توجد نتائج ريلز حاليًا</p>");
+        return;
+      }
+  
+      lastAIResults = res.results;
+  
+      renderAIResultCards(res.results, "ريلز برو");
+  
+    } catch (err) {
+      console.error("❌ Reels Pro error:", err);
+      setHtml($("ai-output"), "<p>❌ حدث خطأ أثناء جلب الريلز</p>");
+    }
+  }
+  
+  
   
 /* =========================
    START APP
 ========================= */
-document.addEventListener("DOMContentLoaded", () => {
 
+document.addEventListener("DOMContentLoaded", () => {
     const reelsBtn = $("btn-pick-short");
   
     if (!reelsBtn) {
@@ -974,7 +1005,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   
     reelsBtn.onclick = handlePickReelsPro;
-  
   });
+  
+  // 🚀 شغّل التطبيق
+  bootstrapApp();
   
   
