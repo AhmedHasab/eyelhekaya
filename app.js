@@ -912,6 +912,54 @@
    - Worker = Source of Truth
    - stories.json -> Worker (ONE TIME)
 ========================= */
+/*async function loadApiModeStatus() {
+    try {
+      const res = await postToWorker({ action: "get_api_mode" });
+  
+      const mode = res.mode || "offline";
+      const changedAt = res.changedAt;
+  
+      const sw = document.getElementById("api-mode-switch");
+      const label = document.getElementById("api-mode-label");
+      const time = document.getElementById("api-mode-time");
+  
+      if (!sw) return;
+  
+      sw.checked = mode === "online";
+      label.textContent =
+        mode === "online"
+          ? "🟢 Online (استخدام API مباشر)"
+          : "⛔ Offline (الاعتماد على الكاش فقط)";
+  
+      time.textContent = changedAt
+        ? `آخر تغيير: ${new Date(changedAt).toLocaleString()}`
+        : "";
+    } catch (e) {
+      console.warn("API mode load failed", e);
+    }
+  }*/
+  function wireApiModeSwitch() {
+    const sw = document.getElementById("api-mode-switch");
+    if (!sw) return;
+  
+    sw.addEventListener("change", async () => {
+      const mode = sw.checked ? "online" : "offline";
+  
+      const res = await postToWorker({
+        action: "toggle_api_mode",
+        payload: { mode },
+      });
+  
+      document.getElementById("api-mode-label").textContent =
+        mode === "online"
+          ? "🟢 Online (استخدام API مباشر)"
+          : "⛔ Offline (الاعتماد على الكاش فقط)";
+  
+      document.getElementById("api-mode-time").textContent =
+        `آخر تغيير: ${new Date(res.changedAt).toLocaleString()}`;
+    });
+  }
+  
 
 async function bootstrapApp() {
     const MIGRATION_FLAG = "EH_STORIES_JSON_MIGRATED";
@@ -1005,6 +1053,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   
     reelsBtn.onclick = handlePickReelsPro;
+
+
   });
   
   // 🚀 شغّل التطبيق
