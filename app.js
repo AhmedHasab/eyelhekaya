@@ -922,13 +922,71 @@
  /* =========================
     BOOTSTRAP
  ========================= */
- document.addEventListener("DOMContentLoaded", async () => {
-   // init defaults
-   if (localStorage.getItem(LS_KEYS.AI_CACHE_ENABLED) === null) setAiCacheEnabled(true);
-   if (localStorage.getItem(LS_KEYS.AUTO_BACKUP) === null) setAutoBackupEnabled(true);
- 
-   wireEventListeners();
-   await loadStoriesFromServer();
-   
- });
+ async function autoMigrateFromStoriesJsonIfNeeded() {
+    const MIGRATION_FLAG = "EH_MIGRATION_DONE";
+  
+    // لو الترحيل حصل قبل كده → نخرج
+    if (localStorage.getItem(MIGRATION_FLAG) === "1") {
+      return;
+    }
+  
+    try {
+      const res = await fetch("stories.json", { cache: "no-store" });
+      if (!res.ok) return;
+  
+      const arr = await res.json();
+      if (!Array.isArray(arr) || !arr.length) return;
+  
+      // جلب الموجود بالفعل في الوركر
+      const serverData = await postToWorker({ action: "get_stories" });
+      const serverTitles = new Set(
+        (serverData.stories || []).map(s =>
+          normalizeArabic(s.title || "")
+        )
+      );
+  
+      let added = 0;
+  
+      for (const item of arr) {
+        const title = (item.name || item.title || "").trim();
+        if (!title) continue;
+  
+        const key = normalizeArabic(title);
+        if (serverTitles.has(key)) continue;
+  
+        const normalized = normalizeStoryObject(
+          {
+            ...item,
+            title,
+            source: "stories.json",
+          },
+          item.type || "long"
+        );
+  
+        await addStoryToServer(normalized);
+        added++;
+      }
+  
+      localStorage.setItem(MIGRATION_FLAG, "1");
+      console.log(`✅ Auto migration done: ${added} stories added`);
+  
+    } catch (err) {
+      console.error("Migration failed", err);
+    }
+  }
+  
+
+  document.addEventListener("DOMContentLoaded", async () => {
+    if (localStorage.getItem(LS_KEYS.AI_CACHE_ENABLED) === null) setAiCacheEnabled(true);
+    if (localStorage.getItem(LS_KEYS.AUTO_BACKUP) === null) setAutoBackupEnabled(true);
+  
+    wireEventListeners();
+  
+    // 🔥 الترحيل التلقائي (مرة واحدة فقط)
+    await autoMigrateFromStoriesJsonIfNeeded();
+  
+    // تحميل القصص من الوركر
+    await loadStoriesFromServer();
+  });
+  
  
