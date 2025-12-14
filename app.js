@@ -516,8 +516,8 @@
        maxLocal = Number(normalized.localNumericId);
      }
  
-     await addStoryToServer(normalized);
-     existing.add(key);
+     /*await addStoryToServer(normalized);
+     existing.add(key);*/
    }
  
    localStorage.setItem(LS_KEYS.MAX_LOCAL_ID, String(maxLocal));
@@ -673,7 +673,7 @@
         const btn = e.target.closest("button[data-add='1']");
         if (!btn) return;
       
-        // 👇 امنع التكرار
+        // امنع التكرار
         if (btn.dataset.loading === "1") return;
         btn.dataset.loading = "1";
         btn.disabled = true;
@@ -705,11 +705,23 @@
           chosen.type || "long"
         );
       
+        // 1️⃣ أضف القصة للسيرفر
         await addStoryToServer(normalized);
       
-        // 👇 شكليًا نقول تم
+        // 2️⃣ بعد التحميل، هتكون القصة دخلت في stories
+        const added = stories.find(
+          (s) => normalizeArabic(s.title) === normalizeArabic(normalized.title)
+        );
+      
+        // 3️⃣ علّمها قصة اليوم
+        if (added?.id) {
+          await addStoryToToday(added);
+        }
+      
+        // 4️⃣ شكليًا نقول تم
         btn.textContent = "✅ تمت الإضافة";
       };
+      
       
    }
  }
