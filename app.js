@@ -5,7 +5,7 @@
  * - Every interactive HTML element has a handler
  *************************************************/
 
- const WORKER_API = "https://odd-credit-25c6.namozg50.workers.dev";
+ const WORKER_API = "https://odd-credit-25c6.namozg50.workers.dev/";
 
  const APP_VERSION = "1.0.0";
  
@@ -117,69 +117,7 @@
    return res.json();
  }
 
- async function migrateLocalStoriesToWorkerOnce() {
-    const MIGRATION_FLAG = "EH_MIGRATION_DONE";
-  
-    // 🔒 منع إعادة الترحيل
-    if (localStorage.getItem(MIGRATION_FLAG) === "1") {
-      alert("🚫 تم ترحيل القصص بالفعل إلى الوركر، لا يمكن التكرار");
-      return;
-    }
-  
-    const raw = localStorage.getItem(LS_KEYS.STORIES_CACHE);
-    if (!raw) {
-      alert("❌ لا توجد بيانات محلية للترحيل");
-      return;
-    }
-  
-    let localStories;
-    try {
-      localStories = JSON.parse(raw);
-    } catch {
-      alert("❌ خطأ في قراءة البيانات");
-      return;
-    }
-  
-    if (!Array.isArray(localStories) || !localStories.length) {
-      alert("❌ لا توجد قصص");
-      return;
-    }
-  
-    // جلب الموجود بالفعل في الوركر لمنع التكرار
-    const serverData = await postToWorker({ action: "get_stories" });
-    const serverTitles = new Set(
-      (serverData.stories || []).map(s => normalizeArabic(s.title || ""))
-    );
-  
-    let added = 0;
-  
-    for (const item of localStories) {
-      const title = (item.title || item.name || "").trim();
-      if (!title) continue;
-  
-      const key = normalizeArabic(title);
-      if (serverTitles.has(key)) continue;
-  
-      const normalized = normalizeStoryObject(
-        {
-          ...item,
-          title,
-          source: "migration",
-        },
-        item.type || "long"
-      );
-  
-      await addStoryToServer(normalized);
-      added++;
-    }
-  
-    // ✅ قفل الترحيل نهائيًا
-    localStorage.setItem(MIGRATION_FLAG, "1");
-  
-    alert(`✅ تم ترحيل ${added} قصة بنجاح إلى الوركر`);
-  
-    await loadStoriesFromServer();
-  }
+
   
  
  /* =========================
@@ -919,75 +857,62 @@
    $("stories-search")?.addEventListener("input", handleSearchInput);
  }
  
- /* =========================
-    BOOTSTRAP
- ========================= */
- async function autoMigrateFromStoriesJsonIfNeeded() {
-    const MIGRATION_FLAG = "EH_MIGRATION_DONE";
-  
-    // لو الترحيل حصل قبل كده → نخرج
-    if (localStorage.getItem(MIGRATION_FLAG) === "1") {
-      return;
-    }
-  
-    try {
-      const res = await fetch("stories.json", { cache: "no-store" });
-      if (!res.ok) return;
-  
-      const arr = await res.json();
-      if (!Array.isArray(arr) || !arr.length) return;
-  
-      // جلب الموجود بالفعل في الوركر
-      const serverData = await postToWorker({ action: "get_stories" });
-      const serverTitles = new Set(
-        (serverData.stories || []).map(s =>
-          normalizeArabic(s.title || "")
-        )
-      );
-  
-      let added = 0;
-  
-      for (const item of arr) {
-        const title = (item.name || item.title || "").trim();
-        if (!title) continue;
-  
-        const key = normalizeArabic(title);
-        if (serverTitles.has(key)) continue;
-  
-        const normalized = normalizeStoryObject(
-          {
-            ...item,
-            title,
-            source: "stories.json",
-          },
-          item.type || "long"
-        );
-  
-        await addStoryToServer(normalized);
-        added++;
-      }
-  
-      localStorage.setItem(MIGRATION_FLAG, "1");
-      console.log(`✅ Auto migration done: ${added} stories added`);
-  
-    } catch (err) {
-      console.error("Migration failed", err);
-    }
-  }
-  
+/* =========================
+   BOOTSTRAP (FINAL & CLEAN)
+   - Worker = Source of Truth
+   - stories.json -> Worker (ONE TIME)
+========================= */
 
-  document.addEventListener("DOMContentLoaded", async () => {
-    if (localStorage.getItem(LS_KEYS.AI_CACHE_ENABLED) === null) setAiCacheEnabled(true);
-    if (localStorage.getItem(LS_KEYS.AUTO_BACKUP) === null) setAutoBackupEnabled(true);
+async function bootstrapApp() {
+    const MIGRATION_FLAG = "EH_STORIES_JSON_MIGRATED";
   
+    // 1️⃣ إعدادات افتراضية
+    if (localStorage.getItem(LS_KEYS.AI_CACHE_ENABLED) === null) {
+      setAiCacheEnabled(true);
+    }
+    if (localStorage.getItem(LS_KEYS.AUTO_BACKUP) === null) {
+      setAutoBackupEnabled(true);
+    }
+  
+    // 2️⃣ ترحيل stories.json → Worker (مرة واحدة فقط)
+    if (localStorage.getItem(MIGRATION_FLAG) !== "1") {
+      try {
+        console.log("⏳ Bootstrapping: loading stories.json ...");
+  
+        const res = await fetch("stories.json", { cache: "no-store" });
+        if (!res.ok) throw new Error("stories.json not found");
+  
+        const storiesFromFile = await res.json();
+        if (Array.isArray(storiesFromFile) && storiesFromFile.length) {
+          const r = await postToWorker({
+            action: "import_stories_json",
+            payload: { stories: storiesFromFile },
+          });
+  
+          if (r?.ok) {
+            console.log(`✅ Migrated ${r.imported} stories to Worker`);
+            localStorage.setItem(MIGRATION_FLAG, "1");
+          } else {
+            console.warn("⚠️ Worker rejected migration", r);
+          }
+        }
+      } catch (err) {
+        console.warn("⚠️ Bootstrap migration skipped:", err.message);
+      }
+    } else {
+      console.log("ℹ️ stories.json already migrated");
+    }
+  
+    // 3️⃣ ربط كل أزرار الواجهة
     wireEventListeners();
   
-    // 🔥 الترحيل التلقائي (مرة واحدة فقط)
-    await autoMigrateFromStoriesJsonIfNeeded();
-  
-    // تحميل القصص من الوركر
+    // 4️⃣ تحميل القصص من الوركر (الذاكرة الرئيسية)
     await loadStoriesFromServer();
-  });
   
- 
-
+    console.log("🚀 App bootstrap completed");
+  }
+  
+  /* =========================
+     START APP
+  ========================= */
+  document.addEventListener("DOMContentLoaded", bootstrapApp);
