@@ -5,7 +5,7 @@
  * - Every interactive HTML element has a handler
  *************************************************/
 
- const WORKER_API = "https://odd-credit-25c6.namozg50.workers.dev/";
+ const WORKER_API = "https://odd-credit-25c6.namozg50.workers.dev";
 
  const APP_VERSION = "1.0.0";
  
@@ -990,3 +990,4 @@
   });
   
  
+
