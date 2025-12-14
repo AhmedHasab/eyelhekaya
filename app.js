@@ -961,7 +961,20 @@ async function bootstrapApp() {
     console.log("🚀 App bootstrap completed");
   }
   
-  /* =========================
-     START APP
-  ========================= */
-  document.addEventListener("DOMContentLoaded", bootstrapApp);
+/* =========================
+   START APP
+========================= */
+document.addEventListener("DOMContentLoaded", () => {
+
+    const reelsBtn = $("btn-pick-short");
+  
+    if (!reelsBtn) {
+      console.error("❌ btn-pick-short not found");
+      return;
+    }
+  
+    reelsBtn.onclick = handlePickReelsPro;
+  
+  });
+  
+  
