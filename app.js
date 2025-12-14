@@ -669,37 +669,48 @@
    // Add buttons wiring (delegation)
    const out = $("ai-output");
    if (out) {
-     out.onclick = async (e) => {
-       const btn = e.target.closest("button[data-add='1']");
-       if (!btn) return;
- 
-       const tmp = btn.getAttribute("data-tmp");
-       if (!tmp || !lastAIResults || !Array.isArray(lastAIResults)) return;
- 
-       const chosen = lastAIResults.find((x) => String(x.tmpId || x.id) === String(tmp));
-       if (!chosen) return;
- 
-       // Add to server stories
-       const normalized = normalizeStoryObject(
-         {
-           title: chosen.title || chosen.name || "",
-           category: chosen.category || "",
-           type: chosen.type || "long",
-           score: Number(chosen.score ?? 80),
-           trendScore: Number(chosen.trendScore ?? 0),
-           finalScore: Number(chosen.finalScore ?? Number(chosen.score ?? 80)),
-           done: false,
-           notes: chosen.notes || "",
-           source: chosen.source || "trend",
-           country: chosen.country || "",
-           analysis: chosen.analysis || null,
-           localNumericId: getNextLocalNumericId(),
-         },
-         chosen.type || "long"
-       );
- 
-       await addStoryToServer(normalized);
-     };
+    out.onclick = async (e) => {
+        const btn = e.target.closest("button[data-add='1']");
+        if (!btn) return;
+      
+        // 👇 امنع التكرار
+        if (btn.dataset.loading === "1") return;
+        btn.dataset.loading = "1";
+        btn.disabled = true;
+        btn.textContent = "⏳ جاري الإضافة...";
+      
+        const tmp = btn.getAttribute("data-tmp");
+        if (!tmp || !lastAIResults || !Array.isArray(lastAIResults)) return;
+      
+        const chosen = lastAIResults.find(
+          (x) => String(x.tmpId || x.id) === String(tmp)
+        );
+        if (!chosen) return;
+      
+        const normalized = normalizeStoryObject(
+          {
+            title: chosen.title || chosen.name || "",
+            category: chosen.category || "",
+            type: chosen.type || "long",
+            score: Number(chosen.score ?? 80),
+            trendScore: Number(chosen.trendScore ?? 0),
+            finalScore: Number(chosen.finalScore ?? Number(chosen.score ?? 80)),
+            done: false,
+            notes: chosen.notes || "",
+            source: chosen.source || "trend",
+            country: chosen.country || "",
+            analysis: chosen.analysis || null,
+            localNumericId: getNextLocalNumericId(),
+          },
+          chosen.type || "long"
+        );
+      
+        await addStoryToServer(normalized);
+      
+        // 👇 شكليًا نقول تم
+        btn.textContent = "✅ تمت الإضافة";
+      };
+      
    }
  }
  
