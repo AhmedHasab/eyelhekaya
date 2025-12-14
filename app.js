@@ -109,13 +109,20 @@
     SERVER COMMUNICATION
  ========================= */
  async function postToWorker(payload) {
-   const res = await fetch(WORKER_API, {
-     method: "POST",
-     headers: { "Content-Type": "application/json" },
-     body: JSON.stringify(payload),
-   });
-   return res.json();
- }
+    const res = await fetch(WORKER_API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Worker error ${res.status}: ${text}`);
+    }
+  
+    return res.json();
+  }
+  
 
 
   
@@ -154,15 +161,14 @@
    await loadStoriesFromServer();
    if (isAutoBackupEnabled()) autoBackupDownloadSilent();
  }
- async function addStoryToToday(story) {
+ async function addStoryToToday(id) {
     return postToWorker({
       action: "add_story_today",
-      payload: {
-        id: story.id,
-        tmpId: story.tmpId,
-      },
+      payload: { id },
     });
+    
   }
+
   
   
  async function updateStoryOnServer(id, updates) {
@@ -669,6 +675,7 @@
    // Add buttons wiring (delegation)
    const out = $("ai-output");
    if (out) {
+    out.onclick = null;
     out.onclick = async (e) => {
         const btn = e.target.closest("button[data-add='1']");
         if (!btn) return;
@@ -686,10 +693,18 @@
           (x) => String(x.tmpId || x.id) === String(tmp)
         );
         if (!chosen) return;
-      
+        const title = (chosen.title || chosen.name || "").trim();
+
+        if (!title) {
+          btn.textContent = "❌ عنوان غير صالح";
+          btn.disabled = false;
+          btn.dataset.loading = "0";
+          return;
+        }
+        
         const normalized = normalizeStoryObject(
           {
-            title: chosen.title || chosen.name || "",
+            title: title,
             category: chosen.category || "",
             type: chosen.type || "long",
             score: Number(chosen.score ?? 80),
@@ -704,6 +719,7 @@
           },
           chosen.type || "long"
         );
+        
       
         // 1️⃣ أضف القصة للسيرفر
         await addStoryToServer(normalized);
@@ -715,7 +731,7 @@
       
         // 3️⃣ علّمها قصة اليوم
         if (added?.id) {
-          await addStoryToToday(added);
+          await addStoryToToday(added.id);
         }
       
         // 4️⃣ شكليًا نقول تم
