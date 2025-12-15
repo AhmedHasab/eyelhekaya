@@ -746,12 +746,13 @@
    setHtml($("ai-output"), "<p>⏳ جاري جلب أفضل تريندات للفيديو الطويل...</p>");
  
    const data = await postToWorker({
-     action: "get_trends_long",
-     payload: {
-       aiCache: isAiCacheEnabled(),
-       windowDays: 120,
-     },
-   });
+    action: "get_trends_long",
+    payload: {
+      source: "user",          // 🔴 مهم جدًا
+      aiCache: isAiCacheEnabled(),
+      windowDays: 120,
+    },
+  });
  
    lastAIResults = Array.isArray(data.results) ? data.results : [];
    renderAIResultCards(lastAIResults, "تريند فيديو طويل");
@@ -788,21 +789,31 @@
  
    // Worker may provide “best 10 weighted” — we request it if supported, else local random fallback
    let data = null;
+
    try {
      data = await postToWorker({
        action: "pick_random_long",
-       payload: { aiCache: isAiCacheEnabled() },
+       payload: {
+         source: "user",          // 🔴 إجباري عشان الوركر ينفذ البحث
+         aiCache: isAiCacheEnabled(),
+         windowDays: 120          // توضيح نطاق البحث (اختياري لكن منطقي)
+       },
      });
-   } catch {}
- 
+   } catch (e) {
+     console.error("pick_random_long error:", e);
+   }
+   
    if (data && Array.isArray(data.results) && data.results.length) {
      lastAIResults = data.results;
-     renderAIResultCards(lastAIResults, "أفضل 10 من المسجل");
+   
+     // 👇 الاسم يعكس الحقيقة (15 = 10 long + 5 reels)
+     renderAIResultCards(lastAIResults, "أفضل 15 من المسجل");
+   
    } else {
+     // fallback أخير (نادر جدًا)
      const pick = longStories[Math.floor(Math.random() * longStories.length)];
      showStoryDetails(pick.id);
-   }
- }
+   }   
  
  async function handleUpdateTrendsAll() {
    setHtml($("ai-output"), "<p>⏳ جاري تحديث التريندات (دفعة واحدة) ...</p>");
