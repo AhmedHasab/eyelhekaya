@@ -809,11 +809,11 @@
      // 👇 الاسم يعكس الحقيقة (15 = 10 long + 5 reels)
      renderAIResultCards(lastAIResults, "أفضل 15 من المسجل");
    
-   } else {
-     // fallback أخير (نادر جدًا)
-     const pick = longStories[Math.floor(Math.random() * longStories.length)];
-     showStoryDetails(pick.id);
-   }   
+    } else {
+        const pick = longStories[Math.floor(Math.random() * longStories.length)];
+        showStoryDetails(pick.id);
+      }
+    }
  
  async function handleUpdateTrendsAll() {
    setHtml($("ai-output"), "<p>⏳ جاري تحديث التريندات (دفعة واحدة) ...</p>");
@@ -1070,5 +1070,3 @@ document.addEventListener("DOMContentLoaded", () => {
   
   // 🚀 شغّل التطبيق
   bootstrapApp();
-  
-  
