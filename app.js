@@ -1063,7 +1063,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
   
-    reelsBtn.onclick = handlePickReelsPro;
+    reelsBtn.onclick = handlePickTrendShortReels;
 
 
   });
