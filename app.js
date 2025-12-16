@@ -654,10 +654,24 @@
            <div class="trend-rank">#${idx + 1} — ${escapeHtml(modeLabel)}</div>
            <div class="trend-title">${title}</div>
            <div class="trend-meta">
-             <b>Country:</b> ${country} |
-             <b>Source:</b> ${source} |
-             <b>Type:</b> ${type}
-           </div>
+           <b>Country:</b> ${country} |
+           <b>Source:</b> ${source} |
+           <b>Type:</b> ${type}
+         </div>
+         
+         <div class="trend-meta">
+           <b>Domain:</b> ${escapeHtml(r.domain || "-")}
+         </div>
+         
+         <div class="trend-meta">
+           <b>Link:</b> 
+           <a href="${escapeHtml(r.url || r.link || r.href || "#")}" 
+              target="_blank" 
+              style="color:#1a73e8; text-decoration:underline;">
+              اضغط هنا لزيارة المصدر
+           </a>
+         </div>
+         
            <div class="trend-scores">
              <b>Score:</b> ${score} |
              <b>Trend:</b> ${trendScore} |
