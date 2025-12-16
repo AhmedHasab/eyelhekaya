@@ -132,7 +132,7 @@ body {
 
 /* إدارة القصص */
 textarea {
-  width: 100%;
+  width: 50%;
   resize: vertical;
   padding: 10px;
   border-radius: 12px;
