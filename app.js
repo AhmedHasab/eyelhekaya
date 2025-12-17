@@ -998,7 +998,7 @@ async function bootstrapApp() {
     }
   
     // 2️⃣ ترحيل stories.json → Worker (مرة واحدة فقط)
-   if (localStorage.getItem(MIGRATION_FLAG) !== "1") {
+   if (true) {
       try {
         console.log("⏳ Bootstrapping: loading stories.json ...");
   
@@ -1084,5 +1084,6 @@ document.addEventListener("DOMContentLoaded", () => {
   
   // 🚀 شغّل التطبيق
   bootstrapApp();
+
 
 
