@@ -332,7 +332,7 @@ ${favoriteIds.has(String(story.id)) ? "⭐ مفضلة" : "☆ مفضلة"}
     if (favBtn) {
       const favId = favBtn.getAttribute("data-fav-id");
       await addToFavorites(favId);
-      favBtn.textContent = "⭐ تمت";
+
       return;
     }
     
@@ -472,6 +472,12 @@ ${favoriteIds.has(String(story.id)) ? "⭐ مفضلة" : "☆ مفضلة"}
  async function handleManualAddOrEdit() {
    const title = ($("manual-name")?.value || "").trim();
    if (!title) return;
+
+   const selectedType =
+  typeof getSelectedStoryType === "function"
+    ? getSelectedStoryType()
+    : "long";
+
  
    const story = normalizeStoryObject(
      {
@@ -482,7 +488,7 @@ ${favoriteIds.has(String(story.id)) ? "⭐ مفضلة" : "☆ مفضلة"}
        source: "manual",
        country: "",
      },
-     "long"
+     selectedType // ✅ long أو short
    );
  
    if (editingStoryId) {
@@ -756,7 +762,10 @@ document.getElementById("categories-dropdown")?.classList.add("hidden");
            </div>
            <div class="trend-meta"><b>Notes:</b> ${notes}</div>
            <button class="add-btn" data-add="1" data-tmp="${tmp}">➕ أضف إلى قصة اليوم</button>
-           <button class="fav-btn" data-fav-id="${r.id || tmp}">⭐ مفضلة</button>
+           <button class="fav-btn ${favoriteIds.has(String(r.id || tmp)) ? "active" : ""}"
+        data-fav-id="${r.id || tmp}">
+${favoriteIds.has(String(r.id || tmp)) ? "⭐ مفضلة" : "☆ مفضلة"}
+</button>
          </div>
        `;
      })
@@ -773,7 +782,7 @@ document.getElementById("categories-dropdown")?.classList.add("hidden");
         if (favBtn) {
           const favId = favBtn.getAttribute("data-fav-id");
           await addToFavorites(favId);
-          favBtn.textContent = "⭐ تمت الإضافة";
+          
           return;
         };
         const btn = e.target.closest("button[data-add='1']");
@@ -851,20 +860,22 @@ document.getElementById("categories-dropdown")?.classList.add("hidden");
 async function addToFavorites(storyId) {
     if (!storyId) return;
   
-    await postToWorker({
+    const res = await postToWorker({
       action: "add_favorite",
       payload: { id: storyId },
     });
   
-    // ✅ تحديث الحالة المحلية فورًا
-    favoriteIds.add(String(storyId));
+    if (!res || !Array.isArray(res.ids)) return;
   
-    // ✅ إعادة رسم الجداول
+    // ✅ السيرفر هو مصدر الحقيقة
+    favoriteIds = new Set(res.ids.map(String));
+  
+    // ✅ إعادة رسم فورية
     renderStoriesTables($("stories-search")?.value || "");
   }
   
+  
 
- 
  async function handlePickTodayTrendLong() {
    setHtml($("ai-output"), "<p>⏳ جاري جلب أفضل تريندات للفيديو الطويل...</p>");
  
