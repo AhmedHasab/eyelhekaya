@@ -102,6 +102,19 @@
     اختر فئة واحدة أو أكثر
   </small>
 </div>
+<div class="manual-cell">
+  <label>نوع المحتوى</label>
+
+  <label>
+    <input type="radio" name="story-type" value="long" checked>
+    🎬 قصة طويلة
+  </label>
+
+  <label>
+    <input type="radio" name="story-type" value="short">
+    ⚡ قصة قصيرة (ريلز)
+  </label>
+</div>
 
           <div class="manual-cell">
             <label>تقييمك الشخصي (الدرجة)</label>
@@ -204,6 +217,28 @@
   </div>
 <!-- سكريبت التحكم في الفئات (Categories) -->
 <script>
+  
+async function toggleFavorite(id) {
+  const res = await postToWorker({
+    action: "add_favorite",
+    payload: { id }
+  });
+
+  if (!res.ok) return;
+
+  // 🔴 المهم هنا
+  FAVORITE_IDS = res.ids;   // تحديث الحالة فورًا
+
+  renderAllTables();        // إعادة رسم كل الجداول
+}
+// اختيار قصة طويله او قصيرة 
+  function getSelectedStoryType() {
+  const el = document.querySelector(
+    "input[name='story-type']:checked"
+  );
+  return el ? el.value : "long";
+}
+  
   function setCategoriesSelection(categories = []) {
     document
       .querySelectorAll("#categories-dropdown input[type='checkbox']")
