@@ -145,6 +145,14 @@
 ></textarea>
         </div>
 
+         <!-- زر المفضلة -->
+        <div class="table-toolbar">
+  <button id="btn-toggle-favorites" class="btn secondary small">
+    ⭐ عرض المفضلة
+   </button>
+            </div>
+
+
         <!-- جدول القصص -->
         <div class="table-wrapper">
           <table id="stories-table">
@@ -304,7 +312,11 @@
   background: #f7f7f7;
   border-radius: 4px;
 }
-
+.table-toolbar {
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: flex-start;
+}
 .categories-dropdown {
   margin-top: 6px;
   padding: 10px;
