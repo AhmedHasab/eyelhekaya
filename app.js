@@ -851,18 +851,19 @@ document.getElementById("categories-dropdown")?.classList.add("hidden");
 async function addToFavorites(storyId) {
     if (!storyId) return;
   
-    try {
-      await postToWorker({
-        action: "add_favorite",
-        payload: { id: storyId },
-      });
+    await postToWorker({
+      action: "add_favorite",
+      payload: { id: storyId },
+    });
   
-      console.log("⭐ Added to favorites:", storyId);
-    } catch (e) {
-      console.error("❌ Favorite error:", e);
-    }
+    // ✅ تحديث الحالة المحلية فورًا
+    favoriteIds.add(String(storyId));
+  
+    // ✅ إعادة رسم الجداول
+    renderStoriesTables($("stories-search")?.value || "");
   }
   
+
  
  async function handlePickTodayTrendLong() {
    setHtml($("ai-output"), "<p>⏳ جاري جلب أفضل تريندات للفيديو الطويل...</p>");
