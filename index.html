@@ -198,7 +198,24 @@
     </main>
 
   </div>
+<!-- سكريبت التحكم في الفئات (Categories) -->
+<script>
+  function setCategoriesSelection(categories = []) {
+    document
+      .querySelectorAll("#categories-dropdown input[type='checkbox']")
+      .forEach(cb => {
+        cb.checked = categories.includes(cb.value);
+      });
+  }
 
+  function clearCategoriesSelection() {
+    document
+      .querySelectorAll("#categories-dropdown input[type='checkbox']")
+      .forEach(cb => {
+        cb.checked = false;
+      });
+  }
+</script>
   <script>
   // فتح / قفل القائمة
   document.getElementById("toggle-categories")?.addEventListener("click", () => {
