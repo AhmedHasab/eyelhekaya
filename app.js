@@ -353,13 +353,10 @@
    if (!s) return;
  
    editingStoryId = s.id;
+   setCategoriesSelection(s.categories || []);
  
    if ($("manual-name")) $("manual-name").value = s.title || "";
-   if ($("manual-type") && Array.isArray(s.categories)) {
-    [...$("manual-type").options].forEach(opt => {
-      opt.selected = s.categories.includes(opt.value);
-    });
-  };
+  
    if ($("manual-score")) $("manual-score").value = Number(s.score ?? 80);
    if ($("manual-notes")) $("manual-notes").value = s.notes || "";
  
@@ -464,7 +461,12 @@
   } else {
     await addStoryToServer(story);
   }
-  
+  // 🧹 امسح الفئات المختارة بعد الحفظ
+clearCategoriesSelection();
+
+// اقفل القائمة
+document.getElementById("categories-dropdown")?.classList.add("hidden");
+
  
    // Clear inputs
    if ($("manual-name")) $("manual-name").value = "";
@@ -1118,6 +1120,5 @@ document.addEventListener("DOMContentLoaded", () => {
   
   // 🚀 شغّل التطبيق
   bootstrapApp();
-
 
 
