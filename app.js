@@ -203,7 +203,11 @@
    return {
      // Worker generates final `id`, but we keep optional localNumericId for your workflow
      title,
-     category: input.category ?? "",
+     categories: Array.isArray(input.categories)
+  ? input.categories
+  : input.category
+    ? [input.category]
+    : [],
      type: forcedType || input.type || "long", // "long" | "short"
      score: Number(input.score ?? 80),
      trendScore: Number(input.trendScore ?? 0),
@@ -262,7 +266,15 @@
      tr.innerHTML = `
        <td>${idx + 1}</td>
        <td>${escapeHtml(story.title || "")}</td>
-       <td>${escapeHtml(story.category || "-")}</td>
+       <td>
+  ${
+    escapeHtml(
+      Array.isArray(story.categories) && story.categories.length
+        ? story.categories.join(" ، ")
+        : story.category || "-"
+    )
+  }
+</td>
        <td>${Number(story.score ?? 0)}</td>
        <td>${Number(story.trendScore ?? 0)}</td>
        <td>${Number(story.finalScore ?? 0)}</td>
@@ -305,7 +317,12 @@
      <div class="trend-card">
        <div class="trend-title">${escapeHtml(s.title || "")}</div>
        <div class="trend-meta">
-         <b>Category:</b> ${escapeHtml(s.category || "-")} |
+       <b>Categories:</b> ${
+        Array.isArray(s.categories) && s.categories.length
+          ? escapeHtml(s.categories.join(" ، "))
+          : "-"
+      }
+|
          <b>Type:</b> ${escapeHtml(s.type || "long")} |
          <b>Done:</b> ${s.done ? "Yes" : "No"} |
          <b>Date:</b> ${escapeHtml(s.createdAt ? new Date(s.createdAt).toLocaleString() : "-")}
@@ -338,7 +355,11 @@
    editingStoryId = s.id;
  
    if ($("manual-name")) $("manual-name").value = s.title || "";
-   if ($("manual-type")) $("manual-type").value = s.category || "";
+   if ($("manual-type") && Array.isArray(s.categories)) {
+    [...$("manual-type").options].forEach(opt => {
+      opt.selected = s.categories.includes(opt.value);
+    });
+  };
    if ($("manual-score")) $("manual-score").value = Number(s.score ?? 80);
    if ($("manual-notes")) $("manual-notes").value = s.notes || "";
  
@@ -388,7 +409,7 @@
      const story = normalizeStoryObject(
        {
          title,
-         category: $("manual-type")?.value || "",
+         categories: getSelectedCategories(),
          score: Number($("manual-score")?.value || 80),
          notes: "",
          source: "raw",
@@ -415,7 +436,7 @@
    const story = normalizeStoryObject(
      {
        title,
-       category: $("manual-type")?.value || "",
+       categories: getSelectedCategories(),
        score: Number($("manual-score")?.value || 80),
        notes: $("manual-notes")?.value || "",
        source: "manual",
@@ -425,17 +446,25 @@
    );
  
    if (editingStoryId) {
-     // Update only fields you allow editing
-     await updateStoryOnServer(editingStoryId, {
-       title: story.title,
-       category: story.category,
-       score: story.score,
-       notes: story.notes,
-       // keep type/createdAt unless you want editable
-     });
-   } else {
-     await addStoryToServer(story);
-   }
+    // Update only fields you allow editing
+    await updateStoryOnServer(editingStoryId, {
+      title: story.title,
+  
+      // دعم الفئات المتعددة + التوافق مع القديم
+      categories: Array.isArray(story.categories)
+        ? story.categories
+        : story.category
+          ? [story.category]
+          : [],
+  
+      score: story.score,
+      notes: story.notes,
+      // keep type/createdAt unless you want editable
+    });
+  } else {
+    await addStoryToServer(story);
+  }
+  
  
    // Clear inputs
    if ($("manual-name")) $("manual-name").value = "";
@@ -722,7 +751,9 @@
         const normalized = normalizeStoryObject(
           {
             title: title,
-            category: chosen.category || "",
+            categories: chosen.categories || (
+                chosen.category ? [chosen.category] : []
+              ),              
             type: chosen.type || "long",
             score: Number(chosen.score ?? 80),
             trendScore: Number(chosen.trendScore ?? 0),
