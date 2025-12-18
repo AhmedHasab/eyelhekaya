@@ -651,7 +651,10 @@
  
        return `
          <div class="trend-card">
-           <div class="trend-rank">#${idx + 1} — ${escapeHtml(modeLabel)}</div>
+         <div class="trend-rank">
+         #${idx + 1} — 
+         ${type === "short" ? "🎬 ريلز" : "🎥 فيديو طويل"}
+       </div>       
            <div class="trend-title">${title}</div>
            <div class="trend-meta">
            <b>Country:</b> ${country} |
@@ -1084,7 +1087,6 @@ document.addEventListener("DOMContentLoaded", () => {
   
   // 🚀 شغّل التطبيق
   bootstrapApp();
-
 
 
 
