@@ -286,6 +286,7 @@
          <button class="btn small secondary" data-action="edit" data-id="${story.id}">✏️</button>
          <button class="btn small secondary" data-action="done" data-id="${story.id}">✅</button>
          <button class="btn small secondary" data-action="del" data-id="${story.id}">🗑</button>
+         <button class="btn small secondary" data-fav-id="${story.id}"> ☆ مفضلة </button>
        </td>
      `;
  
@@ -294,6 +295,16 @@
  
    // Delegate click handling inside tbody
    tbodyEl.onclick = async (e) => {
+
+    const favBtn = e.target.closest("button[data-fav-id]");
+    if (favBtn) {
+      const favId = favBtn.getAttribute("data-fav-id");
+      await addToFavorites(favId);
+      favBtn.textContent = "⭐ تمت";
+      return;
+    }
+    
+
      const btn = e.target.closest("button[data-action]");
      if (!btn) return;
      const id = btn.getAttribute("data-id");
@@ -713,6 +724,7 @@ document.getElementById("categories-dropdown")?.classList.add("hidden");
            </div>
            <div class="trend-meta"><b>Notes:</b> ${notes}</div>
            <button class="add-btn" data-add="1" data-tmp="${tmp}">➕ أضف إلى قصة اليوم</button>
+           <button class="fav-btn" data-fav-id="${r.id || tmp}">⭐ مفضلة</button>
          </div>
        `;
      })
@@ -725,6 +737,13 @@ document.getElementById("categories-dropdown")?.classList.add("hidden");
    if (out) {
     out.onclick = null;
     out.onclick = async (e) => {
+        const favBtn = e.target.closest("button.fav-btn");
+        if (favBtn) {
+          const favId = favBtn.getAttribute("data-fav-id");
+          await addToFavorites(favId);
+          favBtn.textContent = "⭐ تمت الإضافة";
+          return;
+        };
         const btn = e.target.closest("button[data-add='1']");
         if (!btn) return;
       
@@ -788,9 +807,30 @@ document.getElementById("categories-dropdown")?.classList.add("hidden");
         btn.textContent = "✅ تمت الإضافة";
       };
       
+
       
    }
  }
+
+ /* =========================
+   FAVORITES (GLOBAL)
+========================= */
+
+async function addToFavorites(storyId) {
+    if (!storyId) return;
+  
+    try {
+      await postToWorker({
+        action: "add_favorite",
+        payload: { id: storyId },
+      });
+  
+      console.log("⭐ Added to favorites:", storyId);
+    } catch (e) {
+      console.error("❌ Favorite error:", e);
+    }
+  }
+  
  
  async function handlePickTodayTrendLong() {
    setHtml($("ai-output"), "<p>⏳ جاري جلب أفضل تريندات للفيديو الطويل...</p>");
