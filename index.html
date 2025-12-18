@@ -78,22 +78,24 @@
 <div class="manual-cell">
   <label>نوع القصة (Category)</label>
 
-  <div id="manual-categories" class="categories-box">
-    <label><input type="checkbox" value="A"> A – المشاهير والنجوم</label>
-    <label><input type="checkbox" value="B"> B – السياسيين والزعماء والقادة</label>
-    <label><input type="checkbox" value="C"> C – المخابرات والجواسيس</label>
-    <label><input type="checkbox" value="D"> D – الجرائم والاختفاءات</label>
-    <label><input type="checkbox" value="E"> E – التاريخ العسكري</label>
-    <label><input type="checkbox" value="F"> F – الأنبياء والصحابة والغزوات</label>
-    <label><input type="checkbox" value="G"> G – العلماء والمفكرين</label>
+  <button type="button" id="toggle-categories" class="dropdown-btn">
+    اختر الفئات ▼
+  </button>
+
+  <div id="categories-dropdown" class="categories-dropdown hidden">
+    <label><input type="checkbox" value="A"> المشاهير والنجوم</label>
+    <label><input type="checkbox" value="B"> السياسيين والزعماء والقادة</label>
+    <label><input type="checkbox" value="C"> المخابرات والجواسيس</label>
+    <label><input type="checkbox" value="D"> الجرائم والاختفاءات</label>
+    <label><input type="checkbox" value="E"> التاريخ العسكري</label>
+    <label><input type="checkbox" value="F"> الأنبياء والصحابة والغزوات</label>
+    <label><input type="checkbox" value="G"> العلماء والمفكرين</label>
   </div>
 
   <small style="opacity:.7">
     اختر فئة واحدة أو أكثر
   </small>
 </div>
-
-
 
           <div class="manual-cell">
             <label>تقييمك الشخصي (الدرجة)</label>
@@ -181,6 +183,25 @@
 
   </div>
 
+  <script>
+  // فتح / قفل القائمة
+  document.getElementById("toggle-categories")?.addEventListener("click", () => {
+    document
+      .getElementById("categories-dropdown")
+      .classList.toggle("hidden");
+  });
+
+  // الدالة اللي app.js بيستخدمها
+  function getSelectedCategories() {
+    return Array.from(
+      document.querySelectorAll(
+        "#categories-dropdown input[type='checkbox']:checked"
+      )
+    ).map(cb => cb.value);
+  }
+</script>
+
+
   <script src="app.js"></script>
 <script>
 // تعطيل الكاش بالكامل بدون تعديل app.js
@@ -206,7 +227,33 @@
       navigator.serviceWorker.register("service-worker.js");
     }
   </script>
+<style> 
+.dropdown-btn {
+  padding: 6px 12px;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  background: #f7f7f7;
+  border-radius: 4px;
+}
 
+.categories-dropdown {
+  margin-top: 6px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  background: #fff;
+  max-width: 320px;
+}
+
+.categories-dropdown label {
+  display: block;
+  margin: 6px 0;
+  cursor: pointer;
+}
+
+.hidden {
+  display: none;
+}
+  </style>
 </body>
 
 </html>
