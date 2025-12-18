@@ -244,6 +244,52 @@
     }
   </script>
 <style> 
+.manual-input-row {
+  display: grid;
+  grid-template-columns: 2fr 1.2fr 0.6fr 2fr auto;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 15px;
+}
+.manual-cell {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.resizable-textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 42px;
+  padding: 8px 10px;
+  font-family: inherit;
+  font-size: 14px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+.resizable-textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 42px;
+  padding: 8px 10px;
+  font-family: inherit;
+  font-size: 14px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+#manual-notes {
+  min-height: 80px;
+}
+.search-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: center;
+  margin: 15px 0;
+}
+
+#stories-search {
+  max-width: 480px;
+}
 .dropdown-btn {
   padding: 6px 12px;
   cursor: pointer;
