@@ -75,10 +75,12 @@
             <input id="manual-name" type="text" placeholder="اكتب اسم القصة هنا" />
           </div>
 
-<div class="manual-cell">
-  <label>نوع القصة (Category) – يمكن اختيار أكثر من فئة</label>
+          <div class="manual-cell">
+  <label>نوع القصة (Category)</label>
 
-  <select id="manual-categories" multiple size="7">
+  <!-- الفئة الأساسية -->
+  <select id="manual-primary-category">
+    <option value="">اختر الفئة الأساسية</option>
     <option value="A">A – المشاهير والنجوم</option>
     <option value="B">B – السياسيين والزعماء والقادة</option>
     <option value="C">C – المخابرات والجواسيس</option>
@@ -88,10 +90,27 @@
     <option value="G">G – العلماء والمفكرين</option>
   </select>
 
+  <!-- زر إظهار الفئات الإضافية -->
+  <button type="button" id="toggle-extra-categories" class="small-btn">
+    ➕ فئات إضافية
+  </button>
+
+  <!-- الفئات الإضافية (مخفية) -->
+  <div id="extra-categories" style="display:none; margin-top:8px">
+    <label><input type="checkbox" value="A"> المشاهير والنجوم</label><br>
+    <label><input type="checkbox" value="B"> السياسيين والزعماء</label><br>
+    <label><input type="checkbox" value="C"> المخابرات والجواسيس</label><br>
+    <label><input type="checkbox" value="D"> الجرائم والاختفاءات</label><br>
+    <label><input type="checkbox" value="E"> التاريخ العسكري</label><br>
+    <label><input type="checkbox" value="F"> الأنبياء والصحابة والغزوات</label><br>
+    <label><input type="checkbox" value="G"> العلماء والمفكرين</label>
+  </div>
+
   <small style="opacity:.7">
-    (اضغط Ctrl أو ⌘ لاختيار أكثر من فئة)
+    يمكن اختيار فئة أساسية + أي عدد من الفئات الإضافية
   </small>
 </div>
+
 
 
           <div class="manual-cell">
