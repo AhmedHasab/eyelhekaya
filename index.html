@@ -75,19 +75,24 @@
             <input id="manual-name" type="text" placeholder="اكتب اسم القصة هنا" />
           </div>
 
-          <div class="manual-cell">
-            <label>نوع القصة (Category)</label>
-            <select id="manual-type">
-              <option value="">اختر الفئة…</option>
-              <option value="A – المشاهير والنجوم">A – المشاهير والنجوم</option>
-              <option value="B – السياسيين والزعماء والقادة">B – السياسيين والزعماء والقادة</option>
-              <option value="C – المخابرات والجواسيس">C – المخابرات والجواسيس</option>
-              <option value="D – الجرائم والاختفاءات">D – الجرائم والاختفاءات</option>
-              <option value="E – التاريخ العسكري">E – التاريخ العسكري</option>
-              <option value="F – الأنبياء والصحابة والغزوات">F – الأنبياء والصحابة والغزوات</option>
-              <option value="G – العلماء والمفكرين">G – العلماء والمفكرين</option>
-            </select>
-          </div>
+<div class="manual-cell">
+  <label>نوع القصة (Category) – يمكن اختيار أكثر من فئة</label>
+
+  <select id="manual-categories" multiple size="7">
+    <option value="A">A – المشاهير والنجوم</option>
+    <option value="B">B – السياسيين والزعماء والقادة</option>
+    <option value="C">C – المخابرات والجواسيس</option>
+    <option value="D">D – الجرائم والاختفاءات</option>
+    <option value="E">E – التاريخ العسكري</option>
+    <option value="F">F – الأنبياء والصحابة والغزوات</option>
+    <option value="G">G – العلماء والمفكرين</option>
+  </select>
+
+  <small style="opacity:.7">
+    (اضغط Ctrl أو ⌘ لاختيار أكثر من فئة)
+  </small>
+</div>
+
 
           <div class="manual-cell">
             <label>تقييمك الشخصي (الدرجة)</label>
