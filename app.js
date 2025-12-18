@@ -24,6 +24,8 @@
  /* =========================
     GLOBAL STATE
  ========================= */
+ let favoriteIds = new Set();
+ let showFavoritesOnly = false;
  let stories = []; // source of truth = server
  let editingStoryId = null;
  let lastAIResults = null;
@@ -131,23 +133,41 @@
     LOAD STORIES (SERVER -> CACHE -> RENDER)
  ========================= */
  async function loadStoriesFromServer() {
-   try {
-     const data = await postToWorker({ action: "get_stories" });
- 
-     if (Array.isArray(data.stories)) {
-       stories = data.stories;
-       localStorage.setItem(LS_KEYS.STORIES_CACHE, JSON.stringify(stories)); // cache only
-     } else {
-       stories = JSON.parse(localStorage.getItem(LS_KEYS.STORIES_CACHE)) || [];
-     }
-   } catch (err) {
-     stories = JSON.parse(localStorage.getItem(LS_KEYS.STORIES_CACHE)) || [];
-   }
- 
-   syncMaxLocalIdFromStories(stories);
-   renderStoriesTables();
-   updateStatusPills();
- }
+    try {
+      // 1️⃣ القصص
+      const data = await postToWorker({ action: "get_stories" });
+  
+      if (Array.isArray(data.stories)) {
+        stories = data.stories;
+        localStorage.setItem(
+          LS_KEYS.STORIES_CACHE,
+          JSON.stringify(stories)
+        );
+      } else {
+        stories =
+          JSON.parse(localStorage.getItem(LS_KEYS.STORIES_CACHE)) || [];
+      }
+  
+      // 2️⃣ المفضلة (بعد القصص)
+      try {
+        const favRes = await postToWorker({ action: "get_favorites" });
+        favoriteIds = new Set((favRes?.ids || []).map(String));
+      } catch {
+        favoriteIds = new Set();
+      }
+  
+    } catch (err) {
+      stories =
+        JSON.parse(localStorage.getItem(LS_KEYS.STORIES_CACHE)) || [];
+      favoriteIds = new Set();
+    }
+  
+    // 3️⃣ render
+    syncMaxLocalIdFromStories(stories);
+    renderStoriesTables();
+    updateStatusPills();
+  }
+  
  
  /* =========================
     ADD / UPDATE / DELETE (SERVER TRUTH)
@@ -228,25 +248,34 @@
     - Optional short table: #short-stories-tbody (if you add it in index.html)
  ========================= */
  function renderStoriesTables(filterText = "") {
-   const q = normalizeArabic(filterText);
-   const longStories = stories.filter((s) => (s.type || "long") === "long");
-   const shortStories = stories.filter((s) => s.type === "short");
- 
-   const longFiltered = longStories.filter((s) =>
-     normalizeArabic(s.title || "").includes(q)
-   );
- 
-   const shortFiltered = shortStories.filter((s) =>
-     normalizeArabic(s.title || "").includes(q)
-   );
- 
-   renderTableBody($("stories-tbody"), longFiltered);
-   // Optional second table:
-   renderTableBody($("short-stories-tbody"), shortFiltered);
- 
-   // Also refresh status pills each render
-   updateStatusPills();
- }
+
+    const q = normalizeArabic(filterText);
+  
+    let filteredStories = stories.filter(s =>
+      normalizeArabic(s.title || "").includes(q)
+    );
+  
+    // ⭐ لو وضع عرض المفضلة فقط مفعّل
+    if (showFavoritesOnly) {
+      filteredStories = filteredStories.filter(s =>
+        favoriteIds.has(String(s.id))
+      );
+    }
+  
+    const longStories = filteredStories.filter(
+      s => (s.type || "long") === "long"
+    );
+  
+    const shortStories = filteredStories.filter(
+      s => s.type === "short"
+    );
+  
+    renderTableBody($("stories-tbody"), longStories);
+    renderTableBody($("short-stories-tbody"), shortStories);
+  
+    updateStatusPills();
+  }
+
  
  function renderTableBody(tbodyEl, list) {
    if (!tbodyEl) return;
@@ -286,7 +315,10 @@
          <button class="btn small secondary" data-action="edit" data-id="${story.id}">✏️</button>
          <button class="btn small secondary" data-action="done" data-id="${story.id}">✅</button>
          <button class="btn small secondary" data-action="del" data-id="${story.id}">🗑</button>
-         <button class="btn small secondary" data-fav-id="${story.id}"> ☆ مفضلة </button>
+         <button class="btn small secondary fav-btn ${favoriteIds.has(String(story.id)) ? "active" : ""}"
+        data-fav-id="${story.id}">
+${favoriteIds.has(String(story.id)) ? "⭐ مفضلة" : "☆ مفضلة"}
+</button>
        </td>
      `;
  
@@ -1002,7 +1034,13 @@ async function addToFavorites(storyId) {
       if (f) importStoriesFromFile(f);
       e.target.value = "";
     });
-  
+    $("btn-show-favorites")?.addEventListener("click", () => {
+        showFavoritesOnly = !showFavoritesOnly;
+        $("btn-show-favorites").textContent =
+          showFavoritesOnly ? "⭐ عرض الكل" : "⭐ عرض المفضلة";
+        renderStoriesTables($("stories-search")?.value || "");
+      });
+      
     // Search
     $("stories-search")?.addEventListener("input", handleSearchInput);
   }
