@@ -62,7 +62,7 @@
 حادثة طائرة مصر للطيران
 ..."></textarea><br>
 
-        <label class="block-label">✂️ الصق النص الخام للقصص (كل سطر = قصة):</label>
+        <label class="block-label">✂️ الصق النص الخام للقصص (كل سطر = قصة):</label><br>
 
 
 
@@ -73,7 +73,12 @@
 
           <div class="manual-cell">
             <label>اسم القصة</label>
-            <input id="manual-name" type="text" placeholder="اكتب اسم القصة هنا" />
+            <textarea
+  id="manual-name"
+  placeholder="اكتب اسم القصة هنا"
+  rows="2"
+  class="resizable-textarea"
+></textarea>
           </div>
 
 <div class="manual-cell">
@@ -105,7 +110,12 @@
 
           <div class="manual-cell">
             <label>ملاحظات / روابط</label>
-            <input id="manual-notes" type="text" placeholder="ملاحظة – رابط – كلمة مفتاحية" />
+            <textarea
+  id="manual-notes"
+  placeholder="ملاحظة – رابط – كلمة مفتاحية"
+  rows="4"
+  class="resizable-textarea"
+></textarea>
           </div>
 
           <div class="manual-cell manual-cell-action">
@@ -127,7 +137,12 @@
         <!-- شريط البحث -->
         <div class="search-row">
           <label>🔎 شريط بحث:</label>
-          <input id="stories-search" type="text" placeholder="اكتب للبحث في جميع القصص…" />
+          <textarea
+  id="stories-search"
+  placeholder="اكتب للبحث في جميع القصص…"
+  rows="2"
+  class="resizable-textarea"
+></textarea>
         </div>
 
         <!-- جدول القصص -->
