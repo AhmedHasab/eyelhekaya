@@ -1352,19 +1352,17 @@ async function handlePickReelsPro() {
    START APP
 ========================= */
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+    // ربط زر الريلز
     const reelsBtn = $("btn-pick-short");
+    if (reelsBtn) reelsBtn.onclick = handlePickTrendShortReels;
   
-    if (!reelsBtn) {
-      console.error("❌ btn-pick-short not found");
-      return;
-    }
+    // ✅ (اختياري) اربط سويتش API Mode لو موجود في الصفحة
+    wireApiModeSwitch();
   
-    reelsBtn.onclick = handlePickTrendShortReels;
-
-
+    // ✅ شغّل التطبيق بعد ما الـ DOM يبقى جاهز
+    await bootstrapApp();
   });
   
-  // 🚀 شغّل التطبيق
-  bootstrapApp();
+  
 
