@@ -380,32 +380,66 @@ tr.addEventListener("dragend", handleDragEnd);
  }
  let draggedStoryId = null;
 
+// =========================
+// AUTO SCROLL WHILE DRAGGING
+// =========================
+let autoScrollInterval = null;
+
+function startAutoScroll(e) {
+  const scrollZone = 80;   // px من أعلى/أسفل
+  const scrollSpeed = 15; // سرعة السكرول
+
+  const y = e.clientY;
+  const viewportHeight = window.innerHeight;
+
+  clearInterval(autoScrollInterval);
+
+  // أقرب container قابل للسكرول (مش window)
+  const scrollContainer =
+    document.querySelector(".stories-panel") || document.documentElement;
+  
+  if (y < scrollZone) {
+    autoScrollInterval = setInterval(() => {
+      scrollContainer.scrollBy(0, -scrollSpeed);
+    }, 16);
+  
+  } else if (y > viewportHeight - scrollZone) {
+    autoScrollInterval = setInterval(() => {
+      scrollContainer.scrollBy(0, scrollSpeed);
+    }, 16);
+  }
+  
+}
+
+function stopAutoScroll() {
+  clearInterval(autoScrollInterval);
+  autoScrollInterval = null;
+}
+
 function handleDragStart(e) {
   draggedStoryId = this.dataset.id;
   this.classList.add("dragging");
 }
 function handleDragEnd() {
     this.classList.remove("dragging");
+    stopAutoScroll(); // 👈 مهم جدًا
     document
       .querySelectorAll(".drag-over")
       .forEach(el => el.classList.remove("drag-over"));
   }
   
-
   function handleDragOver(e) {
     e.preventDefault();
-    if (!this.classList.contains("drag-over")) {
-      this.classList.add("drag-over");
-    }
-  }  
-
+    startAutoScroll(e); // 👈 ده اللي بيخلّي الصفحة تطلع وتنزل
+  }
+  
   async function handleDrop(e) {
     e.preventDefault();
   
     const targetId = this.dataset.id;
     if (!draggedStoryId || draggedStoryId === targetId) return;
   
-    // 👇 اشتغل على نسخة مرتبة فعليًا
+    // ترتيب فعلي حسب order
     const ordered = [...stories].sort(
       (a, b) => Number(a.order ?? 9999) - Number(b.order ?? 9999)
     );
@@ -419,31 +453,42 @@ function handleDragEnd() {
   
     if (draggedIndex === -1 || targetIndex === -1) return;
   
-    const target = ordered[targetIndex];
-    const prev   = ordered[targetIndex - 1];
-    const next   = ordered[targetIndex + 1];
+    // ⛔️ شيل العنصر المسحوب مؤقتًا
+    const draggedItem = ordered.splice(draggedIndex, 1)[0];
+  
+    // 📍 مكان الإدراج الجديد
+    const insertIndex =
+      draggedIndex < targetIndex ? targetIndex - 1 : targetIndex;
+  
+    const prev = ordered[insertIndex - 1] || null;
+    const next = ordered[insertIndex] || null;
   
     let newOrder;
   
-    // 👇 حساب order ذكي بين عنصرين
     if (prev && next) {
-      newOrder =
-        (Number(prev.order ?? targetIndex) +
-         Number(next.order ?? targetIndex + 1)) / 2;
+      const prevOrder = Number(prev.order ?? insertIndex);
+      const nextOrder = Number(next.order ?? insertIndex + 1);
+  
+      newOrder = Math.floor((prevOrder + nextOrder) / 2);
+  
+      if (newOrder <= prevOrder) {
+        newOrder = prevOrder + 1;
+      }
+  
     } else if (prev) {
-      newOrder = Number(prev.order ?? targetIndex) + 1;
+      newOrder = Number(prev.order ?? insertIndex) + 1;
+  
     } else if (next) {
-      newOrder = Number(next.order ?? 1) - 1;
+      newOrder = Math.max(1, Number(next.order ?? 1) - 1);
+  
     } else {
-      newOrder = targetIndex + 1;
+      newOrder = insertIndex + 1;
     }
   
     await updateStoryOnServer(draggedStoryId, { order: newOrder });
   
     draggedStoryId = null;
   }
-  
-  
 
  /* =========================
     DETAILS VIEW (👁)
@@ -504,7 +549,8 @@ function handleDragEnd() {
    }
   // عرض ترتيب القصة الحالي (لو موجود)
 if ($("manual-order")) {
-    $("manual-order").value = s.order ?? "";
+    $("manual-order").value =
+  Number.isFinite(s.order) ? Math.round(s.order) : "";
   }  
  }
  
@@ -581,6 +627,15 @@ if ($("manual-order")) {
     // اقرأ قيمة الترتيب مرة واحدة
     const orderInput = $("manual-order")?.value;
   
+    // 🧠 ترتيب نظيف وآمن (لا كسور – لا قيم سالبة – لا هبل)
+    let safeOrder = undefined;
+    if (orderInput !== "") {
+      const parsed = Number(orderInput);
+      if (Number.isInteger(parsed) && parsed > 0) {
+        safeOrder = parsed;
+      }
+    }
+  
     const story = normalizeStoryObject(
       {
         title,
@@ -590,7 +645,7 @@ if ($("manual-order")) {
         source: "manual",
         country: "",
       },
-      selectedType // long أو short
+      selectedType
     );
   
     if (editingStoryId) {
@@ -609,11 +664,9 @@ if ($("manual-order")) {
         notes: story.notes,
   
         // ✅ الترتيب:
-        // لو المستخدم كتب رقم → يتحدّث
-        // لو فاضي → ما نغيرش الترتيب القديم
-        order: orderInput !== ""
-          ? Number(orderInput)
-          : undefined,
+        // - لو المستخدم كتب رقم صحيح → يتحدث
+        // - لو فاضي أو غلط → لا نلمس الترتيب
+        order: safeOrder
       });
   
     } else {
@@ -621,7 +674,7 @@ if ($("manual-order")) {
       await addStoryToServer(story);
     }
   
-    // تنظيف الواجهة
+    // 🧹 تنظيف الواجهة
     clearCategoriesSelection();
     document.getElementById("categories-dropdown")?.classList.add("hidden");
   
