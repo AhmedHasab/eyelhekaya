@@ -269,6 +269,12 @@
     const shortStories = filteredStories.filter(
       s => s.type === "short"
     );
+    // 🔢 ترتيب يدوي للقصص (ينطبق على كل القصص)
+const getOrder = (s) => Number(s.order ?? 9999);
+
+longStories.sort((a, b) => getOrder(a) - getOrder(b));
+shortStories.sort((a, b) => getOrder(a) - getOrder(b));
+
   
     renderTableBody($("stories-tbody"), longStories);
     renderTableBody($("short-stories-tbody"), shortStories);
@@ -309,7 +315,25 @@
        <td>${Number(story.finalScore ?? 0)}</td>
        <td>${doneBadge}</td>
        <td>${escapeHtml(dateStr)}</td>
-       <td>${escapeHtml(story.notes || "")}</td>
+       <td>
+       ${
+         story.notes
+           ? story.notes
+               .split(/\s+/)
+               .map(word =>
+                 word.startsWith("http")
+                   ? `<a href="${escapeHtml(word)}"
+                         target="_blank"
+                         rel="noopener noreferrer"
+                         style="display:block;color:#1a73e8;text-decoration:underline;">
+                         🔗 فتح المصدر
+                      </a>`
+                   : escapeHtml(word)
+               )
+               .join(" ")
+           : "-"
+       }
+     </td>     
        <td class="table-actions">
          <button class="btn small secondary" data-action="view" data-id="${story.id}">👁</button>
          <button class="btn small secondary" data-action="edit" data-id="${story.id}">✏️</button>
@@ -406,6 +430,10 @@ ${favoriteIds.has(String(story.id)) ? "⭐ مفضلة" : "☆ مفضلة"}
    if ($("btn-add-manual")) {
      $("btn-add-manual").textContent = "💾 حفظ التعديل";
    }
+  // عرض ترتيب القصة الحالي (لو موجود)
+if ($("manual-order")) {
+    $("manual-order").value = s.order ?? "";
+  }  
  }
  
  function resetEditMode() {
@@ -470,59 +498,68 @@ ${favoriteIds.has(String(story.id)) ? "⭐ مفضلة" : "☆ مفضلة"}
     MANUAL ADD / SAVE EDIT
  ========================= */
  async function handleManualAddOrEdit() {
-   const title = ($("manual-name")?.value || "").trim();
-   if (!title) return;
-
-   const selectedType =
-  typeof getSelectedStoryType === "function"
-    ? getSelectedStoryType()
-    : "long";
-
- 
-   const story = normalizeStoryObject(
-     {
-       title,
-       categories: getSelectedCategories(),
-       score: Number($("manual-score")?.value || 80),
-       notes: $("manual-notes")?.value || "",
-       source: "manual",
-       country: "",
-     },
-     selectedType // ✅ long أو short
-   );
- 
-   if (editingStoryId) {
-    // Update only fields you allow editing
-    await updateStoryOnServer(editingStoryId, {
-      title: story.title,
+    const title = ($("manual-name")?.value || "").trim();
+    if (!title) return;
   
-      // دعم الفئات المتعددة + التوافق مع القديم
-      categories: Array.isArray(story.categories)
-        ? story.categories
-        : story.category
-          ? [story.category]
-          : [],
+    const selectedType =
+      typeof getSelectedStoryType === "function"
+        ? getSelectedStoryType()
+        : "long";
   
-      score: story.score,
-      notes: story.notes,
-      // keep type/createdAt unless you want editable
-    });
-  } else {
-    await addStoryToServer(story);
+    // اقرأ قيمة الترتيب مرة واحدة
+    const orderInput = $("manual-order")?.value;
+  
+    const story = normalizeStoryObject(
+      {
+        title,
+        categories: getSelectedCategories(),
+        score: Number($("manual-score")?.value || 80),
+        notes: $("manual-notes")?.value || "",
+        source: "manual",
+        country: "",
+      },
+      selectedType // long أو short
+    );
+  
+    if (editingStoryId) {
+      // ✅ تعديل قصة موجودة
+      await updateStoryOnServer(editingStoryId, {
+        title: story.title,
+  
+        // دعم الفئات المتعددة + التوافق مع القديم
+        categories: Array.isArray(story.categories)
+          ? story.categories
+          : story.category
+            ? [story.category]
+            : [],
+  
+        score: story.score,
+        notes: story.notes,
+  
+        // ✅ الترتيب:
+        // لو المستخدم كتب رقم → يتحدّث
+        // لو فاضي → ما نغيرش الترتيب القديم
+        order: orderInput !== ""
+          ? Number(orderInput)
+          : undefined,
+      });
+  
+    } else {
+      // ✅ إضافة قصة جديدة
+      await addStoryToServer(story);
+    }
+  
+    // تنظيف الواجهة
+    clearCategoriesSelection();
+    document.getElementById("categories-dropdown")?.classList.add("hidden");
+  
+    if ($("manual-name")) $("manual-name").value = "";
+    if ($("manual-notes")) $("manual-notes").value = "";
+    if ($("manual-order")) $("manual-order").value = "";
+  
+    resetEditMode();
   }
-  // 🧹 امسح الفئات المختارة بعد الحفظ
-clearCategoriesSelection();
-
-// اقفل القائمة
-document.getElementById("categories-dropdown")?.classList.add("hidden");
-
- 
-   // Clear inputs
-   if ($("manual-name")) $("manual-name").value = "";
-   if ($("manual-notes")) $("manual-notes").value = "";
-   resetEditMode();
- }
- 
+  
  /* =========================
     IMPORT / EXPORT (Advanced)
  ========================= */
@@ -1210,5 +1247,4 @@ document.addEventListener("DOMContentLoaded", () => {
   
   // 🚀 شغّل التطبيق
   bootstrapApp();
-
 
