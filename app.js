@@ -197,7 +197,6 @@
      payload: { id, updates },
    });
  
-   await loadStoriesFromServer();
    if (isAutoBackupEnabled()) autoBackupDownloadSilent();
  }
  
@@ -439,57 +438,34 @@ function handleDragEnd() {
     const targetId = this.dataset.id;
     if (!draggedStoryId || draggedStoryId === targetId) return;
   
-    // ترتيب فعلي حسب order
-    const ordered = [...stories].sort(
-      (a, b) => Number(a.order ?? 9999) - Number(b.order ?? 9999)
-    );
+    // 🔥 استخدم نفس الترتيب المعروض
+    const tbody = this.closest("tbody");
+
+const visibleStories = Array.from(
+  tbody.querySelectorAll("tr[data-id]")
+).map(tr =>
+        stories.find(s => String(s.id) === String(tr.dataset.id))
+      ).filter(Boolean);
   
-    const draggedIndex = ordered.findIndex(
-      s => String(s.id) === String(draggedStoryId)
-    );
-    const targetIndex = ordered.findIndex(
-      s => String(s.id) === String(targetId)
-    );
+    const from = visibleStories.findIndex(s => String(s.id) === String(draggedStoryId));
+    const to   = visibleStories.findIndex(s => String(s.id) === String(targetId));
   
-    if (draggedIndex === -1 || targetIndex === -1) return;
+    if (from === -1 || to === -1) return;
   
-    // ⛔️ شيل العنصر المسحوب مؤقتًا
-    const draggedItem = ordered.splice(draggedIndex, 1)[0];
+    const moved = visibleStories.splice(from, 1)[0];
+    visibleStories.splice(to, 0, moved);
   
-    // 📍 مكان الإدراج الجديد
-    const insertIndex =
-      draggedIndex < targetIndex ? targetIndex - 1 : targetIndex;
-  
-    const prev = ordered[insertIndex - 1] || null;
-    const next = ordered[insertIndex] || null;
-  
-    let newOrder;
-  
-    if (prev && next) {
-      const prevOrder = Number(prev.order ?? insertIndex);
-      const nextOrder = Number(next.order ?? insertIndex + 1);
-  
-      newOrder = Math.floor((prevOrder + nextOrder) / 2);
-  
-      if (newOrder <= prevOrder) {
-        newOrder = prevOrder + 1;
-      }
-  
-    } else if (prev) {
-      newOrder = Number(prev.order ?? insertIndex) + 1;
-  
-    } else if (next) {
-      newOrder = Math.max(1, Number(next.order ?? 1) - 1);
-  
-    } else {
-      newOrder = insertIndex + 1;
+    // ✅ إعادة ترقيم نظيفة 1,2,3,4
+    for (let i = 0; i < visibleStories.length; i++) {
+      await updateStoryOnServer(visibleStories[i].id, {
+        order: i + 1
+      });
     }
-  
-    await updateStoryOnServer(draggedStoryId, { order: newOrder });
-  
+  // ✅ أضف السطر ده
+await loadStoriesFromServer();
     draggedStoryId = null;
   }
-
+  
  /* =========================
     DETAILS VIEW (👁)
  ========================= */
@@ -548,10 +524,18 @@ function handleDragEnd() {
      $("btn-add-manual").textContent = "💾 حفظ التعديل";
    }
   // عرض ترتيب القصة الحالي (لو موجود)
-if ($("manual-order")) {
-    $("manual-order").value =
-  Number.isFinite(s.order) ? Math.round(s.order) : "";
-  }  
+  if ($("manual-order")) {
+    const ordered = [...stories].sort(
+      (a, b) => Number(a.order ?? 9999) - Number(b.order ?? 9999)
+    );
+  
+    const index = ordered.findIndex(
+      x => String(x.id) === String(s.id)
+    );
+  
+    $("manual-order").value = index !== -1 ? index + 1 : "";
+  }
+  
  }
  
  function resetEditMode() {
@@ -627,7 +611,6 @@ if ($("manual-order")) {
     // اقرأ قيمة الترتيب مرة واحدة
     const orderInput = $("manual-order")?.value;
   
-    // 🧠 ترتيب نظيف وآمن (لا كسور – لا قيم سالبة – لا هبل)
     let safeOrder = undefined;
     if (orderInput !== "") {
       const parsed = Number(orderInput);
@@ -648,30 +631,41 @@ if ($("manual-order")) {
       selectedType
     );
   
+    // =========================
+    // ✏️ تعديل قصة موجودة
+    // =========================
     if (editingStoryId) {
-      // ✅ تعديل قصة موجودة
       await updateStoryOnServer(editingStoryId, {
         title: story.title,
-  
-        // دعم الفئات المتعددة + التوافق مع القديم
         categories: Array.isArray(story.categories)
           ? story.categories
-          : story.category
-            ? [story.category]
-            : [],
-  
+          : [],
         score: story.score,
         notes: story.notes,
-  
-        // ✅ الترتيب:
-        // - لو المستخدم كتب رقم صحيح → يتحدث
-        // - لو فاضي أو غلط → لا نلمس الترتيب
-        order: safeOrder
+        order: safeOrder // لو undefined → مش هيلمسه
       });
   
-    } else {
-      // ✅ إضافة قصة جديدة
+      // 🔢 إعادة ترقيم بعد التعديل فقط
+      const reordered = [...stories].sort(
+        (a, b) => Number(a.order ?? 9999) - Number(b.order ?? 9999)
+      );
+  
+      for (let i = 0; i < reordered.length; i++) {
+        await updateStoryOnServer(reordered[i].id, {
+          order: i + 1
+        });
+      }
+  
+      await loadStoriesFromServer();
+  
+    } 
+    // =========================
+    // ➕ إضافة قصة جديدة
+    // =========================
+    else {
       await addStoryToServer(story);
+      // ❌ مفيش إعادة ترقيم هنا
+      // addStoryToServer بيعمل load لوحده
     }
   
     // 🧹 تنظيف الواجهة
@@ -684,6 +678,7 @@ if ($("manual-order")) {
   
     resetEditMode();
   }
+  
   
  /* =========================
     IMPORT / EXPORT (Advanced)
