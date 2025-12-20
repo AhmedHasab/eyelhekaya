@@ -55,7 +55,7 @@ function extractLinksFromText(text = "") {
     if (!text) return { links: [], plainText: "" };
   
     // Regex يلقط أغلب صيغ المواقع
-    const urlRegex = /\b((https?:\/\/)?(www\.)?[a-zA-Z0-9-]+\.[a-zA-Z]{2,})(\/\S*)?\b/gi;
+    const urlRegex = /\bhttps?:\/\/[^\s]+|\bwww\.[^\s]+|\b[a-zA-Z0-9-]+\.[a-zA-Z]{2,}[^\s]*/gi;
   
     const links = [];
     let plainText = text;
