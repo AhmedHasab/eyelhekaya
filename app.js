@@ -292,7 +292,11 @@ function extractLinksFromText(text = "") {
      country: input.country ?? "",
      createdAt: input.createdAt ?? input.added ?? now,
      analysis: input.analysis ?? null, // keep if worker sends analysis
-     localNumericId: Number(input.localNumericId ?? getNextLocalNumericId()),
+     localNumericId:
+     input.localNumericId !== undefined
+       ? Number(input.localNumericId)
+       : getNextLocalNumericId(),
+   
    };
  }
  
@@ -308,6 +312,13 @@ function extractLinksFromText(text = "") {
     let filteredStories = stories.filter(s =>
       normalizeArabic(s.title || "").includes(q)
     );
+    // ✅ ترتيب القصص حسب رقم التسلسل اليدوي
+filteredStories.sort((a, b) => {
+    const na = Number(a.localNumericId || 0);
+    const nb = Number(b.localNumericId || 0);
+    return na - nb;
+  });
+  
   
     // ⭐ لو وضع عرض المفضلة فقط مفعّل
     if (showFavoritesOnly) {
@@ -566,24 +577,28 @@ function resetEditMode() {
      },
      selectedType // ✅ long أو short
    );
- 
+   const manualOrderRaw = $("manual-order")?.value;
+const manualOrder =
+  manualOrderRaw && manualOrderRaw.trim() !== ""
+    ? Number(manualOrderRaw.replace(/[^\d]/g, ""))
+    : null;
+
    if (editingStoryId) {
     // Update only fields you allow editing
     await updateStoryOnServer(editingStoryId, {
-      title: story.title,
-  
-      // دعم الفئات المتعددة + التوافق مع القديم
-      categories: Array.isArray(story.categories)
-        ? story.categories
-        : story.category
-          ? [story.category]
-          : [],
-  
-      score: story.score,
-      notes: story.notes,
-      // keep type/createdAt unless you want editable
-      localNumericId: Number($("manual-order")?.value || story.localNumericId),
-    });
+        title: story.title,
+        categories: Array.isArray(story.categories)
+          ? story.categories
+          : story.category
+            ? [story.category]
+            : [],
+        score: story.score,
+        notes: story.notes,
+      
+        ...(manualOrder !== null
+          ? { localNumericId: manualOrder }
+          : {})
+      });
   } else {
     await addStoryToServer(story);
   }
