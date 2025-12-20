@@ -292,11 +292,7 @@ function extractLinksFromText(text = "") {
      country: input.country ?? "",
      createdAt: input.createdAt ?? input.added ?? now,
      analysis: input.analysis ?? null, // keep if worker sends analysis
-     localNumericId:
-     input.localNumericId !== undefined
-       ? Number(input.localNumericId)
-       : getNextLocalNumericId(),
-   
+     localNumericId: Number(input.localNumericId ?? getNextLocalNumericId()),
    };
  }
  
@@ -312,13 +308,6 @@ function extractLinksFromText(text = "") {
     let filteredStories = stories.filter(s =>
       normalizeArabic(s.title || "").includes(q)
     );
-    // ✅ ترتيب القصص حسب رقم التسلسل اليدوي
-filteredStories.sort((a, b) => {
-    const na = Number(a.localNumericId || 0);
-    const nb = Number(b.localNumericId || 0);
-    return na - nb;
-  });
-  
   
     // ⭐ لو وضع عرض المفضلة فقط مفعّل
     if (showFavoritesOnly) {
@@ -463,42 +452,20 @@ ${favoriteIds.has(String(story.id)) ? "⭐ مفضلة" : "☆ مفضلة"}
    editingStoryId = s.id;
    setCategoriesSelection(s.categories || []);
  
-   $("manual-name").value = s.title || "";
-   $("manual-score").value = Number(s.score ?? 80);
-   $("manual-notes").value = s.notes || "";
-  // ✅ إظهار خانة الترتيب
-  if ($("manual-order-wrapper")) {
-    $("manual-order-wrapper").style.display = "block";
-  }
-
-  if ($("manual-order")) {
-    $("manual-order").value = s.localNumericId ?? "";
-  }
-
-  if ($("btn-add-manual")) {
-    $("btn-add-manual").textContent = "💾 حفظ التعديل";
-  }
+   if ($("manual-name")) $("manual-name").value = s.title || "";
   
-}
-
-  
+   if ($("manual-score")) $("manual-score").value = Number(s.score ?? 80);
+   if ($("manual-notes")) $("manual-notes").value = s.notes || "";
  
-function resetEditMode() {
-    editingStoryId = null;
-  
-    $("btn-add-manual").textContent = "➕ إضافة قصة يدويًا";
-  
-    // ✅ إخفاء خانة الترتيب
-    if ($("manual-order-wrapper")) {
-      $("manual-order-wrapper").style.display = "none";
-    }
-  
-    if ($("manual-order")) {
-      $("manual-order").value = "";
-    }
-  }
-  
-  
+   if ($("btn-add-manual")) {
+     $("btn-add-manual").textContent = "💾 حفظ التعديل";
+   }
+ }
+ 
+ function resetEditMode() {
+   editingStoryId = null;
+   if ($("btn-add-manual")) $("btn-add-manual").textContent = "➕ إضافة قصة يدويًا";
+ }
  
  /* =========================
     DONE TOGGLE
@@ -577,28 +544,23 @@ function resetEditMode() {
      },
      selectedType // ✅ long أو short
    );
-   const manualOrderRaw = $("manual-order")?.value;
-const manualOrder =
-  manualOrderRaw && manualOrderRaw.trim() !== ""
-    ? Number(manualOrderRaw.replace(/[^\d]/g, ""))
-    : null;
-
+ 
    if (editingStoryId) {
     // Update only fields you allow editing
     await updateStoryOnServer(editingStoryId, {
-        title: story.title,
-        categories: Array.isArray(story.categories)
-          ? story.categories
-          : story.category
-            ? [story.category]
-            : [],
-        score: story.score,
-        notes: story.notes,
-      
-        ...(manualOrder !== null
-          ? { localNumericId: manualOrder }
-          : {})
-      });
+      title: story.title,
+  
+      // دعم الفئات المتعددة + التوافق مع القديم
+      categories: Array.isArray(story.categories)
+        ? story.categories
+        : story.category
+          ? [story.category]
+          : [],
+  
+      score: story.score,
+      notes: story.notes,
+      // keep type/createdAt unless you want editable
+    });
   } else {
     await addStoryToServer(story);
   }
@@ -1302,5 +1264,4 @@ document.addEventListener("DOMContentLoaded", () => {
   
   // 🚀 شغّل التطبيق
   bootstrapApp();
-
 
