@@ -88,11 +88,13 @@ function extractLinksFromText(text = "") {
           ? rawLink
           : `https://${rawLink}`;
   
-        parts.push(
-          `<a href="${escapeHtml(href)}" target="_blank" style="color:#1a73e8; text-decoration:underline;">
-            مصدر ${idx + 1}
-          </a>`
-        );
+          parts.push(
+            `<a href="${escapeHtml(href)}" target="_blank"
+               style="color:#1a73e8; text-decoration:none; font-weight:700;">
+               🔗 <span style="text-decoration:underline;">مصدر ${idx + 1}</span>
+             </a>`
+          );
+          
       });
     }
   
