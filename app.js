@@ -288,8 +288,10 @@ shortStories.sort((a, b) => getOrder(a) - getOrder(b));
  
    tbodyEl.innerHTML = "";
    list.forEach((story, idx) => {
-     const tr = document.createElement("tr");
- 
+    const tr = document.createElement("tr");
+    tr.draggable = true;
+    tr.dataset.id = story.id;
+    
      const doneBadge = story.done
        ? "<span class='badge-done'>✔</span>"
        : "<span class='badge-not-done'>✖</span>";
@@ -347,6 +349,10 @@ ${favoriteIds.has(String(story.id)) ? "⭐ مفضلة" : "☆ مفضلة"}
      `;
  
      tbodyEl.appendChild(tr);
+     tr.addEventListener("dragstart", handleDragStart);
+tr.addEventListener("dragover", handleDragOver);
+tr.addEventListener("drop", handleDrop);
+tr.addEventListener("dragend", handleDragEnd);
    });
  
    // Delegate click handling inside tbody
@@ -372,7 +378,73 @@ ${favoriteIds.has(String(story.id)) ? "⭐ مفضلة" : "☆ مفضلة"}
      if (action === "del") deleteStoryFromServer(id);
    };
  }
- 
+ let draggedStoryId = null;
+
+function handleDragStart(e) {
+  draggedStoryId = this.dataset.id;
+  this.classList.add("dragging");
+}
+function handleDragEnd() {
+    this.classList.remove("dragging");
+    document
+      .querySelectorAll(".drag-over")
+      .forEach(el => el.classList.remove("drag-over"));
+  }
+  
+
+  function handleDragOver(e) {
+    e.preventDefault();
+    if (!this.classList.contains("drag-over")) {
+      this.classList.add("drag-over");
+    }
+  }  
+
+  async function handleDrop(e) {
+    e.preventDefault();
+  
+    const targetId = this.dataset.id;
+    if (!draggedStoryId || draggedStoryId === targetId) return;
+  
+    // 👇 اشتغل على نسخة مرتبة فعليًا
+    const ordered = [...stories].sort(
+      (a, b) => Number(a.order ?? 9999) - Number(b.order ?? 9999)
+    );
+  
+    const draggedIndex = ordered.findIndex(
+      s => String(s.id) === String(draggedStoryId)
+    );
+    const targetIndex = ordered.findIndex(
+      s => String(s.id) === String(targetId)
+    );
+  
+    if (draggedIndex === -1 || targetIndex === -1) return;
+  
+    const target = ordered[targetIndex];
+    const prev   = ordered[targetIndex - 1];
+    const next   = ordered[targetIndex + 1];
+  
+    let newOrder;
+  
+    // 👇 حساب order ذكي بين عنصرين
+    if (prev && next) {
+      newOrder =
+        (Number(prev.order ?? targetIndex) +
+         Number(next.order ?? targetIndex + 1)) / 2;
+    } else if (prev) {
+      newOrder = Number(prev.order ?? targetIndex) + 1;
+    } else if (next) {
+      newOrder = Number(next.order ?? 1) - 1;
+    } else {
+      newOrder = targetIndex + 1;
+    }
+  
+    await updateStoryOnServer(draggedStoryId, { order: newOrder });
+  
+    draggedStoryId = null;
+  }
+  
+  
+
  /* =========================
     DETAILS VIEW (👁)
  ========================= */
