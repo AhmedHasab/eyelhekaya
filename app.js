@@ -460,11 +460,22 @@ ${favoriteIds.has(String(story.id)) ? "⭐ مفضلة" : "☆ مفضلة"}
    if ($("btn-add-manual")) {
      $("btn-add-manual").textContent = "💾 حفظ التعديل";
    }
+   // إظهار ترتيب القصة عند التعديل
+if ($("manual-order")) {
+    $("manual-order").style.display = "inline-block";
+    $("manual-order").value = s.localNumericId ?? "";
+  }
+  
  }
  
  function resetEditMode() {
    editingStoryId = null;
    if ($("btn-add-manual")) $("btn-add-manual").textContent = "➕ إضافة قصة يدويًا";
+   if ($("manual-order")) {
+    $("manual-order").style.display = "none";
+    $("manual-order").value = "";
+  }
+  
  }
  
  /* =========================
@@ -560,6 +571,7 @@ ${favoriteIds.has(String(story.id)) ? "⭐ مفضلة" : "☆ مفضلة"}
       score: story.score,
       notes: story.notes,
       // keep type/createdAt unless you want editable
+      localNumericId: Number($("manual-order")?.value || story.localNumericId),
     });
   } else {
     await addStoryToServer(story);
