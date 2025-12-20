@@ -197,6 +197,7 @@
      payload: { id, updates },
    });
  
+   await loadStoriesFromServer();
    if (isAutoBackupEnabled()) autoBackupDownloadSilent();
  }
  
@@ -268,12 +269,6 @@
     const shortStories = filteredStories.filter(
       s => s.type === "short"
     );
-    // 🔢 ترتيب يدوي للقصص (ينطبق على كل القصص)
-const getOrder = (s) => Number(s.order ?? 9999);
-
-longStories.sort((a, b) => getOrder(a) - getOrder(b));
-shortStories.sort((a, b) => getOrder(a) - getOrder(b));
-
   
     renderTableBody($("stories-tbody"), longStories);
     renderTableBody($("short-stories-tbody"), shortStories);
@@ -281,16 +276,32 @@ shortStories.sort((a, b) => getOrder(a) - getOrder(b));
     updateStatusPills();
   }
 
- 
+  function renderSourceLinks(text = "") {
+    if (!text) return "-";
+  
+    const urls = String(text).match(/https?:\/\/[^\s]+/gi);
+    if (!urls) return escapeHtml(text);
+  
+    return urls
+      .map(
+        (url, i) => `
+          <a href="${escapeHtml(url)}"
+             target="_blank"
+             class="source-link">
+             فتح المصدر ${urls.length > 1 ? i + 1 : ""}
+          </a>
+        `
+      )
+      .join(" ");
+  }
+  
  function renderTableBody(tbodyEl, list) {
    if (!tbodyEl) return;
  
    tbodyEl.innerHTML = "";
    list.forEach((story, idx) => {
-    const tr = document.createElement("tr");
-    tr.draggable = true;
-    tr.dataset.id = story.id;
-    
+     const tr = document.createElement("tr");
+ 
      const doneBadge = story.done
        ? "<span class='badge-done'>✔</span>"
        : "<span class='badge-not-done'>✖</span>";
@@ -316,25 +327,7 @@ shortStories.sort((a, b) => getOrder(a) - getOrder(b));
        <td>${Number(story.finalScore ?? 0)}</td>
        <td>${doneBadge}</td>
        <td>${escapeHtml(dateStr)}</td>
-       <td>
-       ${
-         story.notes
-           ? story.notes
-               .split(/\s+/)
-               .map(word =>
-                 word.startsWith("http")
-                   ? `<a href="${escapeHtml(word)}"
-                         target="_blank"
-                         rel="noopener noreferrer"
-                         style="display:block;color:#1a73e8;text-decoration:underline;">
-                         🔗 فتح المصدر
-                      </a>`
-                   : escapeHtml(word)
-               )
-               .join(" ")
-           : "-"
-       }
-     </td>     
+       <td>${renderSourceLinks(story.notes)}</td>
        <td class="table-actions">
          <button class="btn small secondary" data-action="view" data-id="${story.id}">👁</button>
          <button class="btn small secondary" data-action="edit" data-id="${story.id}">✏️</button>
@@ -348,10 +341,6 @@ ${favoriteIds.has(String(story.id)) ? "⭐ مفضلة" : "☆ مفضلة"}
      `;
  
      tbodyEl.appendChild(tr);
-     tr.addEventListener("dragstart", handleDragStart);
-tr.addEventListener("dragover", handleDragOver);
-tr.addEventListener("drop", handleDrop);
-tr.addEventListener("dragend", handleDragEnd);
    });
  
    // Delegate click handling inside tbody
@@ -377,95 +366,7 @@ tr.addEventListener("dragend", handleDragEnd);
      if (action === "del") deleteStoryFromServer(id);
    };
  }
- let draggedStoryId = null;
-
-// =========================
-// AUTO SCROLL WHILE DRAGGING
-// =========================
-let autoScrollInterval = null;
-
-function startAutoScroll(e) {
-  const scrollZone = 80;   // px من أعلى/أسفل
-  const scrollSpeed = 15; // سرعة السكرول
-
-  const y = e.clientY;
-  const viewportHeight = window.innerHeight;
-
-  clearInterval(autoScrollInterval);
-
-  // أقرب container قابل للسكرول (مش window)
-  const scrollContainer =
-    document.querySelector(".stories-panel") || document.documentElement;
-  
-  if (y < scrollZone) {
-    autoScrollInterval = setInterval(() => {
-      scrollContainer.scrollBy(0, -scrollSpeed);
-    }, 16);
-  
-  } else if (y > viewportHeight - scrollZone) {
-    autoScrollInterval = setInterval(() => {
-      scrollContainer.scrollBy(0, scrollSpeed);
-    }, 16);
-  }
-  
-}
-
-function stopAutoScroll() {
-  clearInterval(autoScrollInterval);
-  autoScrollInterval = null;
-}
-
-function handleDragStart(e) {
-  draggedStoryId = this.dataset.id;
-  this.classList.add("dragging");
-}
-function handleDragEnd() {
-    this.classList.remove("dragging");
-    stopAutoScroll(); // 👈 مهم جدًا
-    document
-      .querySelectorAll(".drag-over")
-      .forEach(el => el.classList.remove("drag-over"));
-  }
-  
-  function handleDragOver(e) {
-    e.preventDefault();
-    startAutoScroll(e); // 👈 ده اللي بيخلّي الصفحة تطلع وتنزل
-  }
-  
-  async function handleDrop(e) {
-    e.preventDefault();
-  
-    const targetId = this.dataset.id;
-    if (!draggedStoryId || draggedStoryId === targetId) return;
-  
-    // 🔥 استخدم نفس الترتيب المعروض
-    const tbody = this.closest("tbody");
-
-const visibleStories = Array.from(
-  tbody.querySelectorAll("tr[data-id]")
-).map(tr =>
-        stories.find(s => String(s.id) === String(tr.dataset.id))
-      ).filter(Boolean);
-  
-    const from = visibleStories.findIndex(s => String(s.id) === String(draggedStoryId));
-    const to   = visibleStories.findIndex(s => String(s.id) === String(targetId));
-  
-    if (from === -1 || to === -1) return;
-  
-    const moved = visibleStories.splice(from, 1)[0];
-    visibleStories.splice(to, 0, moved);
-  
-    // ✅ إعادة ترقيم نظيفة 1,2,3,4
-    for (let i = 0; i < visibleStories.length; i++) {
-      await updateStoryOnServer(visibleStories[i].id, {
-        order: i + 1
-      });
-    }
-  // ✅ أضف السطر ده
-await loadStoriesFromServer();
-    draggedStoryId = null;
-  }
-  
+ 
  /* =========================
     DETAILS VIEW (👁)
  ========================= */
@@ -523,19 +424,6 @@ await loadStoriesFromServer();
    if ($("btn-add-manual")) {
      $("btn-add-manual").textContent = "💾 حفظ التعديل";
    }
-  // عرض ترتيب القصة الحالي (لو موجود)
-  if ($("manual-order")) {
-    const ordered = [...stories].sort(
-      (a, b) => Number(a.order ?? 9999) - Number(b.order ?? 9999)
-    );
-  
-    const index = ordered.findIndex(
-      x => String(x.id) === String(s.id)
-    );
-  
-    $("manual-order").value = index !== -1 ? index + 1 : "";
-  }
-  
  }
  
  function resetEditMode() {
@@ -600,86 +488,59 @@ await loadStoriesFromServer();
     MANUAL ADD / SAVE EDIT
  ========================= */
  async function handleManualAddOrEdit() {
-    const title = ($("manual-name")?.value || "").trim();
-    if (!title) return;
+   const title = ($("manual-name")?.value || "").trim();
+   if (!title) return;
+
+   const selectedType =
+  typeof getSelectedStoryType === "function"
+    ? getSelectedStoryType()
+    : "long";
+
+ 
+   const story = normalizeStoryObject(
+     {
+       title,
+       categories: getSelectedCategories(),
+       score: Number($("manual-score")?.value || 80),
+       notes: $("manual-notes")?.value || "",
+       source: "manual",
+       country: "",
+     },
+     selectedType // ✅ long أو short
+   );
+ 
+   if (editingStoryId) {
+    // Update only fields you allow editing
+    await updateStoryOnServer(editingStoryId, {
+      title: story.title,
   
-    const selectedType =
-      typeof getSelectedStoryType === "function"
-        ? getSelectedStoryType()
-        : "long";
-  
-    // اقرأ قيمة الترتيب مرة واحدة
-    const orderInput = $("manual-order")?.value;
-  
-    let safeOrder = undefined;
-    if (orderInput !== "") {
-      const parsed = Number(orderInput);
-      if (Number.isInteger(parsed) && parsed > 0) {
-        safeOrder = parsed;
-      }
-    }
-  
-    const story = normalizeStoryObject(
-      {
-        title,
-        categories: getSelectedCategories(),
-        score: Number($("manual-score")?.value || 80),
-        notes: $("manual-notes")?.value || "",
-        source: "manual",
-        country: "",
-      },
-      selectedType
-    );
-  
-    // =========================
-    // ✏️ تعديل قصة موجودة
-    // =========================
-    if (editingStoryId) {
-      await updateStoryOnServer(editingStoryId, {
-        title: story.title,
-        categories: Array.isArray(story.categories)
-          ? story.categories
+      // دعم الفئات المتعددة + التوافق مع القديم
+      categories: Array.isArray(story.categories)
+        ? story.categories
+        : story.category
+          ? [story.category]
           : [],
-        score: story.score,
-        notes: story.notes,
-        order: safeOrder // لو undefined → مش هيلمسه
-      });
   
-      // 🔢 إعادة ترقيم بعد التعديل فقط
-      const reordered = [...stories].sort(
-        (a, b) => Number(a.order ?? 9999) - Number(b.order ?? 9999)
-      );
-  
-      for (let i = 0; i < reordered.length; i++) {
-        await updateStoryOnServer(reordered[i].id, {
-          order: i + 1
-        });
-      }
-  
-      await loadStoriesFromServer();
-  
-    } 
-    // =========================
-    // ➕ إضافة قصة جديدة
-    // =========================
-    else {
-      await addStoryToServer(story);
-      // ❌ مفيش إعادة ترقيم هنا
-      // addStoryToServer بيعمل load لوحده
-    }
-  
-    // 🧹 تنظيف الواجهة
-    clearCategoriesSelection();
-    document.getElementById("categories-dropdown")?.classList.add("hidden");
-  
-    if ($("manual-name")) $("manual-name").value = "";
-    if ($("manual-notes")) $("manual-notes").value = "";
-    if ($("manual-order")) $("manual-order").value = "";
-  
-    resetEditMode();
+      score: story.score,
+      notes: story.notes,
+      // keep type/createdAt unless you want editable
+    });
+  } else {
+    await addStoryToServer(story);
   }
-  
-  
+  // 🧹 امسح الفئات المختارة بعد الحفظ
+clearCategoriesSelection();
+
+// اقفل القائمة
+document.getElementById("categories-dropdown")?.classList.add("hidden");
+
+ 
+   // Clear inputs
+   if ($("manual-name")) $("manual-name").value = "";
+   if ($("manual-notes")) $("manual-notes").value = "";
+   resetEditMode();
+ }
+ 
  /* =========================
     IMPORT / EXPORT (Advanced)
  ========================= */
@@ -1352,17 +1213,20 @@ async function handlePickReelsPro() {
    START APP
 ========================= */
 
-document.addEventListener("DOMContentLoaded", async () => {
-    // ربط زر الريلز
+document.addEventListener("DOMContentLoaded", () => {
     const reelsBtn = $("btn-pick-short");
-    if (reelsBtn) reelsBtn.onclick = handlePickTrendShortReels;
   
-    // ✅ (اختياري) اربط سويتش API Mode لو موجود في الصفحة
-    wireApiModeSwitch();
+    if (!reelsBtn) {
+      console.error("❌ btn-pick-short not found");
+      return;
+    }
   
-    // ✅ شغّل التطبيق بعد ما الـ DOM يبقى جاهز
-    await bootstrapApp();
+    reelsBtn.onclick = handlePickTrendShortReels;
+
+
   });
   
-  
+  // 🚀 شغّل التطبيق
+  bootstrapApp();
+
 
