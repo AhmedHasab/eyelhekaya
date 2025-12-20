@@ -48,6 +48,58 @@
      .replaceAll('"', "&quot;")
      .replaceAll("'", "&#039;");
  }
+ // =========================
+// NOTES LINKS PARSER
+// =========================
+function extractLinksFromText(text = "") {
+    if (!text) return { links: [], plainText: "" };
+  
+    // Regex يلقط أغلب صيغ المواقع
+    const urlRegex = /\b((https?:\/\/)?(www\.)?[a-zA-Z0-9-]+\.[a-zA-Z]{2,})(\/\S*)?\b/gi;
+  
+    const links = [];
+    let plainText = text;
+  
+    plainText = plainText.replace(urlRegex, (match) => {
+      links.push(match);
+      return ""; // نشيل الرابط من النص
+    });
+  
+    return {
+      links,
+      plainText: plainText.trim()
+    };
+  }
+  function renderNotesCell(notesText = "") {
+    if (!notesText) return "-";
+  
+    const { links, plainText } = extractLinksFromText(notesText);
+  
+    const parts = [];
+  
+     // لو فيه نص عادي (عربي أو غيره)
+     if (plainText) {
+        parts.push(`<span>${escapeHtml(plainText)}</span>`);
+      }
+    // لو فيه روابط → نحولهم لمصادر
+    if (links.length) {
+      links.forEach((rawLink, idx) => {
+        const href = rawLink.startsWith("http")
+          ? rawLink
+          : `https://${rawLink}`;
+  
+        parts.push(
+          `<a href="${escapeHtml(href)}" target="_blank" style="color:#1a73e8; text-decoration:underline;">
+            مصدر ${idx + 1}
+          </a>`
+        );
+      });
+    }
+  
+  
+    return parts.join(" | ");
+  }
+    
  
  /* =========================
     ARABIC NORMALIZATION
@@ -276,25 +328,7 @@
     updateStatusPills();
   }
 
-  function renderSourceLinks(text = "") {
-    if (!text) return "-";
-  
-    const urls = String(text).match(/https?:\/\/[^\s]+/gi);
-    if (!urls) return escapeHtml(text);
-  
-    return urls
-      .map(
-        (url, i) => `
-          <a href="${escapeHtml(url)}"
-             target="_blank"
-             class="source-link">
-             فتح المصدر ${urls.length > 1 ? i + 1 : ""}
-          </a>
-        `
-      )
-      .join(" ");
-  }
-  
+ 
  function renderTableBody(tbodyEl, list) {
    if (!tbodyEl) return;
  
@@ -327,7 +361,7 @@
        <td>${Number(story.finalScore ?? 0)}</td>
        <td>${doneBadge}</td>
        <td>${escapeHtml(dateStr)}</td>
-       <td>${renderSourceLinks(story.notes)}</td>
+       <td>${renderNotesCell(story.notes || "")}</td>
        <td class="table-actions">
          <button class="btn small secondary" data-action="view" data-id="${story.id}">👁</button>
          <button class="btn small secondary" data-action="edit" data-id="${story.id}">✏️</button>
@@ -397,7 +431,7 @@ ${favoriteIds.has(String(story.id)) ? "⭐ مفضلة" : "☆ مفضلة"}
          <b>Country:</b> ${escapeHtml(s.country || "-")} |
          <b>Source:</b> ${escapeHtml(s.source || "-")}
        </div>
-       <div class="trend-meta"><b>Notes:</b> ${escapeHtml(s.notes || "-")}</div>
+       <div class="trend-meta"><b>Notes:</b> ${renderNotesCell(s.notes || "-")}  </div>
        <div class="trend-meta"><b>Analysis:</b> ${escapeHtml(JSON.stringify(s.analysis || "", null, 2) || "-")}</div>
      </div>
    `;
