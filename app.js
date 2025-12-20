@@ -452,31 +452,42 @@ ${favoriteIds.has(String(story.id)) ? "⭐ مفضلة" : "☆ مفضلة"}
    editingStoryId = s.id;
    setCategoriesSelection(s.categories || []);
  
-   if ($("manual-name")) $("manual-name").value = s.title || "";
-  
-   if ($("manual-score")) $("manual-score").value = Number(s.score ?? 80);
-   if ($("manual-notes")) $("manual-notes").value = s.notes || "";
- 
-   if ($("btn-add-manual")) {
-     $("btn-add-manual").textContent = "💾 حفظ التعديل";
-   }
-   // إظهار ترتيب القصة عند التعديل
-if ($("manual-order")) {
-    $("manual-order").style.display = "inline-block";
+   $("manual-name").value = s.title || "";
+   $("manual-score").value = Number(s.score ?? 80);
+   $("manual-notes").value = s.notes || "";
+  // ✅ إظهار خانة الترتيب
+  if ($("manual-order-wrapper")) {
+    $("manual-order-wrapper").style.display = "block";
+  }
+
+  if ($("manual-order")) {
     $("manual-order").value = s.localNumericId ?? "";
   }
-  
- }
- 
- function resetEditMode() {
-   editingStoryId = null;
-   if ($("btn-add-manual")) $("btn-add-manual").textContent = "➕ إضافة قصة يدويًا";
-   if ($("manual-order")) {
-    $("manual-order").style.display = "none";
-    $("manual-order").value = "";
+
+  if ($("btn-add-manual")) {
+    $("btn-add-manual").textContent = "💾 حفظ التعديل";
   }
   
- }
+}
+
+  
+ 
+function resetEditMode() {
+    editingStoryId = null;
+  
+    $("btn-add-manual").textContent = "➕ إضافة قصة يدويًا";
+  
+    // ✅ إخفاء خانة الترتيب
+    if ($("manual-order-wrapper")) {
+      $("manual-order-wrapper").style.display = "none";
+    }
+  
+    if ($("manual-order")) {
+      $("manual-order").value = "";
+    }
+  }
+  
+  
  
  /* =========================
     DONE TOGGLE
