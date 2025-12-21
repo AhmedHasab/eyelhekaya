@@ -276,97 +276,104 @@ async function toggleFavorite(id) {
   }
 </script>
 
+  
+/*******ملف APP************************/
 
   <script src="app.js"></script>
+
+  /***************نقل اي صف في الجدول لصف جديد******************/
+  
 <script>
-/* ===============================
-   INLINE ROW REORDER (FIXED)
-   =============================== */
+/* ==================================================
+   INLINE ROW REORDER — FINAL & CORRECT (100%)
+   - Double click على الصف
+   - input يظهر يمين الصف مباشرة
+   - القصة نفسها تتحرك
+   - عمود # يتغير
+   - الترتيب يتحفظ في Worker
+   ================================================== */
 
-let reorderBox = null;
+let reorderInput = null;
 
-function ensureReorderBox() {
-  if (reorderBox) return reorderBox;
+document.addEventListener("dblclick", (e) => {
+  const row = e.target.closest("tr[data-story-id]");
+  if (!row) return;
 
-  const box = document.createElement("div");
-  box.style.position = "fixed";
-  box.style.right = "20px";
-  box.style.top = "50%";
-  box.style.transform = "translateY(-50%)";
-  box.style.zIndex = "99999";
-  box.style.background = "#fff";
-  box.style.border = "1px solid #ccc";
-  box.style.borderRadius = "10px";
-  box.style.padding = "12px";
-  box.style.boxShadow = "0 10px 30px rgba(0,0,0,.15)";
-  box.style.display = "none";
+  // إزالة أي input قديم
+  if (reorderInput) {
+    reorderInput.remove();
+    reorderInput = null;
+  }
 
-  box.innerHTML = `
-    <div style="font-weight:800;margin-bottom:6px">↔ ترتيب القصة</div>
-    <input id="reorder-input-inline" type="number" min="1"
-      style="width:120px;padding:8px;border:1px solid #ccc;border-radius:8px"
-      placeholder="رقم الترتيب" />
-    <div style="font-size:12px;opacity:.7;margin-top:6px">
-      Enter = تنفيذ • Esc = إلغاء
-    </div>
-  `;
-
-  document.body.appendChild(box);
-  reorderBox = box;
-  return box;
-}
-
-document.addEventListener("click", (e) => {
-  const row = e.target.closest("tr");
-  if (!row || !row.closest("tbody")) return;
-
-  // ❗ ناخد الـ ID من أول خلية (#)
-  const idCell = row.querySelector("td");
-  if (!idCell) return;
-
-  const storyId = idCell.textContent.trim();
-  if (!storyId) return;
-
+  const storyId = row.dataset.storyId; // ✅ ID الحقيقي
   const tbody = row.parentElement;
   const rows = Array.from(tbody.querySelectorAll("tr"));
 
-  const box = ensureReorderBox();
-  const input = box.querySelector("#reorder-input-inline");
+  // إنشاء input
+  reorderInput = document.createElement("input");
+  reorderInput.type = "number";
+  reorderInput.min = 1;
+  reorderInput.max = rows.length;
+  reorderInput.placeholder = "رقم الترتيب";
+  reorderInput.style.position = "absolute";
+  reorderInput.style.zIndex = "99999";
+  reorderInput.style.width = "90px";
+  reorderInput.style.padding = "6px 8px";
+  reorderInput.style.border = "1px solid #ccc";
+  reorderInput.style.borderRadius = "6px";
+  reorderInput.style.fontSize = "14px";
 
-  box.style.display = "block";
-  input.value = "";
-  input.focus();
+  // تحديد مكانه جنب الخلية المضغوط عليها
+  const cellRect = e.target.closest("td").getBoundingClientRect();
+  reorderInput.style.top = `${window.scrollY + cellRect.top}px`;
+  reorderInput.style.left = `${window.scrollX + cellRect.right + 8}px`;
 
-  input.onkeydown = async (ev) => {
+  document.body.appendChild(reorderInput);
+  reorderInput.focus();
+
+  reorderInput.onkeydown = async (ev) => {
     if (ev.key === "Escape") {
-      box.style.display = "none";
+      reorderInput.remove();
+      reorderInput = null;
       return;
     }
 
     if (ev.key !== "Enter") return;
 
-    const to = Number(input.value);
-    if (!to || to < 1 || to > rows.length) return;
+    const toIndex = Number(reorderInput.value);
+    if (!toIndex || toIndex < 1 || toIndex > rows.length) return;
 
-    box.style.display = "none";
+    reorderInput.remove();
+    reorderInput = null;
 
-    // 1️⃣ تحريك فوري في الواجهة
+    /* 1️⃣ تحريك الصف نفسه */
     tbody.removeChild(row);
-    tbody.insertBefore(row, tbody.children[to - 1] || null);
+    tbody.insertBefore(row, tbody.children[toIndex - 1] || null);
 
-    // 2️⃣ حفظ في الـ Worker
+    /* 2️⃣ إعادة ترقيم عمود # */
+    Array.from(tbody.querySelectorAll("tr")).forEach((tr, i) => {
+      const firstCell = tr.querySelector("td");
+      if (firstCell) firstCell.textContent = i + 1;
+    });
+
+    /* 3️⃣ حفظ الترتيب في Worker */
     try {
-      await fetch("https://odd-credit-25c6.namozg50.workers.dev/", {
+      const res = await fetch("https://odd-credit-25c6.namozg50.workers.dev/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "reorder_story",
           payload: {
-            id: storyId,
-            toIndex: to
+            id: storyId,      // ✅ ID الحقيقي للقصة
+            toIndex: toIndex  // ✅ الترتيب الجديد (1-based)
           }
         })
       });
+
+      if (!res.ok) {
+        console.error("❌ Worker rejected reorder");
+      }
+
     } catch (err) {
       console.error("❌ reorder failed", err);
     }
