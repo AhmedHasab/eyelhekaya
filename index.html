@@ -241,166 +241,83 @@
        - مدى: 18/12/25 - 20/12/25
        - لا يغيّر ترتيب السيرفر ولا يلمس البيانات
   ========================================== -->
-  <script>
-    // زر التجميع = مؤقت في الذاكرة فقط
-    let FORCE_GROUPING = false;
+<script>
+/* ================================
+   FORCE SMART GROUPING — WORKING
+   modifies STORIES ARRAY DIRECTLY
+================================ */
 
-    // ---- DATE SEARCH PARSER ----
-    function parseDateToken(tok) {
-      const m = String(tok || "").trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/);
-      if (!m) return null;
-      const dd = Number(m[1]), mm = Number(m[2]), yyRaw = String(m[3]);
-      if (!dd || !mm) return null;
-      let yyyy = Number(yyRaw);
-      if (yyRaw.length === 2) yyyy = 2000 + yyyy; // 25 => 2025
-      const d = new Date(yyyy, mm - 1, dd);
-      if (d.getFullYear() !== yyyy || d.getMonth() !== (mm - 1) || d.getDate() !== dd) return null;
-      d.setHours(0, 0, 0, 0);
-      return d;
-    }
+let FORCE_GROUPING = false;
 
-    function parseDateQuery(input) {
-      const q = String(input || "").trim();
+/* 15 كلمة */
+function words15(title) {
+  return normalizeArabic(title)
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 15);
+}
 
-      // range: dd/mm/yy - dd/mm/yy  (مع مسافات أو بدون)
-      const range = q.match(/^(\d{1,2}\/\d{1,2}\/(?:\d{2}|\d{4}))\s*-\s*(\d{1,2}\/\d{1,2}\/(?:\d{2}|\d{4}))$/);
-      if (range) {
-        const from = parseDateToken(range[1]);
-        const to = parseDateToken(range[2]);
-        if (from && to) {
-          const a = from.getTime(), b = to.getTime();
-          const min = new Date(Math.min(a, b));
-          const max = new Date(Math.max(a, b));
-          max.setHours(23, 59, 59, 999);
-          return { kind: "range", from: min, to: max };
-        }
+/* عدد الكلمات المشتركة */
+function overlap(a, b) {
+  const A = new Set(words15(a));
+  const B = new Set(words15(b));
+  let c = 0;
+  A.forEach(w => B.has(w) && c++);
+  return c;
+}
+
+/* تجميع فعلي */
+function groupStories(list) {
+  const used = new Set();
+  const out = [];
+
+  for (let i = 0; i < list.length; i++) {
+    const base = list[i];
+    if (used.has(base.id)) continue;
+
+    const group = [base];
+    used.add(base.id);
+
+    for (let j = 0; j < list.length; j++) {
+      const other = list[j];
+      if (used.has(other.id)) continue;
+
+      if (overlap(base.title, other.title) >= 2) {
+        group.push(other);
+        used.add(other.id);
       }
-
-      // single: dd/mm/yy
-      const single = parseDateToken(q);
-      if (single) {
-        const start = new Date(single.getTime());
-        const end = new Date(single.getTime());
-        end.setHours(23, 59, 59, 999);
-        return { kind: "single", from: start, to: end };
-      }
-
-      return null;
     }
 
-    function storyInDateRange(story, from, to) {
-      const ts = story?.createdAt ? new Date(story.createdAt).getTime() : NaN;
-      if (!Number.isFinite(ts)) return false;
-      return ts >= from.getTime() && ts <= to.getTime();
-    }
+    group.sort((a, b) =>
+      overlap(b.title, base.title) - overlap(a.title, base.title)
+    );
 
-    // ---- GROUPING (PIVOT ONLY / STRICT) ----
-    function words15(title) {
-      return normalizeArabic(title || "")
-        .split(" ")
-        .filter(Boolean)
-        .slice(0, 15);
-    }
+    out.push(...group);
+  }
 
-    function overlapCount(a, b) {
-      const A = new Set(words15(a));
-      const B = new Set(words15(b));
-      let c = 0;
-      A.forEach(w => { if (B.has(w)) c++; });
-      return c;
-    }
+  return out;
+}
 
-    // ✅ التجميع الإجباري: كل عنصر يتقارن مع Pivot فقط (مش chain)
-    // - محمد أحمد محمد يتلم مع محمد أحمد محمود (2 كلمات)
-    // - لكن مش هيشيل كل "محمد" لوحدها (لازم 2 كلمات على الأقل)
-    function clusterStoriesPivotOnly(list) {
-      const used = new Set();
-      const out = [];
+/* زر التجميع */
+document.getElementById("btn-force-group").addEventListener("click", () => {
+  FORCE_GROUPING = !FORCE_GROUPING;
 
-      for (let i = 0; i < list.length; i++) {
-        const pivot = list[i];
-        if (used.has(pivot.id)) continue;
+  const base = FORCE_GROUPING
+    ? groupStories([...stories])
+    : stories;
 
-        const group = [pivot];
-        used.add(pivot.id);
+  renderTableBody(
+    document.getElementById("stories-tbody"),
+    base.filter(s => (s.type || "long") === "long")
+  );
 
-        for (let j = 0; j < list.length; j++) {
-          const s = list[j];
-          if (used.has(s.id) || s.id === pivot.id) continue;
+  renderTableBody(
+    document.getElementById("short-stories-tbody"),
+    base.filter(s => s.type === "short")
+  );
+});
+</script>
 
-          if (overlapCount(pivot.title, s.title) >= 2) {
-            group.push(s);
-            used.add(s.id);
-          }
-        }
-
-        // ترتيب داخل المجموعة حسب أقرب حاجة للـ pivot
-        group.sort((a, b) =>
-          overlapCount(pivot.title, b.title) - overlapCount(pivot.title, a.title)
-        );
-
-        out.push(...group);
-      }
-
-      return out;
-    }
-
-    // ---- HOOK renderStoriesTables (يدعم النص + التاريخ + التجميع + المفضلة) ----
-    (function hookRender() {
-      const original = window.renderStoriesTables;
-      if (typeof original !== "function") return;
-
-      window.renderStoriesTables = function (filterText = "") {
-        const rawQ = String(filterText || "").trim();
-        const dateQ = parseDateQuery(rawQ);
-
-        let base = Array.isArray(stories) ? stories.slice() : [];
-
-        // فلترة (تاريخ أو نص)
-        if (rawQ) {
-          if (dateQ) {
-            base = base.filter(s => storyInDateRange(s, dateQ.from, dateQ.to));
-          } else {
-            const qNorm = normalizeArabic(rawQ);
-            base = base.filter(s => normalizeArabic(s.title || "").includes(qNorm));
-          }
-        }
-
-        // ⭐ المفضلة فقط (المتغيرات موجودة في app.js كـ globals)
-        if (typeof showFavoritesOnly !== "undefined" && showFavoritesOnly) {
-          base = base.filter(s => favoriteIds?.has?.(String(s.id)));
-        }
-
-        // تجميع إجباري مؤقت (عرض فقط)
-        if (FORCE_GROUPING) {
-          base = clusterStoriesPivotOnly(base);
-        }
-
-        // حافظ على ترتيب base عند فصل long/short
-        const longStories = base.filter(s => (s.type || "long") === "long");
-        const shortStories = base.filter(s => s.type === "short");
-
-        renderTableBody(document.getElementById("stories-tbody"), longStories);
-        renderTableBody(document.getElementById("short-stories-tbody"), shortStories);
-
-        // لو عندك pills
-        if (typeof updateStatusPills === "function") updateStatusPills();
-      };
-    })();
-
-    // زر التجميع
-    document.getElementById("btn-force-group")?.addEventListener("click", () => {
-      FORCE_GROUPING = !FORCE_GROUPING;
-      window.renderStoriesTables(document.getElementById("stories-search")?.value || "");
-    });
-
-    // أول رندر بعد ما scripts تخلص
-    document.addEventListener("DOMContentLoaded", () => {
-      setTimeout(() => {
-        window.renderStoriesTables(document.getElementById("stories-search")?.value || "");
-      }, 0);
-    });
-  </script>
 
   <!-- =========================================
      INLINE ROW REORDER — SAFE VERSION
