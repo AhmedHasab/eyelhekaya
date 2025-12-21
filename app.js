@@ -4,22 +4,7 @@
  * - LocalStorage: Cache/Fallback only
  * - Every interactive HTML element has a handler
  *************************************************/
- const TOKEN_KEY = "EH_TOKEN";
 
- if (!localStorage.getItem(TOKEN_KEY)) {
-   document.body.innerHTML = `
-     <div style="display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif">
-       <div>
-         <h2>🔒 أدخل كلمة المرور</h2>
-         <input type="password" id="pw" style="padding:8px;width:200px"/>
-         <button onclick="login()" style="padding:8px 12px">دخول</button>
-         <p id="err" style="color:red"></p>
-       </div>
-     </div>
-   `;
-   throw new Error("NOT_AUTHENTICATED");
- }
- 
   const WORKER_API = "https://odd-credit-25c6.namozg50.workers.dev/";
  
   const APP_VERSION = "1.0.0";
@@ -182,29 +167,21 @@
      SERVER COMMUNICATION
   ========================= */
   async function postToWorker(payload) {
-    const token = localStorage.getItem("EH_TOKEN");
-  
-    const res = await fetch(WORKER_API, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...payload,
-        payload: {
-          ...(payload.payload || {}),
-          token
-        }
-      }),
-    });
-  
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`Worker error ${res.status}: ${text}`);
-    }
-  
-    return res.json();
-  }
-  
+     const res = await fetch(WORKER_API, {
+       method: "POST",
+       headers: { "Content-Type": "application/json" },
+       body: JSON.stringify(payload),
+     });
    
+     if (!res.ok) {
+       const text = await res.text();
+       throw new Error(`Worker error ${res.status}: ${text}`);
+     }
+   
+     return res.json();
+   }
+   
+
   
   /* =========================
      LOAD STORIES (SERVER -> CACHE -> RENDER)
@@ -1363,27 +1340,5 @@
    
    // 🚀 شغّل التطبيق
    bootstrapApp();
- async function login() {
-   const password = document.getElementById("pw").value;
- 
-   const res = await fetch("https://odd-credit-25c6.namozg50.workers.dev/", {
-     method: "POST",
-     headers: { "Content-Type": "application/json" },
-     body: JSON.stringify({
-       action: "auth_password",
-       payload: { password }
-     })
-   });
- 
-   const data = await res.json();
- 
-   if (!data.ok) {
-     document.getElementById("err").textContent = "❌ باسورد غلط";
-     return;
-   }
- 
-   localStorage.setItem("EH_TOKEN", data.token);
-   location.reload();
- }
  
  
