@@ -167,6 +167,9 @@
           <button id="btn-show-favorites" class="btn secondary small">
          ⭐ عرض المفضلة
            </button>
+        <button id="btn-force-group" class="btn secondary" type="button">
+  🧩 تجميع متشابه (مؤقت)
+        </button>
         <!-- جدول القصص -->
         <div class="table-wrapper">
           <table id="stories-table">
@@ -291,6 +294,178 @@ function getSelectedCategories() {
 
 
   <script src="app.js"></script>
+
+
+  <script>
+  /*************************************************
+   * Force Similarity Grouping (VIEW ONLY)
+   * - index.html ONLY
+   * - Uses LocalStorage flag during session
+   * - Auto breaks on refresh via beforeunload
+   *************************************************/
+
+  const LS_FORCE_GROUP = "EH_FORCE_GROUP_VIEW";
+
+  // ✅ يكسر التجميع عند أي Refresh / Reload / Close
+  window.addEventListener("beforeunload", () => {
+    try { localStorage.removeItem(LS_FORCE_GROUP); } catch {}
+  });
+
+  function isForceGroupOn() {
+    try { return localStorage.getItem(LS_FORCE_GROUP) === "1"; } catch { return false; }
+  }
+
+  function setForceGroupOn(val) {
+    try {
+      if (val) localStorage.setItem(LS_FORCE_GROUP, "1");
+      else localStorage.removeItem(LS_FORCE_GROUP);
+    } catch {}
+  }
+
+  // نفس فكرة normalizeArabic عندك (نسخة خفيفة)
+  function normalizeArabicIndex(text = "") {
+    return String(text)
+      .replace(/[إأآا]/g, "ا")
+      .replace(/ى/g, "ي")
+      .replace(/ؤ/g, "و")
+      .replace(/ئ/g, "ي")
+      .replace(/ة/g, "ه")
+      .replace(/ـ/g, "")
+      .replace(/[^\u0600-\u06FF0-9\s]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  // مفتاح التشابه: كل ما زاد عدد الكلمات = تشابه أعلى (زي ما طلبت)
+  // هنستخدم أول 15 كلمة (تقدر تزود/تقلل)
+  function similarityKeyFromTitle(title, wordsCount = 15) {
+    return normalizeArabicIndex(title)
+      .split(" ")
+      .slice(0, wordsCount)
+      .join(" ");
+  }
+
+  // ✅ تجميع "عرضي" داخل الجدول عبر إعادة ترتيب <tr> فقط
+  // - لا نلمس stories ولا نعدل داتا
+  // - بنحافظ على ترتيب القصص داخل نفس المجموعة كما كان
+  function forceGroupTableBody(tbodyId) {
+    const tbody = document.getElementById(tbodyId);
+    if (!tbody) return;
+
+    const rows = Array.from(tbody.querySelectorAll("tr"));
+    if (!rows.length) return;
+
+    const items = rows.map((tr, idx) => {
+      const tds = tr.querySelectorAll("td");
+      const title = (tds[1]?.innerText || "").trim(); // العمود 2 = العنوان
+      return {
+        tr,
+        idx,
+        key: similarityKeyFromTitle(title, 15),
+      };
+    });
+
+    // Group by key (يحافظ على ترتيب أول ظهور للمجموعة)
+    const groupOrder = new Map(); // key -> firstIndex
+    for (const it of items) {
+      if (!groupOrder.has(it.key)) groupOrder.set(it.key, it.idx);
+    }
+
+    // Sort by:
+    // 1) first appearance of the group
+    // 2) then original row order inside the group
+    items.sort((a, b) => {
+      const ga = groupOrder.get(a.key);
+      const gb = groupOrder.get(b.key);
+      if (ga !== gb) return ga - gb;
+      return a.idx - b.idx;
+    });
+
+    // ✅ إعادة إدراج الصفوف بنفس العناصر (DOM move)
+    // ونضيف كلاس بصري لأول صف في كل مجموعة (اختياري)
+    let lastKey = null;
+    for (const it of items) {
+      it.tr.classList.remove("force-group-start");
+      if (it.key && it.key !== lastKey) {
+        it.tr.classList.add("force-group-start");
+        lastKey = it.key;
+      }
+      tbody.appendChild(it.tr);
+    }
+  }
+
+  function applyForceGroupingIfOn() {
+    if (!isForceGroupOn()) return;
+    forceGroupTableBody("stories-tbody");
+    forceGroupTableBody("short-stories-tbody");
+  }
+
+  // ✅ زر التشغيل/الإلغاء
+  function wireForceGroupButton() {
+    const btn = document.getElementById("btn-force-group");
+    if (!btn) return;
+
+    const syncText = () => {
+      btn.textContent = isForceGroupOn()
+        ? "🔁 إلغاء التجميع المؤقت"
+        : "🧩 تجميع متشابه (مؤقت)";
+    };
+
+    syncText();
+
+    btn.addEventListener("click", () => {
+      const next = !isForceGroupOn();
+      setForceGroupOn(next);
+      syncText();
+
+      // اعمل render طبيعي ثم طبّق grouping على DOM فقط
+      // renderStoriesTables موجودة في app.js (Global)
+      if (typeof window.renderStoriesTables === "function") {
+        const q = document.getElementById("stories-search")?.value || "";
+        window.renderStoriesTables(q);
+      } else {
+        // fallback: طبق على الموجود
+        applyForceGroupingIfOn();
+      }
+    });
+  }
+
+  // ✅ Hook: أي render يحصل من app.js → بعدها نطبق التجميع لو الفلاج ON
+  function hookRenderStoriesTables() {
+    if (typeof window.renderStoriesTables !== "function") return;
+
+    const original = window.renderStoriesTables;
+    window.renderStoriesTables = function (...args) {
+      const res = original.apply(this, args);
+      // بعد ما الجداول تترسم
+      applyForceGroupingIfOn();
+      return res;
+    };
+  }
+
+  // ✅ CSS اختياري لإظهار بداية كل مجموعة بشكل بسيط (مؤقت للعرض)
+  function injectForceGroupCss() {
+    const css = `
+      tr.force-group-start td {
+        border-top: 3px solid rgba(255,255,255,0.25);
+      }
+    `;
+    const style = document.createElement("style");
+    style.textContent = css;
+    document.head.appendChild(style);
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    injectForceGroupCss();
+    wireForceGroupButton();
+
+    // مهم: hook بعد تحميل app.js (هو محمّل قبله في index)
+    hookRenderStoriesTables();
+
+    // لو كان ON في نفس الجلسة (بدون refresh) وحدث render لأي سبب
+    applyForceGroupingIfOn();
+  });
+</script>
 
 <script>
 /* ==================================================
