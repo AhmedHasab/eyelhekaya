@@ -281,9 +281,9 @@ function getSelectedCategories() {
 
   <script src="app.js"></script>
 
-  <script>
+<script>
 /* ==================================================
-   INLINE ROW REORDER — FINAL SAFE VERSION
+   INLINE ROW REORDER — FINAL SAFE VERSION (FIXED)
 ================================================== */
 (() => {
   const WORKER_URL = "https://odd-credit-25c6.namozg50.workers.dev/";
@@ -297,14 +297,11 @@ function getSelectedCategories() {
     reorderInput = null;
   }
 
+  /* ✅ المصدر الوحيد الموثوق */
   function extractStoryId(row) {
-    if (row?.dataset?.storyId) return row.dataset.storyId;
-
-    const byDataId = row.querySelector("[data-id]");
-    if (byDataId?.dataset?.id) return byDataId.dataset.id;
-
-    const m = row.textContent.match(UUID_RE);
-    return m ? m[0] : "";
+    const id = row?.dataset?.storyId;
+    if (id && UUID_RE.test(id)) return id;
+    return "";
   }
 
   function renumber(tbody) {
@@ -320,7 +317,10 @@ function getSelectedCategories() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         action: "reorder_story",
-        payload: { id: String(id), toIndex: Number(toIndex) }
+        payload: {
+          id: String(id),
+          toIndex: Number(toIndex)
+        }
       })
     });
 
@@ -345,12 +345,13 @@ function getSelectedCategories() {
       const max = rows.length;
 
       const storyId = extractStoryId(row);
-      if (!UUID_RE.test(storyId)) {
-        alert("❌ لم يتم العثور على UUID صحيح للصف");
+      if (!storyId) {
+        alert("❌ هذا الصف لا يحتوي على storyId صحيح");
         return;
       }
 
       removeInput();
+
       reorderInput = document.createElement("input");
       reorderInput.type = "number";
       reorderInput.min = 1;
@@ -382,6 +383,7 @@ function getSelectedCategories() {
 
         const current = Array.from(tbody.querySelectorAll("tr"));
         const target = current[to - 1];
+
         tbody.removeChild(row);
         tbody.insertBefore(row, target);
 
