@@ -288,7 +288,12 @@ function extractLinksFromText(text = "") {
       // 2️⃣ المفضلة (بعد القصص)
       try {
         const favRes = await postToWorker({ action: "get_favorites" });
-        favoriteIds = new Set((favRes?.ids || []).map(String));
+        const favArr = Array.isArray(favRes?.favorites)
+        ? favRes.favorites
+        : [];
+      
+      favoriteIds = new Set(favArr.map(f => String(f.id)));
+      window.__FAVORITES_ORDER__ = favArr;      
       } catch {
         favoriteIds = new Set();
       }
@@ -416,15 +421,43 @@ function extractLinksFromText(text = "") {
       s => s.type === "short"
     );
   
+    // ⭐ وضع المفضلة → ترتيب يدوي فقط
+if (showFavoritesOnly) {
+    const favOrderMap = new Map(
+      (window.__FAVORITES_ORDER__ || []).map(f => [
+        String(f.id),
+        Number(f.order || 0)
+      ])
+    );
+  
+    const favLong = longStories
+      .filter(s => favOrderMap.has(String(s.id)))
+      .sort((a, b) =>
+        favOrderMap.get(String(a.id)) - favOrderMap.get(String(b.id))
+      );
+  
+    const favShort = shortStories
+      .filter(s => favOrderMap.has(String(s.id)))
+      .sort((a, b) =>
+        favOrderMap.get(String(a.id)) - favOrderMap.get(String(b.id))
+      );
+  
+    renderTableBody($("stories-tbody"), favLong);
+    renderTableBody($("short-stories-tbody"), favShort);
+  
+  } else {
+    // 🤖 الوضع العادي → ترتيب ذكي فقط
     renderTableBody(
-        $("stories-tbody"),
-        smartGroupByTitleSimilarity(longStories)
-      );
-      
-      renderTableBody(
-        $("short-stories-tbody"),
-        smartGroupByTitleSimilarity(shortStories)
-      );
+      $("stories-tbody"),
+      smartGroupByTitleSimilarity(longStories)
+    );
+  
+    renderTableBody(
+      $("short-stories-tbody"),
+      smartGroupByTitleSimilarity(shortStories)
+    );
+  }
+  
        
     updateStatusPills();
   }
