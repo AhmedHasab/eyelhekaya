@@ -436,6 +436,9 @@ ${favoriteIds.has(String(story.id)) ? "⭐ مفضلة" : "☆ مفضلة"}
    // Delegate click handling inside tbody
    tbodyEl.onclick = async (e) => {
 
+    const tr = e.target.closest("tr");
+if (!tr) return;
+
     // 1) مفضلة
     const favBtn = e.target.closest("button[data-fav-id]");
     if (favBtn) {
@@ -509,7 +512,7 @@ ${favoriteIds.has(String(story.id)) ? "⭐ مفضلة" : "☆ مفضلة"}
   };*/
   
     // أقصى يمين الصف (في الشاشة)
-    const r = tr.getBoundingClientRect();
+  /*  const r = tr.getBoundingClientRect();
     box.style.left = `${Math.min(window.innerWidth - 180, r.right + 10)}px`;
     box.style.top = `${Math.max(10, r.top)}px`;
     box.style.display = "block";
@@ -541,7 +544,7 @@ ${favoriteIds.has(String(story.id)) ? "⭐ مفضلة" : "☆ مفضلة"}
         hideReorderBox();
         await reorderStoryOnServer(box.dataset.id, to);
       }
-    };
+    };*/
   };
   
  }
