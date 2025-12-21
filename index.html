@@ -320,21 +320,15 @@ async function toggleFavorite(id) {
   flex-direction: column;
   justify-content: center;
 }
-#stories-table,
-#short-stories-table {
-    min-width: 1250px;   /* 👈 هذا هو الحد الأدنى الصحيح حسب الصورة */
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: fixed;
-}
-
 .table-wrapper {
-    overflow-x: auto;  /* يسمح بالسحب يمين/شمال عند الحاجة */
-    overflow-y: auto;
-    resize: vertical;  /* لو حابب تسحب رأسيًا */
-    min-height: 400px;
+    display: inline-block;   /* 👈 علشان العنصر يكبر بحرية */
+    resize: both;            /* 👈 سحب أفقي + رأسي */
+    overflow: auto;          /* 👈 مهم جداً للسحب */
+    min-width: 900px;        /* 👈 أقل عرض مفضل */
+    min-height: 300px;
+    max-width: none;         /* 👈 إزالة أي حدود للعرض */
 }
-
+  
 .resizable-textarea {
   width: 100%;
   resize: vertical;
