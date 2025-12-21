@@ -399,14 +399,13 @@ function extractLinksFromText(text = "") {
  ========================= */
 
  function renderStoriesTables(filterText = "") {
-
     const q = normalizeArabic(filterText);
   
     let filteredStories = stories.filter(s =>
       normalizeArabic(s.title || "").includes(q)
     );
   
-    // ⭐ لو وضع عرض المفضلة فقط مفعّل
+    // ⭐ عرض المفضلة فقط
     if (showFavoritesOnly) {
       filteredStories = filteredStories.filter(s =>
         favoriteIds.has(String(s.id))
@@ -421,51 +420,70 @@ function extractLinksFromText(text = "") {
       s => s.type === "short"
     );
   
-    // ⭐ وضع المفضلة → ترتيب يدوي فقط
-if (showFavoritesOnly) {
-    const favOrderMap = new Map(
-      (window.__FAVORITES_ORDER__ || []).map(f => [
-        String(f.id),
-        Number(f.order || 0)
-      ])
-    );
+    /* =========================
+       ⭐ وضع المفضلة
+       - ترتيب يدوي لو موجود
+       - غير كده → ترتيب ذكي
+    ========================= */
+    if (showFavoritesOnly) {
+      const favOrderArr = Array.isArray(window.__FAVORITES_ORDER__)
+        ? window.__FAVORITES_ORDER__
+        : [];
   
-    const favLong = longStories
-      .filter(s => favOrderMap.has(String(s.id)))
-      .sort((a, b) =>
-        favOrderMap.get(String(a.id)) - favOrderMap.get(String(b.id))
+      const favOrderMap = new Map(
+        favOrderArr.map(f => [String(f.id), Number(f.order || 0)])
       );
   
-    const favShort = shortStories
-      .filter(s => favOrderMap.has(String(s.id)))
-      .sort((a, b) =>
-        favOrderMap.get(String(a.id)) - favOrderMap.get(String(b.id))
+      const favLong = longStories.filter(s =>
+        favoriteIds.has(String(s.id))
       );
   
-    renderTableBody($("stories-tbody"), favLong);
-    renderTableBody($("short-stories-tbody"), favShort);
+      const favShort = shortStories.filter(s =>
+        favoriteIds.has(String(s.id))
+      );
   
-  } else {
-    // 🤖 الوضع العادي → ترتيب ذكي فقط
-    renderTableBody(
-      $("stories-tbody"),
-      smartGroupByTitleSimilarity(longStories)
-    );
+      const finalFavLong =
+        favOrderMap.size > 0
+          ? favLong.sort(
+              (a, b) =>
+                (favOrderMap.get(String(a.id)) ?? 9999) -
+                (favOrderMap.get(String(b.id)) ?? 9999)
+            )
+          : smartGroupByTitleSimilarity(favLong);
   
-    renderTableBody(
-      $("short-stories-tbody"),
-      smartGroupByTitleSimilarity(shortStories)
-    );
-  }
+      const finalFavShort =
+        favOrderMap.size > 0
+          ? favShort.sort(
+              (a, b) =>
+                (favOrderMap.get(String(a.id)) ?? 9999) -
+                (favOrderMap.get(String(b.id)) ?? 9999)
+            )
+          : smartGroupByTitleSimilarity(favShort);
   
-       
+      renderTableBody($("stories-tbody"), finalFavLong);
+      renderTableBody($("short-stories-tbody"), finalFavShort);
+  
+    } else {
+      /* =========================
+         🤖 الوضع العادي
+         - ترتيب ذكي فقط
+      ========================= */
+      renderTableBody(
+        $("stories-tbody"),
+        smartGroupByTitleSimilarity(longStories)
+      );
+  
+      renderTableBody(
+        $("short-stories-tbody"),
+        smartGroupByTitleSimilarity(shortStories)
+      );
+    }
+  
     updateStatusPills();
   }
-
+  
  
   /*let reorderBoxEl = null;*/
-
-
 
 
  function renderTableBody(tbodyEl, list) {
