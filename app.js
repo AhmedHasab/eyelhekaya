@@ -121,53 +121,34 @@ function extractLinksFromText(text = "") {
      .trim();
  }
 
- function similarityScore(a = [], b = []) {
-    let score = 0;
-    const maxLen = Math.max(a.length, b.length);
-  
-    for (let i = 0; i < Math.min(a.length, b.length); i++) {
-      if (a[i] === b[i]) {
-        score += 2; // نفس الكلمة + نفس الترتيب
-      } else if (a.includes(b[i])) {
-        score += 1; // نفس الكلمة ترتيب مختلف
-      }
-    }
-  
-    return maxLen ? score / maxLen : 0;
+ function getSmartTitleTokens(title = "", limit = 15) {
+    return normalizeArabic(title)
+      .split(" ")
+      .filter(w =>
+        w.length > 2 && // تجاهل القصير
+        ![
+          "قصة","حكاية","تفاصيل","كاملة","كامل",
+          "بعد","قبل","سبب","حقيقة","اسرار",
+          "وفاة","مقتل","اغتيال","قضية"
+        ].includes(w)
+      )
+      .slice(0, limit);
   }
   
+  function similarityScore(tokensA = [], tokensB = []) {
+    let score = 0;
+    tokensA.forEach(t => {
+      if (tokensB.includes(t)) score++;
+    });
+    return score;
+  }
   
   function smartGroupByTitleSimilarity(list = []) {
-    if (!list.length) return list;
-  
-    // تجهيز العناصر + التوكنز (حتى 15 كلمة)
+    // نسخة للعرض فقط (مهم جدًا)
     const items = list.map(s => ({
       ...s,
-      _tokens: normalizeArabic(s.title || "")
-        .split(" ")
-        .filter(w => w.length > 0)
-        .slice(0, 15)
+      _tokens: getSmartTitleTokens(s.title, 15)
     }));
-  
-  
-    // حساب متوسط التشابه العام (لتحديد الصرامة تلقائيًا)
-    let total = 0;
-    let comparisons = 0;
-  
-    for (let i = 0; i < items.length; i++) {
-      for (let j = i + 1; j < items.length; j++) {
-        total += similarityScore(items[i]._tokens, items[j]._tokens);
-        comparisons++;
-      }
-    }
-  
-    const avgSimilarity = comparisons ? total / comparisons : 0;
-  
-    // 🎯 تحديد مستوى الصرامة تلقائيًا
-    let THRESHOLD;
-    if (avgSimilarity > 0.55) THRESHOLD = 0.6;       // أسماء شبه متطابقة
-    else if (avgSimilarity > 0.35) THRESHOLD = 0.45; // تشابه متوسط
-    else THRESHOLD = 0.3;                            // تشابه ضعيف
   
     const used = new Set();
     const result = [];
@@ -178,6 +159,7 @@ function extractLinksFromText(text = "") {
       const base = items[i];
       used.add(base.id);
   
+      // المجموعة الحالية
       const group = [base];
   
       for (let j = i + 1; j < items.length; j++) {
@@ -185,17 +167,21 @@ function extractLinksFromText(text = "") {
         if (used.has(candidate.id)) continue;
   
         const score = similarityScore(base._tokens, candidate._tokens);
-        if (score >= THRESHOLD) {
+  
+        // ⭐ شرط التشابه (ذكي ومتحفظ)
+        if (score >= 2) {
           group.push(candidate);
           used.add(candidate.id);
         }
       }
   
-      // ترتيب داخلي حسب أقوى تشابه
-      group.sort((a, b) =>
-        similarityScore(base._tokens, b._tokens) -
-        similarityScore(base._tokens, a._tokens)
-      );
+      // لو فيه أكتر من قصة → رتّبهم داخليًا بالأقوى تشابه
+      if (group.length > 1) {
+        group.sort((a, b) =>
+          similarityScore(base._tokens, b._tokens) -
+          similarityScore(base._tokens, a._tokens)
+        );
+      }
   
       result.push(...group);
     }
@@ -288,12 +274,7 @@ function extractLinksFromText(text = "") {
       // 2️⃣ المفضلة (بعد القصص)
       try {
         const favRes = await postToWorker({ action: "get_favorites" });
-        const favArr = Array.isArray(favRes?.favorites)
-        ? favRes.favorites
-        : [];
-      
-      favoriteIds = new Set(favArr.map(f => String(f.id)));
-      window.__FAVORITES_ORDER__ = favArr;      
+        favoriteIds = new Set((favRes?.ids || []).map(String));
       } catch {
         favoriteIds = new Set();
       }
@@ -399,13 +380,14 @@ function extractLinksFromText(text = "") {
  ========================= */
 
  function renderStoriesTables(filterText = "") {
+
     const q = normalizeArabic(filterText);
   
     let filteredStories = stories.filter(s =>
       normalizeArabic(s.title || "").includes(q)
     );
   
-    // ⭐ عرض المفضلة فقط
+    // ⭐ لو وضع عرض المفضلة فقط مفعّل
     if (showFavoritesOnly) {
       filteredStories = filteredStories.filter(s =>
         favoriteIds.has(String(s.id))
@@ -420,70 +402,23 @@ function extractLinksFromText(text = "") {
       s => s.type === "short"
     );
   
-    /* =========================
-       ⭐ وضع المفضلة
-       - ترتيب يدوي لو موجود
-       - غير كده → ترتيب ذكي
-    ========================= */
-    if (showFavoritesOnly) {
-      const favOrderArr = Array.isArray(window.__FAVORITES_ORDER__)
-        ? window.__FAVORITES_ORDER__
-        : [];
-  
-      const favOrderMap = new Map(
-        favOrderArr.map(f => [String(f.id), Number(f.order || 0)])
-      );
-  
-      const favLong = longStories.filter(s =>
-        favoriteIds.has(String(s.id))
-      );
-  
-      const favShort = shortStories.filter(s =>
-        favoriteIds.has(String(s.id))
-      );
-  
-      const finalFavLong =
-        favOrderMap.size > 0
-          ? favLong.sort(
-              (a, b) =>
-                (favOrderMap.get(String(a.id)) ?? 9999) -
-                (favOrderMap.get(String(b.id)) ?? 9999)
-            )
-          : smartGroupByTitleSimilarity(favLong);
-  
-      const finalFavShort =
-        favOrderMap.size > 0
-          ? favShort.sort(
-              (a, b) =>
-                (favOrderMap.get(String(a.id)) ?? 9999) -
-                (favOrderMap.get(String(b.id)) ?? 9999)
-            )
-          : smartGroupByTitleSimilarity(favShort);
-  
-      renderTableBody($("stories-tbody"), finalFavLong);
-      renderTableBody($("short-stories-tbody"), finalFavShort);
-  
-    } else {
-      /* =========================
-         🤖 الوضع العادي
-         - ترتيب ذكي فقط
-      ========================= */
-      renderTableBody(
+    renderTableBody(
         $("stories-tbody"),
         smartGroupByTitleSimilarity(longStories)
       );
-  
+      
       renderTableBody(
         $("short-stories-tbody"),
         smartGroupByTitleSimilarity(shortStories)
       );
-    }
-  
+       
     updateStatusPills();
   }
-  
+
  
   /*let reorderBoxEl = null;*/
+
+
 
 
  function renderTableBody(tbodyEl, list) {
@@ -1483,4 +1418,3 @@ document.addEventListener("DOMContentLoaded", () => {
   
   // 🚀 شغّل التطبيق
   bootstrapApp();
-
