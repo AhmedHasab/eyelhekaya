@@ -1546,9 +1546,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   
     reelsBtn.onclick = handlePickTrendShortReels;
-
+ // 🚀 شغّل التطبيق
+  bootstrapApp();
 
   });
   
-  // 🚀 شغّل التطبيق
-  bootstrapApp();
+ 
