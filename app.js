@@ -186,20 +186,38 @@ function extractLinksFromText(text = "") {
      .trim();
  }
 
- function detectCategoriesFromTitle(title = "") {
+function detectCategoriesFromTitle(title = "") {
   const text = normalizeArabic(title.toLowerCase());
-  const detected = new Set();
+  const results = [];
 
   for (const group of KEYWORD_CATEGORY_MAP) {
+    let score = 0;
+
     for (const kw of group.keywords) {
-      if (text.includes(normalizeArabic(kw.toLowerCase()))) {
-        detected.add(group.category);
-        break;
+      const word = normalizeArabic(kw.toLowerCase());
+      if (!word) continue;
+
+      if (text.includes(word)) {
+        // 🧠 ذكاء بسيط:
+        // كل ما الكلمة أطول → أهم
+        score += Math.min(word.length, 6);
       }
+    }
+
+    // ❌ تجاهل التطابق الضعيف جدًا
+    if (score >= 4) {
+      results.push({
+        category: group.category,
+        score
+      });
     }
   }
 
-  return Array.from(detected);
+  // ترتيب حسب الأهمية
+  return results
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3)          // ✅ حد أقصى 3 فئات
+    .map(r => r.category);
 }
 
  
