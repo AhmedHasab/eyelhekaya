@@ -186,6 +186,26 @@ function extractLinksFromText(text = "") {
      .trim();
  }
 
+function groupBySimilarity(list) {
+  const map = new Map();
+
+  for (const s of list) {
+    const key =
+      s.similarityKey ||
+      normalizeArabic(s.title || "")
+        .split(" ")
+        .slice(0, 15)
+        .join(" ");
+
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(s);
+  }
+
+  // ⚠️ مهم: بنرجّع نفس الترتيب الداخلي
+  return Array.from(map.values()).flat();
+}
+
+
 function detectCategoriesFromTitle(title = "") {
   const text = normalizeArabic(title.toLowerCase());
   const results = [];
@@ -455,6 +475,9 @@ function normalizeStoryObject(input, forcedType) {
     - Existing long table: #stories-tbody
     - Optional short table: #short-stories-tbody (if you add it in index.html)
  ========================= */
+
+
+
  function renderStoriesTables(filterText = "") {
 
     const q = normalizeArabic(filterText);
@@ -470,13 +493,14 @@ function normalizeStoryObject(input, forcedType) {
       );
     }
   
-    const longStories = filteredStories.filter(
-      s => (s.type || "long") === "long"
-    );
-  
-    const shortStories = filteredStories.filter(
-      s => s.type === "short"
-    );
+const longStories = groupBySimilarity(
+  filteredStories.filter(s => (s.type || "long") === "long")
+);
+
+const shortStories = groupBySimilarity(
+  filteredStories.filter(s => s.type === "short")
+);
+
   
     renderTableBody($("stories-tbody"), longStories);
     renderTableBody($("short-stories-tbody"), shortStories);
