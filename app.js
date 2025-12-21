@@ -48,20 +48,7 @@
      .replaceAll('"', "&quot;")
      .replaceAll("'", "&#039;");
  }
- async function reorderStoryOnServer(id, toIndex) {
-    if (!Number.isInteger(toIndex)) return;
 
-    await postToWorker({
-        action: "reorder_story",
-        payload: {
-          id: String(id),
-          toIndex: Number(toIndex)
-        }
-      });
-      
-    await loadStoriesFromServer();
-    if (isAutoBackupEnabled()) autoBackupDownloadSilent();
-  }
   
  // =========================
 // NOTES LINKS PARSER
@@ -307,7 +294,11 @@ function extractLinksFromText(text = "") {
      country: input.country ?? "",
      createdAt: input.createdAt ?? input.added ?? now,
      analysis: input.analysis ?? null, // keep if worker sends analysis
-     localNumericId: Number(input.localNumericId ?? getNextLocalNumericId()),
+     localNumericId:
+Number.isFinite(Number(item.localNumericId))
+  ? Number(item.localNumericId)
+  : getNextLocalNumericId(),
+   
    };
  }
  
@@ -346,41 +337,10 @@ function extractLinksFromText(text = "") {
   }
 
  
-  let reorderBoxEl = null;
+  /*let reorderBoxEl = null;*/
 
-  function ensureReorderBox() {
-    if (reorderBoxEl) return reorderBoxEl;
-  
-    const wrap = document.createElement("div");
-    wrap.style.position = "fixed";
-    wrap.style.zIndex = "9999";
-    wrap.style.display = "none";
-    wrap.style.background = "#fff";
-    wrap.style.border = "1px solid #ddd";
-    wrap.style.borderRadius = "10px";
-    wrap.style.padding = "8px";
-    wrap.style.boxShadow = "0 10px 30px rgba(0,0,0,0.12)";
-  
-    wrap.innerHTML = `
-      <div style="font-weight:800; margin-bottom:6px;">↔ نقل للترتيب</div>
-      <input id="reorder-input" type="number" min="1"
-        style="width:120px; padding:8px; border:1px solid #ccc; border-radius:8px;"
-        placeholder="رقم (مثلاً 3)" />
-      <div style="font-size:12px; opacity:.7; margin-top:6px;">Enter = تنفيذ • Esc = إلغاء</div>
-    `;
-  
-    document.body.appendChild(wrap);
-    reorderBoxEl = wrap;
-    return reorderBoxEl;
-  }
-  
-  function hideReorderBox() {
-    if (!reorderBoxEl) return;
-    reorderBoxEl.style.display = "none";
-    reorderBoxEl.dataset.id = "";
-    reorderBoxEl.dataset.max = "";
-  }
-  
+
+
 
  function renderTableBody(tbodyEl, list) {
    if (!tbodyEl) return;
@@ -793,7 +753,11 @@ document.getElementById("categories-dropdown")?.classList.add("hidden");
        {
          ...item,
          title,
-         localNumericId: item.localNumericId ?? item.id ?? getNextLocalNumericId(),
+         localNumericId:
+         Number.isFinite(Number(item.localNumericId))
+           ? Number(item.localNumericId)
+           : getNextLocalNumericId(),
+       
        },
        item.type || "long"
      );
@@ -802,8 +766,8 @@ document.getElementById("categories-dropdown")?.classList.add("hidden");
        maxLocal = Number(normalized.localNumericId);
      }
  
-     /*await addStoryToServer(normalized);
-     existing.add(key);*/
+     await addStoryToServer(normalized);
+     existing.add(key);
    }
  
    localStorage.setItem(LS_KEYS.MAX_LOCAL_ID, String(maxLocal));
@@ -1229,7 +1193,7 @@ async function addToFavorites(storyId) {
     // ⚠️ ملحوظة: زر الريلز (btn-pick-short) НЕ يتم ربطه هنا
   
     // Layout controls
-    $("btn-show-stories-only")?.addEventListener("click", showStoriesOnly);
+   /* $("btn-show-stories-only")?.addEventListener("click", showStoriesOnly);*/
     $("btn-show-both")?.addEventListener("click", showBothPanels);
     $("btn-show-ai-only")?.addEventListener("click", showAiOnly);
   
@@ -1255,12 +1219,7 @@ async function addToFavorites(storyId) {
       
     // Search
     $("stories-search")?.addEventListener("input", handleSearchInput);
-    document.addEventListener("click", (e) => {
-        if (!reorderBoxEl || reorderBoxEl.style.display === "none") return;
-        const inside = e.target.closest("#reorder-input") || e.target.closest("tr");
-        if (!inside) hideReorderBox();
-      });
-      
+
   }
   
  
@@ -1295,28 +1254,7 @@ async function addToFavorites(storyId) {
       console.warn("API mode load failed", e);
     }
   }*/
-  function wireApiModeSwitch() {
-    const sw = document.getElementById("api-mode-switch");
-    if (!sw) return;
-  
-    sw.addEventListener("change", async () => {
-      const mode = sw.checked ? "online" : "offline";
-  
-      const res = await postToWorker({
-        action: "toggle_api_mode",
-        payload: { mode },
-      });
-  
-      document.getElementById("api-mode-label").textContent =
-        mode === "online"
-          ? "🟢 Online (استخدام API مباشر)"
-          : "⛔ Offline (الاعتماد على الكاش فقط)";
-  
-      document.getElementById("api-mode-time").textContent =
-        `آخر تغيير: ${new Date(res.changedAt).toLocaleString()}`;
-    });
-  }
-  
+
 
 async function bootstrapApp() {
     const MIGRATION_FLAG = "EH_STORIES_JSON_MIGRATED";
@@ -1367,35 +1305,6 @@ async function bootstrapApp() {
     console.log("🚀 App bootstrap completed");
   }
 
-// =========================
-// PICK REELS PRO (FIXED)
-// =========================
-async function handlePickReelsPro() {
-    console.log("🔥 REELS PRO BUTTON CLICKED");
-  
-    setHtml($("ai-output"), "<p>⏳ جاري جلب تريندات الريلز...</p>");
-  
-    try {
-      const res = await postToWorker({
-        action: "get_reels_pro",
-      });
-  
-      if (!res || !Array.isArray(res.results) || !res.results.length) {
-        setHtml($("ai-output"), "<p>❌ لا توجد نتائج ريلز حاليًا</p>");
-        return;
-      }
-  
-      lastAIResults = res.results;
-  
-      renderAIResultCards(res.results, "ريلز برو");
-  
-    } catch (err) {
-      console.error("❌ Reels Pro error:", err);
-      setHtml($("ai-output"), "<p>❌ حدث خطأ أثناء جلب الريلز</p>");
-    }
-  }
-  
-  
   
 /* =========================
    START APP
