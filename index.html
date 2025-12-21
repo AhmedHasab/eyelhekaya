@@ -428,6 +428,13 @@ if ("serviceWorker" in navigator) {
 
   
 <style> 
+  .table-wrapper {
+  resize: vertical;       /* 👈 يسمح بالسحب لتكبير الحجم */
+  overflow: auto;         /* 👈 ضروري مع resize */
+  min-height: 420px;      /* 👈 أقل ارتفاع (خليه ارتفاعه الحالي) */
+  max-height: 90vh;       /* 👈 اختياري: يمنع إنه يكبر زيادة عن الشاشة */
+}
+
 .manual-input-row {
   display: grid;
   grid-template-columns: 2fr 1.2fr 0.6fr 2fr auto;
