@@ -12,10 +12,8 @@
   <link rel="stylesheet" href="style.css" />
 
   <meta name="theme-color" content="#ffffff" />
- <link rel="icon" type="image/png" href="Logo_Channel.png">
-<link rel="apple-touch-icon" href="icon-192.png">
-
-
+  <link rel="icon" type="image/png" href="Logo_Channel.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
 </head>
 
 <body>
@@ -24,22 +22,19 @@
     <header class="app-header">
       <h1>🎬 ذكاء اختيار القصص – قناة "إيه الحكاية؟"</h1>
 
-      <!-- أزرار الترند -->
       <div class="top-buttons">
         <button id="btn-pick-today" class="btn primary strong">🗓 اختيار قصة فيديو طويل وفقا للترند</button>
         <button id="btn-pick-long" class="btn primary">🎥 اختيار قصة عشوائية مسجلة بالموقع (فيديو طويل)</button>
         <button id="btn-pick-short" class="btn accent">⚡ اختيار فيديو (ريلز) من الترند</button>
         <button id="btn-update-trends" class="btn secondary">📈 تحديث التريندات</button>
-       </div>
-      <!-- حالة التريند -->
+      </div>
+
       <div class="status-row">
         <span id="status-trends" class="status-pill muted">تريندات Google غير محدثة</span>
         <span id="status-youtube" class="status-pill muted">تريندات YouTube غير محدثة</span>
         <span id="status-deaths" class="status-pill muted">وفيات آخر 48 ساعة غير محدثة</span>
       </div>
 
-
-      <!-- التحكم في عرض اللوحين -->
       <div class="layout-controls">
         <button id="btn-show-ai-only" class="btn secondary small">➡ عرض نتائج الذكاء فقط</button>
         <button id="btn-show-both" class="btn secondary small">⬌ عرض اللوحين معًا</button>
@@ -49,7 +44,6 @@
 
     <main class="main-layout">
 
-      <!-- لوحة نتائج الذكاء -->
       <section class="ai-panel card">
         <h2>🧠 نتائج الذكاء الاصطناعي</h2>
         <div id="ai-output" class="ai-output">
@@ -57,10 +51,10 @@
         </div>
       </section>
 
-      <!-- لوحة إدارة القصص -->
       <section class="stories-panel card">
         <h2>📚 إدارة القصص</h2>
-                <textarea id="raw-input" rows="5" placeholder="مثال:
+
+        <textarea id="raw-input" rows="5" placeholder="مثال:
 ليلى مراد
 محاولات اغتيال مبارك
 حادثة طائرة مصر للطيران
@@ -68,83 +62,66 @@
 
         <label class="block-label">✂️ الصق النص الخام للقصص (كل سطر = قصة):</label><br>
 
-
-
         <button id="btn-parse-raw" class="btn primary small">➕ تحويل النص إلى قصص</button>
 
-        <!-- إدخال يدوي كامل -->
         <div class="manual-input-row">
 
           <div class="manual-cell">
             <label>اسم القصة</label>
-            <textarea
-  id="manual-name"
-  placeholder="اكتب اسم القصة هنا"
-  rows="2"
-  class="resizable-textarea"
-></textarea>
+            <textarea id="manual-name" placeholder="اكتب اسم القصة هنا" rows="2" class="resizable-textarea"></textarea>
           </div>
 
-<div class="manual-cell">
-  <label>نوع القصة (Category)</label>
+          <div class="manual-cell">
+            <label>نوع القصة (Category)</label>
+            <button type="button" id="toggle-categories" class="dropdown-btn">اختر الفئات ▼</button>
 
-  <button type="button" id="toggle-categories" class="dropdown-btn">
-    اختر الفئات ▼
-  </button>
+            <div id="categories-dropdown" class="categories-dropdown hidden">
+              <label><input type="checkbox" value="A">A- المشاهير والنجوم</label>
+              <label><input type="checkbox" value="B">B- السياسيين والزعماء والقادة</label>
+              <label><input type="checkbox" value="C">C- المخابرات والجواسيس</label>
+              <label><input type="checkbox" value="D">D- الجرائم والاختفاءات</label>
+              <label><input type="checkbox" value="E">E- التاريخ العسكري</label>
+              <label><input type="checkbox" value="F">F- الأنبياء والصحابة والغزوات</label>
+              <label><input type="checkbox" value="G">G- العلماء والمفكرين</label>
+            </div>
 
-  <div id="categories-dropdown" class="categories-dropdown hidden">
-    <label><input type="checkbox" value="A">A- المشاهير والنجوم</label>
-    <label><input type="checkbox" value="B">B- السياسيين والزعماء والقادة</label>
-    <label><input type="checkbox" value="C">C- المخابرات والجواسيس</label>
-    <label><input type="checkbox" value="D">D- الجرائم والاختفاءات</label>
-    <label><input type="checkbox" value="E">E- التاريخ العسكري</label>
-    <label><input type="checkbox" value="F">F- الأنبياء والصحابة والغزوات</label>
-    <label><input type="checkbox" value="G">G- العلماء والمفكرين</label>
-  </div>
+            <small style="opacity:.7">اختر فئة واحدة أو أكثر</small>
+          </div>
 
-  <small style="opacity:.7">
-    اختر فئة واحدة أو أكثر
-  </small>
-</div>
-<div class="manual-cell">
-  <label>نوع المحتوى</label>
+          <div class="manual-cell">
+            <label>نوع المحتوى</label>
 
-  <label>
-    <input type="radio" name="story-type" value="long" checked>
-    🎬 قصة طويلة
-  </label>
+            <label>
+              <input type="radio" name="story-type" value="long" checked>
+              🎬 قصة طويلة
+            </label>
 
-  <label>
-    <input type="radio" name="story-type" value="short">
-    ⚡ قصة قصيرة (ريلز)
-  </label>
-</div>
+            <label>
+              <input type="radio" name="story-type" value="short">
+              ⚡ قصة قصيرة (ريلز)
+            </label>
+          </div>
 
-<div class="manual-cell">
-  <label>تقييمك الشخصي (الدرجة)</label>
-  <input id="manual-score" type="number" min="0" max="100" value="80" />
-</div>
-
+          <div class="manual-cell">
+            <label>تقييمك الشخصي (الدرجة)</label>
+            <input id="manual-score" type="number" min="0" max="100" value="80" />
+          </div>
 
           <div class="manual-cell">
             <label>ملاحظات / روابط</label>
-            <textarea
-  id="manual-notes"
-  placeholder="ملاحظة – رابط – كلمة مفتاحية"
-  rows="4"
-  class="resizable-textarea"
-></textarea>
+            <textarea id="manual-notes" placeholder="ملاحظة – رابط – كلمة مفتاحية" rows="4"
+              class="resizable-textarea"></textarea>
           </div>
 
           <div class="manual-cell manual-cell-action">
             <label>&nbsp;</label>
             <button id="btn-add-manual" class="btn primary small">➕ إضافة قصة يدويًا</button>
           </div>
+
         </div>
 
         <p class="manual-hint">⚙ يتم احتساب تاريخ التسجيل ودرجة الذكاء تلقائيًا.</p>
 
-        <!-- تصدير واستيراد -->
         <div class="backup-row">
           <button id="btn-export" class="btn secondary small">💾 تصدير القصص</button>
 
@@ -152,25 +129,19 @@
           <input type="file" id="import-file" hidden accept="application/json" />
         </div>
 
-        <!-- شريط البحث -->
         <div class="search-row">
           <label>🔎 شريط بحث:</label>
-          <textarea
-  id="stories-search"
-  placeholder="اكتب للبحث في جميع القصص…"
-  rows="2"
-  class="resizable-textarea"
-></textarea>
+          <textarea id="stories-search"
+            placeholder="بحث نصي… أو تاريخ: 18/12/2025 أو 18/12/25 أو مدى: 18/12/25 - 20/12/25" rows="2"
+            class="resizable-textarea"></textarea>
         </div>
 
-            <!-- زر المفضلة -->
-          <button id="btn-show-favorites" class="btn secondary small">
-         ⭐ عرض المفضلة
-           </button>
+        <button id="btn-show-favorites" class="btn secondary small">⭐ عرض المفضلة</button>
+
         <button id="btn-force-group" class="btn secondary" type="button">
-  🧩 تجميع متشابه (مؤقت)
+          🧩 تجميع متشابه (مؤقت)
         </button>
-        <!-- جدول القصص -->
+
         <div class="table-wrapper">
           <table id="stories-table">
             <thead>
@@ -192,501 +163,470 @@
         </div>
 
       </section>
-      <!-- ========================= -->
-<!-- جدول القصص القصيرة (ريلز) -->
-<!-- ========================= -->
 
-<h3 style="margin-top:25px;">⚡ القصص القصيرة (ريلز)</h3>
+      <h3 style="margin-top:25px;">⚡ القصص القصيرة (ريلز)</h3>
 
-<div class="table-wrapper">
-  <table id="short-stories-table">
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>الاسم</th>
-        <th>النوع</th>
-        <th>الدرجة</th>
-        <th>الجاذبية</th>
-        <th>ذكاء</th>
-        <th>تنفيذ</th>
-        <th>تاريخ</th>
-        <th>ملاحظات</th>
-        <th>تحكم</th>
-      </tr>
-    </thead>
-    <tbody id="short-stories-tbody">
-      <!-- يتم الملء تلقائيًا من app.js -->
-    </tbody>
-  </table>
-</div>
+      <div class="table-wrapper">
+        <table id="short-stories-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>الاسم</th>
+              <th>النوع</th>
+              <th>الدرجة</th>
+              <th>الجاذبية</th>
+              <th>ذكاء</th>
+              <th>تنفيذ</th>
+              <th>تاريخ</th>
+              <th>ملاحظات</th>
+              <th>تحكم</th>
+            </tr>
+          </thead>
+          <tbody id="short-stories-tbody"></tbody>
+        </table>
+      </div>
 
     </main>
-
   </div>
-<!-- سكريبت التحكم في الفئات (Categories) -->
 
-<script>
-function getDeviceId() {
-  let id = localStorage.getItem("EH_DEVICE_ID");
-  if (!id) {
-    id = crypto.randomUUID();
-    localStorage.setItem("EH_DEVICE_ID", id);
-  }
-  return id;
-}
-</script>
-<script>
-/* =========================
-   FAVORITES (INLINE → app.js compatible)
-========================= */
-async function toggleFavorite(id) {
-  // app.js هو Source of Truth
-  await addToFavorites(id);
-}
-
-/* =========================
-   STORY TYPE (long / short)
-========================= */
-function getSelectedStoryType() {
-  const el = document.querySelector("input[name='story-type']:checked");
-  return el ? el.value : "long";
-}
-
-/* =========================
-   CATEGORIES
-========================= */
-function setCategoriesSelection(categories = []) {
-  document
-    .querySelectorAll("#categories-dropdown input[type='checkbox']")
-    .forEach(cb => {
-      cb.checked = categories.includes(cb.value);
-    });
-}
-
-function clearCategoriesSelection() {
-  document
-    .querySelectorAll("#categories-dropdown input[type='checkbox']")
-    .forEach(cb => {
-      cb.checked = false;
-    });
-}
-</script>
-
-<script>
-/* فتح / قفل قائمة التصنيفات */
-document
-  .getElementById("toggle-categories")
-  ?.addEventListener("click", () => {
-    document
-      .getElementById("categories-dropdown")
-      .classList.toggle("hidden");
-  });
-
-/* app.js يعتمد عليها */
-function getSelectedCategories() {
-  return Array.from(
-    document.querySelectorAll(
-      "#categories-dropdown input[type='checkbox']:checked"
-    )
-  ).map(cb => cb.value);
-}
-</script>
-
-
-  <script src="app.js"></script>
-
-
+  <!-- ========= Helpers (قبل app.js) ========= -->
   <script>
-  /*************************************************
-   * Force Similarity Grouping (VIEW ONLY)
-   * - index.html ONLY
-   * - Uses LocalStorage flag during session
-   * - Auto breaks on refresh via beforeunload
-   *************************************************/
-
-  const LS_FORCE_GROUP = "EH_FORCE_GROUP_VIEW";
-
-  // ✅ يكسر التجميع عند أي Refresh / Reload / Close
-  window.addEventListener("beforeunload", () => {
-    try { localStorage.removeItem(LS_FORCE_GROUP); } catch {}
-  });
-
-  function isForceGroupOn() {
-    try { return localStorage.getItem(LS_FORCE_GROUP) === "1"; } catch { return false; }
-  }
-
-  function setForceGroupOn(val) {
-    try {
-      if (val) localStorage.setItem(LS_FORCE_GROUP, "1");
-      else localStorage.removeItem(LS_FORCE_GROUP);
-    } catch {}
-  }
-
-  // نفس فكرة normalizeArabic عندك (نسخة خفيفة)
-  function normalizeArabicIndex(text = "") {
-    return String(text)
-      .replace(/[إأآا]/g, "ا")
-      .replace(/ى/g, "ي")
-      .replace(/ؤ/g, "و")
-      .replace(/ئ/g, "ي")
-      .replace(/ة/g, "ه")
-      .replace(/ـ/g, "")
-      .replace(/[^\u0600-\u06FF0-9\s]/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
-  }
-
-  // مفتاح التشابه: كل ما زاد عدد الكلمات = تشابه أعلى (زي ما طلبت)
-  // هنستخدم أول 15 كلمة (تقدر تزود/تقلل)
-  function similarityKeyFromTitle(title, wordsCount = 15) {
-    return normalizeArabicIndex(title)
-      .split(" ")
-      .slice(0, wordsCount)
-      .join(" ");
-  }
-
-  // ✅ تجميع "عرضي" داخل الجدول عبر إعادة ترتيب <tr> فقط
-  // - لا نلمس stories ولا نعدل داتا
-  // - بنحافظ على ترتيب القصص داخل نفس المجموعة كما كان
-  function forceGroupTableBody(tbodyId) {
-    const tbody = document.getElementById(tbodyId);
-    if (!tbody) return;
-
-    const rows = Array.from(tbody.querySelectorAll("tr"));
-    if (!rows.length) return;
-
-    const items = rows.map((tr, idx) => {
-      const tds = tr.querySelectorAll("td");
-      const title = (tds[1]?.innerText || "").trim(); // العمود 2 = العنوان
-      return {
-        tr,
-        idx,
-        key: similarityKeyFromTitle(title, 15),
-      };
-    });
-
-    // Group by key (يحافظ على ترتيب أول ظهور للمجموعة)
-    const groupOrder = new Map(); // key -> firstIndex
-    for (const it of items) {
-      if (!groupOrder.has(it.key)) groupOrder.set(it.key, it.idx);
+    function getDeviceId() {
+      let id = localStorage.getItem("EH_DEVICE_ID");
+      if (!id) {
+        id = crypto.randomUUID();
+        localStorage.setItem("EH_DEVICE_ID", id);
+      }
+      return id;
     }
 
-    // Sort by:
-    // 1) first appearance of the group
-    // 2) then original row order inside the group
-    items.sort((a, b) => {
-      const ga = groupOrder.get(a.key);
-      const gb = groupOrder.get(b.key);
-      if (ga !== gb) return ga - gb;
-      return a.idx - b.idx;
-    });
-
-    // ✅ إعادة إدراج الصفوف بنفس العناصر (DOM move)
-    // ونضيف كلاس بصري لأول صف في كل مجموعة (اختياري)
-    let lastKey = null;
-    for (const it of items) {
-      it.tr.classList.remove("force-group-start");
-      if (it.key && it.key !== lastKey) {
-        it.tr.classList.add("force-group-start");
-        lastKey = it.key;
-      }
-      tbody.appendChild(it.tr);
+    async function toggleFavorite(id) {
+      await addToFavorites(id);
     }
-  }
 
-  function applyForceGroupingIfOn() {
-    if (!isForceGroupOn()) return;
-    forceGroupTableBody("stories-tbody");
-    forceGroupTableBody("short-stories-tbody");
-  }
-
-  // ✅ زر التشغيل/الإلغاء
-  function wireForceGroupButton() {
-    const btn = document.getElementById("btn-force-group");
-    if (!btn) return;
-
-    const syncText = () => {
-      btn.textContent = isForceGroupOn()
-        ? "🔁 إلغاء التجميع المؤقت"
-        : "🧩 تجميع متشابه (مؤقت)";
-    };
-
-    syncText();
-
-    btn.addEventListener("click", () => {
-      const next = !isForceGroupOn();
-      setForceGroupOn(next);
-      syncText();
-
-      // اعمل render طبيعي ثم طبّق grouping على DOM فقط
-      // renderStoriesTables موجودة في app.js (Global)
-      if (typeof window.renderStoriesTables === "function") {
-        const q = document.getElementById("stories-search")?.value || "";
-        window.renderStoriesTables(q);
-      } else {
-        // fallback: طبق على الموجود
-        applyForceGroupingIfOn();
-      }
-    });
-  }
-
-  // ✅ Hook: أي render يحصل من app.js → بعدها نطبق التجميع لو الفلاج ON
-  function hookRenderStoriesTables() {
-    if (typeof window.renderStoriesTables !== "function") return;
-
-    const original = window.renderStoriesTables;
-    window.renderStoriesTables = function (...args) {
-      const res = original.apply(this, args);
-      // بعد ما الجداول تترسم
-      applyForceGroupingIfOn();
-      return res;
-    };
-  }
-
-  // ✅ CSS اختياري لإظهار بداية كل مجموعة بشكل بسيط (مؤقت للعرض)
-  function injectForceGroupCss() {
-    const css = `
-      tr.force-group-start td {
-        border-top: 3px solid rgba(255,255,255,0.25);
-      }
-    `;
-    const style = document.createElement("style");
-    style.textContent = css;
-    document.head.appendChild(style);
-  }
-
-  document.addEventListener("DOMContentLoaded", () => {
-    injectForceGroupCss();
-    wireForceGroupButton();
-
-    // مهم: hook بعد تحميل app.js (هو محمّل قبله في index)
-    hookRenderStoriesTables();
-
-    // لو كان ON في نفس الجلسة (بدون refresh) وحدث render لأي سبب
-    applyForceGroupingIfOn();
-  });
-</script>
-
-<script>
-/* ==================================================
-   INLINE ROW REORDER — FINAL SAFE VERSION (FIXED)
-================================================== */
-(() => {
-  const WORKER_URL = "https://odd-credit-25c6.namozg50.workers.dev/";
-  let reorderInput = null;
-
-  const UUID_RE =
-    /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}/;
-
-  function removeInput() {
-    reorderInput?.remove();
-    reorderInput = null;
-  }
-
-  /* ✅ المصدر الوحيد الموثوق */
-  function extractStoryId(row) {
-    const id = row?.dataset?.storyId;
-    if (id && UUID_RE.test(id)) return id;
-    return "";
-  }
-
-  function renumber(tbody) {
-    tbody.querySelectorAll("tr").forEach((tr, i) => {
-      const td = tr.querySelector("td");
-      if (td) td.textContent = i + 1;
-    });
-  }
-
-  async function saveReorder(id, toIndex) {
-    const res = await fetch(WORKER_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "reorder_story",
-        payload: {
-          id: String(id),
-          toIndex: Number(toIndex)
-        }
-      })
-    });
-
-    if (!res.ok) {
-      const t = await res.text();
-      console.error("❌ reorder failed:", t);
-      throw new Error("reorder_story rejected");
+    function getSelectedStoryType() {
+      const el = document.querySelector("input[name='story-type']:checked");
+      return el ? el.value : "long";
     }
-  }
 
-  document.addEventListener(
-    "dblclick",
-    async e => {
-      const row = e.target.closest("tbody tr");
-      if (!row) return;
+    function setCategoriesSelection(categories = []) {
+      document.querySelectorAll("#categories-dropdown input[type='checkbox']")
+        .forEach(cb => { cb.checked = categories.includes(cb.value); });
+    }
 
-      e.preventDefault();
-      e.stopPropagation();
+    function clearCategoriesSelection() {
+      document.querySelectorAll("#categories-dropdown input[type='checkbox']")
+        .forEach(cb => { cb.checked = false; });
+    }
 
-      const tbody = row.closest("tbody");
-      const rows = Array.from(tbody.querySelectorAll("tr"));
-      const max = rows.length;
-
-      const storyId = extractStoryId(row);
-      if (!storyId) {
-        alert("❌ هذا الصف لا يحتوي على storyId صحيح");
-        return;
-      }
-
-      removeInput();
-
-      reorderInput = document.createElement("input");
-      reorderInput.type = "number";
-      reorderInput.min = 1;
-      reorderInput.max = max;
-      reorderInput.placeholder = "رقم الترتيب";
-
-      const r = row.getBoundingClientRect();
-      Object.assign(reorderInput.style, {
-        position: "absolute",
-        top: `${window.scrollY + r.top}px`,
-        left: `${window.scrollX + r.right + 8}px`,
-        zIndex: 9999,
-        width: "110px",
-        padding: "6px",
-        borderRadius: "8px"
+    document.getElementById("toggle-categories")
+      ?.addEventListener("click", () => {
+        document.getElementById("categories-dropdown")?.classList.toggle("hidden");
       });
 
-      document.body.appendChild(reorderInput);
-      reorderInput.focus();
+    function getSelectedCategories() {
+      return Array.from(
+        document.querySelectorAll("#categories-dropdown input[type='checkbox']:checked")
+      ).map(cb => cb.value);
+    }
+  </script>
 
-      reorderInput.onkeydown = async ev => {
-        if (ev.key === "Escape") return removeInput();
-        if (ev.key !== "Enter") return;
+  <!-- ========= app.js ========= -->
+  <script src="app.js"></script>
 
-        const to = Number(reorderInput.value);
-        if (!to || to < 1 || to > max) return;
+  <!-- =========================================
+       FORCE GROUPING + DATE SEARCH (FINAL)
+       - تجميع إجباري مؤقت (عرض فقط)
+       - بحث تاريخ: 18/12/2025 أو 18/12/25
+       - مدى: 18/12/25 - 20/12/25
+       - لا يغيّر ترتيب السيرفر ولا يلمس البيانات
+  ========================================== -->
+  <script>
+    // زر التجميع = مؤقت في الذاكرة فقط
+    let FORCE_GROUPING = false;
 
-        removeInput();
+    // ---- DATE SEARCH PARSER ----
+    function parseDateToken(tok) {
+      const m = String(tok || "").trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/);
+      if (!m) return null;
+      const dd = Number(m[1]), mm = Number(m[2]), yyRaw = String(m[3]);
+      if (!dd || !mm) return null;
+      let yyyy = Number(yyRaw);
+      if (yyRaw.length === 2) yyyy = 2000 + yyyy; // 25 => 2025
+      const d = new Date(yyyy, mm - 1, dd);
+      if (d.getFullYear() !== yyyy || d.getMonth() !== (mm - 1) || d.getDate() !== dd) return null;
+      d.setHours(0, 0, 0, 0);
+      return d;
+    }
 
-        const current = Array.from(tbody.querySelectorAll("tr"));
-        const target = current[to - 1];
+    function parseDateQuery(input) {
+      const q = String(input || "").trim();
 
-        tbody.removeChild(row);
-        tbody.insertBefore(row, target);
-
-        renumber(tbody);
-
-        try {
-          await saveReorder(storyId, to);
-        } catch {
-          alert("❌ فشل حفظ الترتيب (راجع Console)");
+      // range: dd/mm/yy - dd/mm/yy  (مع مسافات أو بدون)
+      const range = q.match(/^(\d{1,2}\/\d{1,2}\/(?:\d{2}|\d{4}))\s*-\s*(\d{1,2}\/\d{1,2}\/(?:\d{2}|\d{4}))$/);
+      if (range) {
+        const from = parseDateToken(range[1]);
+        const to = parseDateToken(range[2]);
+        if (from && to) {
+          const a = from.getTime(), b = to.getTime();
+          const min = new Date(Math.min(a, b));
+          const max = new Date(Math.max(a, b));
+          max.setHours(23, 59, 59, 999);
+          return { kind: "range", from: min, to: max };
         }
+      }
+
+      // single: dd/mm/yy
+      const single = parseDateToken(q);
+      if (single) {
+        const start = new Date(single.getTime());
+        const end = new Date(single.getTime());
+        end.setHours(23, 59, 59, 999);
+        return { kind: "single", from: start, to: end };
+      }
+
+      return null;
+    }
+
+    function storyInDateRange(story, from, to) {
+      const ts = story?.createdAt ? new Date(story.createdAt).getTime() : NaN;
+      if (!Number.isFinite(ts)) return false;
+      return ts >= from.getTime() && ts <= to.getTime();
+    }
+
+    // ---- GROUPING (PIVOT ONLY / STRICT) ----
+    function words15(title) {
+      return normalizeArabic(title || "")
+        .split(" ")
+        .filter(Boolean)
+        .slice(0, 15);
+    }
+
+    function overlapCount(a, b) {
+      const A = new Set(words15(a));
+      const B = new Set(words15(b));
+      let c = 0;
+      A.forEach(w => { if (B.has(w)) c++; });
+      return c;
+    }
+
+    // ✅ التجميع الإجباري: كل عنصر يتقارن مع Pivot فقط (مش chain)
+    // - محمد أحمد محمد يتلم مع محمد أحمد محمود (2 كلمات)
+    // - لكن مش هيشيل كل "محمد" لوحدها (لازم 2 كلمات على الأقل)
+    function clusterStoriesPivotOnly(list) {
+      const used = new Set();
+      const out = [];
+
+      for (let i = 0; i < list.length; i++) {
+        const pivot = list[i];
+        if (used.has(pivot.id)) continue;
+
+        const group = [pivot];
+        used.add(pivot.id);
+
+        for (let j = 0; j < list.length; j++) {
+          const s = list[j];
+          if (used.has(s.id) || s.id === pivot.id) continue;
+
+          if (overlapCount(pivot.title, s.title) >= 2) {
+            group.push(s);
+            used.add(s.id);
+          }
+        }
+
+        // ترتيب داخل المجموعة حسب أقرب حاجة للـ pivot
+        group.sort((a, b) =>
+          overlapCount(pivot.title, b.title) - overlapCount(pivot.title, a.title)
+        );
+
+        out.push(...group);
+      }
+
+      return out;
+    }
+
+    // ---- HOOK renderStoriesTables (يدعم النص + التاريخ + التجميع + المفضلة) ----
+    (function hookRender() {
+      const original = window.renderStoriesTables;
+      if (typeof original !== "function") return;
+
+      window.renderStoriesTables = function (filterText = "") {
+        const rawQ = String(filterText || "").trim();
+        const dateQ = parseDateQuery(rawQ);
+
+        let base = Array.isArray(stories) ? stories.slice() : [];
+
+        // فلترة (تاريخ أو نص)
+        if (rawQ) {
+          if (dateQ) {
+            base = base.filter(s => storyInDateRange(s, dateQ.from, dateQ.to));
+          } else {
+            const qNorm = normalizeArabic(rawQ);
+            base = base.filter(s => normalizeArabic(s.title || "").includes(qNorm));
+          }
+        }
+
+        // ⭐ المفضلة فقط (المتغيرات موجودة في app.js كـ globals)
+        if (typeof showFavoritesOnly !== "undefined" && showFavoritesOnly) {
+          base = base.filter(s => favoriteIds?.has?.(String(s.id)));
+        }
+
+        // تجميع إجباري مؤقت (عرض فقط)
+        if (FORCE_GROUPING) {
+          base = clusterStoriesPivotOnly(base);
+        }
+
+        // حافظ على ترتيب base عند فصل long/short
+        const longStories = base.filter(s => (s.type || "long") === "long");
+        const shortStories = base.filter(s => s.type === "short");
+
+        renderTableBody(document.getElementById("stories-tbody"), longStories);
+        renderTableBody(document.getElementById("short-stories-tbody"), shortStories);
+
+        // لو عندك pills
+        if (typeof updateStatusPills === "function") updateStatusPills();
       };
-    },
-    true
-  );
+    })();
 
-  document.addEventListener("mousedown", e => {
-    if (e.target !== reorderInput) removeInput();
-  });
+    // زر التجميع
+    document.getElementById("btn-force-group")?.addEventListener("click", () => {
+      FORCE_GROUPING = !FORCE_GROUPING;
+      window.renderStoriesTables(document.getElementById("stories-search")?.value || "");
+    });
 
-  const style = document.createElement("style");
-  style.textContent = `
-    tbody tr { user-select:none }
-    input { user-select:text!important }
-  `;
-  document.head.appendChild(style);
-})();
-</script>
+    // أول رندر بعد ما scripts تخلص
+    document.addEventListener("DOMContentLoaded", () => {
+      setTimeout(() => {
+        window.renderStoriesTables(document.getElementById("stories-search")?.value || "");
+      }, 0);
+    });
+  </script>
+
+  <!-- =========================================
+     INLINE ROW REORDER — SAFE VERSION
+  ========================================== -->
+  <script>
+    (() => {
+      const WORKER_URL = "https://odd-credit-25c6.namozg50.workers.dev/";
+      let reorderInput = null;
+
+      const UUID_RE =
+        /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}/;
+
+      function removeInput() {
+        reorderInput?.remove();
+        reorderInput = null;
+      }
+
+      function extractStoryId(row) {
+        const id = row?.dataset?.storyId;
+        if (id && UUID_RE.test(id)) return id;
+        return "";
+      }
+
+      function renumber(tbody) {
+        tbody.querySelectorAll("tr").forEach((tr, i) => {
+          const td = tr.querySelector("td");
+          if (td) td.textContent = i + 1;
+        });
+      }
+
+      async function saveReorder(id, toIndex) {
+        const res = await fetch(WORKER_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "reorder_story",
+            payload: {
+              id: String(id),
+              toIndex: Number(toIndex)
+            }
+          })
+        });
+
+        if (!res.ok) {
+          const t = await res.text();
+          console.error("❌ reorder failed:", t);
+          throw new Error("reorder_story rejected");
+        }
+      }
+
+      document.addEventListener(
+        "dblclick",
+        async e => {
+          const row = e.target.closest("tbody tr");
+          if (!row) return;
+
+          e.preventDefault();
+          e.stopPropagation();
+
+          const tbody = row.closest("tbody");
+          const rows = Array.from(tbody.querySelectorAll("tr"));
+          const max = rows.length;
+
+          const storyId = extractStoryId(row);
+          if (!storyId) {
+            alert("❌ هذا الصف لا يحتوي على storyId صحيح");
+            return;
+          }
+
+          removeInput();
+
+          reorderInput = document.createElement("input");
+          reorderInput.type = "number";
+          reorderInput.min = 1;
+          reorderInput.max = max;
+          reorderInput.placeholder = "رقم الترتيب";
+
+          const r = row.getBoundingClientRect();
+          Object.assign(reorderInput.style, {
+            position: "absolute",
+            top: `${window.scrollY + r.top}px`,
+            left: `${window.scrollX + r.right + 8}px`,
+            zIndex: 9999,
+            width: "110px",
+            padding: "6px",
+            borderRadius: "8px"
+          });
+
+          document.body.appendChild(reorderInput);
+          reorderInput.focus();
+
+          reorderInput.onkeydown = async ev => {
+            if (ev.key === "Escape") return removeInput();
+            if (ev.key !== "Enter") return;
+
+            const to = Number(reorderInput.value);
+            if (!to || to < 1 || to > max) return;
+
+            removeInput();
+
+            const current = Array.from(tbody.querySelectorAll("tr"));
+            const target = current[to - 1];
+
+            tbody.removeChild(row);
+            tbody.insertBefore(row, target);
+
+            renumber(tbody);
+
+            try {
+              await saveReorder(storyId, to);
+            } catch {
+              alert("❌ فشل حفظ الترتيب (راجع Console)");
+            }
+          };
+        },
+        true
+      );
+
+      document.addEventListener("mousedown", e => {
+        if (e.target !== reorderInput) removeInput();
+      });
+
+      const style = document.createElement("style");
+      style.textContent = `
+        tbody tr { user-select:none }
+        input { user-select:text!important }
+      `;
+      document.head.appendChild(style);
+    })();
+  </script>
 
   <script>
-(function () {
-  console.log("⛔ Cache Override Active");
-  window.getCachedAi = () => null;
-  window.setCachedAi = () => {};
-})();
-</script>
+    (function () {
+      console.log("⛔ Cache Override Active");
+      window.getCachedAi = () => null;
+      window.setCachedAi = () => { };
+    })();
+  </script>
 
   <script>
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("service-worker.js");
-}
-</script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("service-worker.js");
+    }
+  </script>
 
-  
-<style> 
-  .table-wrapper {
-  resize: vertical;       /* 👈 يسمح بالسحب لتكبير الحجم */
-  overflow: auto;         /* 👈 ضروري مع resize */
-  min-height: 420px;      /* 👈 أقل ارتفاع (خليه ارتفاعه الحالي) */
-  max-height: 90vh;       /* 👈 اختياري: يمنع إنه يكبر زيادة عن الشاشة */
-}
+  <style>
+    .table-wrapper {
+      resize: vertical;
+      overflow: auto;
+      min-height: 420px;
+      max-height: 90vh;
+    }
 
-.manual-input-row {
-  display: grid;
-  grid-template-columns: 2fr 1.2fr 0.6fr 2fr auto;
-  gap: 12px;
-  align-items: center;
-  margin-bottom: 15px;
-}
-.manual-cell {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-.resizable-textarea {
-  width: 100%;
-  resize: vertical;
-  min-height: 42px;
-  padding: 8px 10px;
-  font-family: inherit;
-  font-size: 14px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-}
-#manual-notes {
-  min-height: 80px;
-}
-.search-row {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 10px;
-  align-items: center;
-  margin: 15px 0;
-}
+    .manual-input-row {
+      display: grid;
+      grid-template-columns: 2fr 1.2fr 0.6fr 2fr auto;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 15px;
+    }
 
-#stories-search {
-  max-width: 480px;
-}
-.dropdown-btn {
-  padding: 6px 12px;
-  cursor: pointer;
-  border: 1px solid #ccc;
-  background: #f7f7f7;
-  border-radius: 4px;
-}
-.table-toolbar {
-  margin-bottom: 8px;
-  display: flex;
-  justify-content: flex-start;
-}
-.categories-dropdown {
-  margin-top: 6px;
-  padding: 10px;
-  border: 1px solid #ccc;
-  background: #fff;
-  max-width: 320px;
-}
+    .manual-cell {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
 
-.categories-dropdown label {
-  display: block;
-  margin: 6px 0;
-  cursor: pointer;
-}
+    .resizable-textarea {
+      width: 100%;
+      resize: vertical;
+      min-height: 42px;
+      padding: 8px 10px;
+      font-family: inherit;
+      font-size: 14px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
 
-.hidden {
-  display: none;
-}
+    #manual-notes {
+      min-height: 80px;
+    }
+
+    .search-row {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 10px;
+      align-items: center;
+      margin: 15px 0;
+    }
+
+    #stories-search {
+      max-width: 480px;
+    }
+
+    .dropdown-btn {
+      padding: 6px 12px;
+      cursor: pointer;
+      border: 1px solid #ccc;
+      background: #f7f7f7;
+      border-radius: 4px;
+    }
+
+    .table-toolbar {
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: flex-start;
+    }
+
+    .categories-dropdown {
+      margin-top: 6px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      background: #fff;
+      max-width: 320px;
+    }
+
+    .categories-dropdown label {
+      display: block;
+      margin: 6px 0;
+      cursor: pointer;
+    }
+
+    .hidden {
+      display: none;
+    }
   </style>
-</body>
 
+</body>
 </html>
