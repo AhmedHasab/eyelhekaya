@@ -754,10 +754,9 @@ document.getElementById("categories-dropdown")?.classList.add("hidden");
          ...item,
          title,
          localNumericId:
-         Number.isFinite(Number(item.localNumericId))
-           ? Number(item.localNumericId)
+         Number.isFinite(Number(input.localNumericId))
+           ? Number(input.localNumericId)
            : getNextLocalNumericId(),
-       
        },
        item.type || "long"
      );
