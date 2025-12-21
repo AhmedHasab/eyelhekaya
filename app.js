@@ -48,6 +48,16 @@
      .replaceAll('"', "&quot;")
      .replaceAll("'", "&#039;");
  }
+ async function reorderStoryOnServer(id, toIndex) {
+    await postToWorker({
+      action: "reorder_story",
+      payload: { id, toIndex }
+    });
+  
+    await loadStoriesFromServer();
+    if (isAutoBackupEnabled()) autoBackupDownloadSilent();
+  }
+  
  // =========================
 // NOTES LINKS PARSER
 // =========================
@@ -331,6 +341,42 @@ function extractLinksFromText(text = "") {
   }
 
  
+  let reorderBoxEl = null;
+
+  function ensureReorderBox() {
+    if (reorderBoxEl) return reorderBoxEl;
+  
+    const wrap = document.createElement("div");
+    wrap.style.position = "fixed";
+    wrap.style.zIndex = "9999";
+    wrap.style.display = "none";
+    wrap.style.background = "#fff";
+    wrap.style.border = "1px solid #ddd";
+    wrap.style.borderRadius = "10px";
+    wrap.style.padding = "8px";
+    wrap.style.boxShadow = "0 10px 30px rgba(0,0,0,0.12)";
+  
+    wrap.innerHTML = `
+      <div style="font-weight:800; margin-bottom:6px;">↔ نقل للترتيب</div>
+      <input id="reorder-input" type="number" min="1"
+        style="width:120px; padding:8px; border:1px solid #ccc; border-radius:8px;"
+        placeholder="رقم (مثلاً 3)" />
+      <div style="font-size:12px; opacity:.7; margin-top:6px;">Enter = تنفيذ • Esc = إلغاء</div>
+    `;
+  
+    document.body.appendChild(wrap);
+    reorderBoxEl = wrap;
+    return reorderBoxEl;
+  }
+  
+  function hideReorderBox() {
+    if (!reorderBoxEl) return;
+    reorderBoxEl.style.display = "none";
+    reorderBoxEl.dataset.id = "";
+    reorderBoxEl.dataset.max = "";
+  }
+  
+
  function renderTableBody(tbodyEl, list) {
    if (!tbodyEl) return;
  
@@ -377,30 +423,81 @@ ${favoriteIds.has(String(story.id)) ? "⭐ مفضلة" : "☆ مفضلة"}
      `;
  
      tbodyEl.appendChild(tr);
+
+     tr.dataset.storyId = String(story.id);
+
    });
  
    // Delegate click handling inside tbody
    tbodyEl.onclick = async (e) => {
 
+    // 1) مفضلة
     const favBtn = e.target.closest("button[data-fav-id]");
     if (favBtn) {
       const favId = favBtn.getAttribute("data-fav-id");
       await addToFavorites(favId);
-
       return;
     }
-    
-
-     const btn = e.target.closest("button[data-action]");
-     if (!btn) return;
-     const id = btn.getAttribute("data-id");
-     const action = btn.getAttribute("data-action");
- 
-     if (action === "view") showStoryDetails(id);
-     if (action === "edit") startEditStory(id);
-     if (action === "done") toggleDone(id);
-     if (action === "del") deleteStoryFromServer(id);
-   };
+  
+    // 2) أزرار الأكشن
+    const btn = e.target.closest("button[data-action]");
+    if (btn) {
+      const id = btn.getAttribute("data-id");
+      const action = btn.getAttribute("data-action");
+  
+      if (action === "view") showStoryDetails(id);
+      if (action === "edit") startEditStory(id);
+      if (action === "done") toggleDone(id);
+      if (action === "del") deleteStoryFromServer(id);
+      return;
+    }
+  
+    // 3) ضغط على الصف نفسه → افتح مربع الترتيب
+    const tr = e.target.closest("tr");
+    if (!tr) return;
+  
+    const id = tr.dataset.storyId;
+    if (!id) return;
+  
+    const box = ensureReorderBox();
+    const input = box.querySelector("#reorder-input");
+  
+    // أقصى يمين الصف (في الشاشة)
+    const r = tr.getBoundingClientRect();
+    box.style.left = `${Math.min(window.innerWidth - 180, r.right + 10)}px`;
+    box.style.top = `${Math.max(10, r.top)}px`;
+    box.style.display = "block";
+  
+    // max = عدد الصفوف في نفس الجدول (طويل أو قصير)
+    const max = tr.parentElement?.querySelectorAll("tr")?.length || 1;
+    box.dataset.id = String(id);
+    box.dataset.max = String(max);
+  
+    input.value = "";
+    input.focus();
+  
+    // Events (مرة واحدة كل فتح)
+    input.onkeydown = async (ev) => {
+      if (ev.key === "Escape") {
+        hideReorderBox();
+        return;
+      }
+      if (ev.key === "Enter") {
+        const to = Number(input.value);
+        const mx = Number(box.dataset.max || 1);
+  
+        if (!Number.isFinite(to) || to < 1 || to > mx) {
+          input.value = "";
+          input.placeholder = `من 1 إلى ${mx}`;
+          return;
+        }
+  
+        hideReorderBox();
+        await reorderStoryOnServer(box.dataset.id, to);
+      }
+    };
+  };
+  
  }
  
  /* =========================
@@ -1109,6 +1206,12 @@ async function addToFavorites(storyId) {
       
     // Search
     $("stories-search")?.addEventListener("input", handleSearchInput);
+    document.addEventListener("click", (e) => {
+        if (!reorderBoxEl || reorderBoxEl.style.display === "none") return;
+        const inside = e.target.closest("#reorder-input") || e.target.closest("tr");
+        if (!inside) hideReorderBox();
+      });
+      
   }
   
  
@@ -1264,4 +1367,3 @@ document.addEventListener("DOMContentLoaded", () => {
   
   // 🚀 شغّل التطبيق
   bootstrapApp();
-
