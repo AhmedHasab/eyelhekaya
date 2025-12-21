@@ -320,22 +320,20 @@ async function toggleFavorite(id) {
   flex-direction: column;
   justify-content: center;
 }
-  .table-wrapper {
-  overflow-x: auto;
-  overflow-y: visible;
-  padding-bottom: 6px;
-
-  /* يمنع انضغاط الجدول */
-  white-space: nowrap;
-
-  /* يحافظ على شكل الـ card */
-  border-radius: 8px;
+/* الغلاف الخارجي للجدول */
+.table-wrapper {
+  overflow-x: auto;      /* سحب أفقي عند الحاجة */
+  overflow-y: hidden;
+  width: 100%;
 }
+
+/* الجدول نفسه */
 #stories-table,
 #short-stories-table {
-  min-width: 1200px; /* ✔ تقدر تزودها 1500 أو 1800 حسب ما تحب */
+  min-width: 1400px;     /* ✔ هذا الرقم هو الحد الأدنى لعرض الجدول */
+  width: 100%;           /* يمتلئ عند توفر مساحة */
   border-collapse: collapse;
-  width: 100%;
+  table-layout: fixed;   /* يحافظ على شكل الأعمدة */
 }
 
 .resizable-textarea {
