@@ -220,7 +220,42 @@ function detectCategoriesFromTitle(title = "") {
     .map(r => r.category);
 }
 
- 
+ function detectCategoriesSmart({ title = "", keywords = [] }) {
+  const textTitle = normalizeArabic(title.toLowerCase());
+  const textKeywords = normalizeArabic(
+    Array.isArray(keywords) ? keywords.join(" ").toLowerCase() : ""
+  );
+
+  const results = [];
+
+  for (const group of KEYWORD_CATEGORY_MAP) {
+    let score = 0;
+
+    for (const kw of group.keywords) {
+      const word = normalizeArabic(kw.toLowerCase());
+      if (!word) continue;
+
+      // 🔴 تطابق في العنوان = وزن أعلى
+      if (textTitle.includes(word)) {
+        score += Math.min(word.length * 2, 10);
+      }
+      // 🟡 تطابق في الكلمات المفتاحية = دعم
+      else if (textKeywords.includes(word)) {
+        score += Math.min(word.length, 6);
+      }
+    }
+
+    if (score >= 5) {
+      results.push({ category: group.category, score });
+    }
+  }
+
+  return results
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3)   // ✅ حد أقصى 3 فئات
+    .map(r => r.category);
+}
+
  /* =========================
     LOCAL NUMERIC ID (for import/manual UX)
     NOTE: Worker still generates/owns real story.id.
@@ -1096,9 +1131,10 @@ ${favoriteIds.has(String(r.id || tmp)) ? "⭐ مفضلة" : "☆ مفضلة"}
         const normalized = normalizeStoryObject(
           {
             title: title,
-            categories: chosen.categories || (
-                chosen.category ? [chosen.category] : []
-              ),              
+          categories: detectCategoriesSmart({
+  title,
+  keywords: chosen.keywords || chosen.tags || []
+}),            
             type: chosen.type || "long",
             score: Number(chosen.score ?? 80),
             trendScore: Number(chosen.trendScore ?? 0),
@@ -1312,7 +1348,7 @@ async function addToFavorites(storyId) {
     // ⚠️ ملحوظة: زر الريلز (btn-pick-short) НЕ يتم ربطه هنا
   
     // Layout controls
-   /* $("btn-show-stories-only")?.addEventListener("click", showStoriesOnly);*/
+    $("btn-show-stories-only")?.addEventListener("click", showStoriesOnly);
     $("btn-show-both")?.addEventListener("click", showBothPanels);
     $("btn-show-ai-only")?.addEventListener("click", showAiOnly);
   
