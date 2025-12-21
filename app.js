@@ -94,7 +94,7 @@
  let stories = []; // source of truth = server
  let editingStoryId = null;
  let lastAIResults = null;
- 
+ let FORCE_GROUPING = false;
  /* =========================
     DOM HELPERS
  ========================= */
@@ -447,6 +447,64 @@ function normalizeStoryObject(input, forcedType) {
     - Existing long table: #stories-tbody
     - Optional short table: #short-stories-tbody (if you add it in index.html)
  ========================= */
+/* =========================
+   SMART TEMP GROUPING (APP LEVEL)
+========================= */
+
+function words15(title) {
+  return normalizeArabic(title)
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 15);
+}
+
+function overlapCount(a, b) {
+  const A = new Set(words15(a));
+  const B = new Set(words15(b));
+  let c = 0;
+  A.forEach(w => B.has(w) && c++);
+  return c;
+}
+
+function groupStoriesBySimilarity(list) {
+  const used = new Set();
+  const result = [];
+
+  for (let i = 0; i < list.length; i++) {
+    const base = list[i];
+    if (used.has(base.id)) continue;
+
+    const group = [base];
+    used.add(base.id);
+
+    for (let j = 0; j < list.length; j++) {
+      const other = list[j];
+      if (used.has(other.id)) continue;
+
+      if (
+  overlapCount(base.title, other.title) >= 2 ||
+  normalizeArabic(other.title).includes(normalizeArabic(base.title)) ||
+  normalizeArabic(base.title).includes(normalizeArabic(other.title))
+) {
+
+        group.push(other);
+        used.add(other.id);
+      }
+    }
+
+    // ترتيب داخل المجموعة حسب الأقرب
+    group.sort((a, b) =>
+      overlapCount(b.title, base.title) -
+      overlapCount(a.title, base.title)
+    );
+
+    result.push(...group);
+  }
+
+  return result;
+}
+
+
  function renderStoriesTables(filterText = "") {
 
     const q = normalizeArabic(filterText);
@@ -454,6 +512,10 @@ function normalizeStoryObject(input, forcedType) {
     let filteredStories = stories.filter(s =>
       normalizeArabic(s.title || "").includes(q)
     );
+  
+if (FORCE_GROUPING) {
+  filteredStories = groupStoriesBySimilarity(filteredStories);
+}
   
     // ⭐ لو وضع عرض المفضلة فقط مفعّل
     if (showFavoritesOnly) {
@@ -1374,6 +1436,16 @@ async function addToFavorites(storyId) {
       
     // Search
     $("stories-search")?.addEventListener("input", handleSearchInput);
+$("btn-force-group")?.addEventListener("click", () => {
+  FORCE_GROUPING = !FORCE_GROUPING;
+
+  $("btn-force-group").textContent =
+    FORCE_GROUPING
+      ? "🧩 تجميع متشابه (مفعّل)"
+      : "🧩 تجميع متشابه (مؤقت)";
+
+  renderStoriesTables($("stories-search")?.value || "");
+});
 
   }
   
