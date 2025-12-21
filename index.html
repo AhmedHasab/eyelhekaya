@@ -278,9 +278,9 @@ async function toggleFavorite(id) {
 
 
   <script src="app.js"></script>
-  <script>
+<script>
 /* ===============================
-   INLINE ROW REORDER (UI + WORKER)
+   INLINE ROW REORDER (FIXED)
    =============================== */
 
 let reorderBox = null;
@@ -316,13 +316,20 @@ function ensureReorderBox() {
   return box;
 }
 
-// اضغط على أي صف
 document.addEventListener("click", (e) => {
-  const row = e.target.closest("tr[data-story-id]");
-  if (!row) return;
+  const row = e.target.closest("tr");
+  if (!row || !row.closest("tbody")) return;
+
+  // ❗ ناخد الـ ID من أول خلية (#)
+  const idCell = row.querySelector("td");
+  if (!idCell) return;
+
+  const storyId = idCell.textContent.trim();
+  if (!storyId) return;
 
   const tbody = row.parentElement;
   const rows = Array.from(tbody.querySelectorAll("tr"));
+
   const box = ensureReorderBox();
   const input = box.querySelector("#reorder-input-inline");
 
@@ -347,10 +354,7 @@ document.addEventListener("click", (e) => {
     tbody.removeChild(row);
     tbody.insertBefore(row, tbody.children[to - 1] || null);
 
-    // 2️⃣ حفظ الترتيب في Worker
-    const storyId = row.dataset.storyId;
-    if (!storyId) return;
-
+    // 2️⃣ حفظ في الـ Worker
     try {
       await fetch("https://odd-credit-25c6.namozg50.workers.dev/", {
         method: "POST",
@@ -358,13 +362,13 @@ document.addEventListener("click", (e) => {
         body: JSON.stringify({
           action: "reorder_story",
           payload: {
-            id: String(storyId),
+            id: storyId,
             toIndex: to
           }
         })
       });
     } catch (err) {
-      console.error("❌ reorder save failed", err);
+      console.error("❌ reorder failed", err);
     }
   };
 });
