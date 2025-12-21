@@ -321,12 +321,20 @@ async function toggleFavorite(id) {
   justify-content: center;
 }
 .table-wrapper {
-    display: inline-block;   /* 👈 علشان العنصر يكبر بحرية */
-    resize: both;            /* 👈 سحب أفقي + رأسي */
-    overflow: auto;          /* 👈 مهم جداً للسحب */
-    min-width: 900px;        /* 👈 أقل عرض مفضل */
-    min-height: 500px;
-    max-width: none;         /* 👈 إزالة أي حدود للعرض */
+    display: inline-block;     /* يسمح بالتمدد الحقيقي */
+    resize: both;              /* سحب أفقي + سحب رأسي */
+    overflow: auto;            /* يسمح بزيادة الحجم */
+    
+    min-width: 900px;          /* الحد الأدنى للعرض */
+    min-height: 500px;         /* الحد الأدنى للطول */
+    
+    width: auto;               /* ضروري لحرية التمدد */
+    height: auto;              /* ضروري لحرية التمدد */
+    
+    max-width: none;           /* بدون أي حدود للعرض */
+    max-height: none;          /* بدون أي حدود للطول */
+    
+    box-sizing: border-box;    /* يمنع مشاكل القياس */
 }
   
 .resizable-textarea {
