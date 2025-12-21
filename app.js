@@ -271,37 +271,41 @@ function extractLinksFromText(text = "") {
     STORY NORMALIZATION (Standard schema)
  ========================= */
  function normalizeStoryObject(input, forcedType) {
-   const now = new Date().toISOString();
- 
-   // Accept older stories.json schema: name/added
-   const title = (input.title ?? input.name ?? "").trim();
- 
-   return {
-     // Worker generates final `id`, but we keep optional localNumericId for your workflow
-     title,
-     categories: Array.isArray(input.categories)
-  ? input.categories
-  : input.category
-    ? [input.category]
-    : [],
-     type: forcedType || input.type || "long", // "long" | "short"
-     score: Number(input.score ?? 80),
-     trendScore: Number(input.trendScore ?? 0),
-     finalScore: Number(input.finalScore ?? (Number(input.score ?? 80))),
-     done: Boolean(input.done ?? false),
-     notes: input.notes ?? "",
-     source: input.source ?? "",
-     country: input.country ?? "",
-     createdAt: input.createdAt ?? input.added ?? now,
-     analysis: input.analysis ?? null, // keep if worker sends analysis
-     localNumericId:
-Number.isFinite(Number(item.localNumericId))
-  ? Number(item.localNumericId)
-  : getNextLocalNumericId(),
-   
-   };
- }
- 
+    const now = new Date().toISOString();
+  
+    const title = (input.title ?? input.name ?? "").trim();
+  
+    return {
+      title,
+      categories: Array.isArray(input.categories)
+        ? input.categories
+        : input.category
+          ? [input.category]
+          : [],
+  
+      type: forcedType || input.type || "long",
+  
+      score: Number(input.score ?? 80),
+      trendScore: Number(input.trendScore ?? 0),
+      finalScore: Number(
+        input.finalScore ??
+        (Number(input.score ?? 80))
+      ),
+  
+      done: Boolean(input.done ?? false),
+      notes: input.notes ?? "",
+      source: input.source ?? "",
+      country: input.country ?? "",
+      createdAt: input.createdAt ?? input.added ?? now,
+      analysis: input.analysis ?? null,
+  
+      // ✅ التصحيح الحقيقي هنا
+      localNumericId: Number.isFinite(Number(input.localNumericId))
+        ? Number(input.localNumericId)
+        : getNextLocalNumericId(),
+    };
+  }
+  
  /* =========================
     UI: RENDER TABLE(S)
     - Existing long table: #stories-tbody
