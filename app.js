@@ -590,45 +590,59 @@ if (!tr) return;
     RAW PARSE (each line => story)
  ========================= */
  async function parseRawToStories() {
-   const raw = ($("raw-input")?.value || "").trim();
-   if (!raw) return;
- 
-   const lines = raw
-     .split("\n")
-     .map((x) => x.trim())
-     .filter(Boolean);
- 
-   if (!lines.length) return;
- 
-   // Dedup vs current stories by normalized title
-   const existing = new Set(stories.map((s) => normalizeArabic(s.title || "")));
- 
-   for (const line of lines) {
-     const title = line.trim();
-     if (!title) continue;
- 
-     const key = normalizeArabic(title);
-     if (existing.has(key)) continue;
- 
-     const story = normalizeStoryObject(
-       {
-         title,
-         categories: getSelectedCategories(),
-         score: Number($("manual-score")?.value || 80),
-         notes: "",
-         source: "raw",
-         country: "",
-       },
-       "long"
-     );
- 
-     // IMPORTANT: Worker is truth; we send payload (worker will assign id)
-     await addStoryToServer(story);
-     existing.add(key);
-   }
- 
-   $("raw-input").value = "";
- }
+    const raw = ($("raw-input")?.value || "").trim();
+    if (!raw) return;
+  
+    const lines = raw
+      .split("\n")
+      .map(x => x.trim())
+      .filter(Boolean);
+  
+    if (!lines.length) return;
+  
+    const existing = new Set(
+      stories.map(s => normalizeArabic(s.title || ""))
+    );
+  
+    const batch = [];
+  
+    for (const line of lines) {
+      const title = line.trim();
+      if (!title) continue;
+  
+      const key = normalizeArabic(title);
+      if (existing.has(key)) continue;
+  
+      const story = normalizeStoryObject(
+        {
+          title,
+          categories: getSelectedCategories(),
+          score: Number($("manual-score")?.value || 80),
+          notes: "",
+          source: "raw",
+          country: "",
+        },
+        "long"
+      );
+  
+      batch.push(story);
+      existing.add(key);
+    }
+  
+    // 🔥 إرسال دفعة واحدة
+    for (const story of batch) {
+      await postToWorker({
+        action: "add_story",
+        payload: story
+      });
+    }
+  
+    // 🔥 reload مرة واحدة فقط
+    await loadStoriesFromServer();
+  
+    $("raw-input").value = "";
+  }
+  
  
  /* =========================
     MANUAL ADD / SAVE EDIT
