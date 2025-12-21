@@ -219,286 +219,212 @@
 
   </div>
 <!-- سكريبت التحكم في الفئات (Categories) -->
+
+
 <script>
-  
+/* =========================
+   FAVORITES (INLINE → app.js compatible)
+========================= */
 async function toggleFavorite(id) {
-  const res = await postToWorker({
-    action: "add_favorite",
-    payload: { id }
-  });
-
-  if (!res.ok) return;
-
-  // 🔴 المهم هنا
-  FAVORITE_IDS = res.ids;   // تحديث الحالة فورًا
-
-  renderAllTables();        // إعادة رسم كل الجداول
+  // app.js هو Source of Truth
+  await addToFavorites(id);
 }
-// اختيار قصة طويله او قصيرة 
-  function getSelectedStoryType() {
-  const el = document.querySelector(
-    "input[name='story-type']:checked"
-  );
+
+/* =========================
+   STORY TYPE (long / short)
+========================= */
+function getSelectedStoryType() {
+  const el = document.querySelector("input[name='story-type']:checked");
   return el ? el.value : "long";
 }
-  
-  function setCategoriesSelection(categories = []) {
-    document
-      .querySelectorAll("#categories-dropdown input[type='checkbox']")
-      .forEach(cb => {
-        cb.checked = categories.includes(cb.value);
-      });
-  }
 
-  function clearCategoriesSelection() {
-    document
-      .querySelectorAll("#categories-dropdown input[type='checkbox']")
-      .forEach(cb => {
-        cb.checked = false;
-      });
-  }
+/* =========================
+   CATEGORIES
+========================= */
+function setCategoriesSelection(categories = []) {
+  document
+    .querySelectorAll("#categories-dropdown input[type='checkbox']")
+    .forEach(cb => {
+      cb.checked = categories.includes(cb.value);
+    });
+}
+
+function clearCategoriesSelection() {
+  document
+    .querySelectorAll("#categories-dropdown input[type='checkbox']")
+    .forEach(cb => {
+      cb.checked = false;
+    });
+}
 </script>
-  <script>
-  // فتح / قفل القائمة
-  document.getElementById("toggle-categories")?.addEventListener("click", () => {
+
+<script>
+/* فتح / قفل قائمة التصنيفات */
+document
+  .getElementById("toggle-categories")
+  ?.addEventListener("click", () => {
     document
       .getElementById("categories-dropdown")
       .classList.toggle("hidden");
   });
 
-  // الدالة اللي app.js بيستخدمها
-  function getSelectedCategories() {
-    return Array.from(
-      document.querySelectorAll(
-        "#categories-dropdown input[type='checkbox']:checked"
-      )
-    ).map(cb => cb.value);
-  }
+/* app.js يعتمد عليها */
+function getSelectedCategories() {
+  return Array.from(
+    document.querySelectorAll(
+      "#categories-dropdown input[type='checkbox']:checked"
+    )
+  ).map(cb => cb.value);
+}
 </script>
 
-  
-/*******ملف APP************************/
 
   <script src="app.js"></script>
 
-  /***************نقل اي صف في الجدول لصف جديد******************/
-  
-<script>
+  <script>
 /* ==================================================
-   INLINE ROW REORDER — ROBUST FIX
-   - Double click على أي صف داخل tbody
-   - يمنع تحديد النص
-   - يستخرج UUID الحقيقي من الصف حتى لو مش موجود على <tr>
-   - input يظهر يمين الصف مباشرة
-   - الصف نفسه يتحرك + عمود # يتحدث
-   - يحفظ في Worker عبر reorder_story
-   ================================================== */
-
+   INLINE ROW REORDER — FINAL SAFE VERSION
+================================================== */
 (() => {
   const WORKER_URL = "https://odd-credit-25c6.namozg50.workers.dev/";
-
   let reorderInput = null;
 
-  // UUID v4 regex (كفاية لمعظم الحالات)
   const UUID_RE =
     /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}/;
 
   function removeInput() {
-    if (reorderInput) {
-      reorderInput.remove();
-      reorderInput = null;
-    }
+    reorderInput?.remove();
+    reorderInput = null;
   }
 
-  // يحاول يطلع الـ storyId الحقيقي من أي مكان داخل الصف
   function extractStoryId(row) {
-    // 1) لو موجود على tr
-    if (row?.dataset?.storyId) return String(row.dataset.storyId).trim();
+    if (row?.dataset?.storyId) return row.dataset.storyId;
 
-    // 2) أي عنصر داخلي عنده data-story-id
-    const el1 = row.querySelector("[data-story-id]");
-    if (el1?.dataset?.storyId) return String(el1.dataset.storyId).trim();
+    const byDataId = row.querySelector("[data-id]");
+    if (byDataId?.dataset?.id) return byDataId.dataset.id;
 
-    // 3) أي عنصر داخلي عنده data-id
-    const el2 = row.querySelector("[data-id]");
-    if (el2?.dataset?.id) return String(el2.dataset.id).trim();
-
-    // 4) أي onclick يحتوي UUID (شائع جدًا في الأزرار)
-    const clickables = row.querySelectorAll("[onclick]");
-    for (const el of clickables) {
-      const s = el.getAttribute("onclick") || "";
-      const m = s.match(UUID_RE);
-      if (m) return m[0];
-    }
-
-    // 5) أي نص داخل الصف يحتوي UUID
-    const m2 = (row.textContent || "").match(UUID_RE);
-    if (m2) return m2[0];
-
-    return "";
+    const m = row.textContent.match(UUID_RE);
+    return m ? m[0] : "";
   }
 
-  function renumberTbody(tbody) {
-    Array.from(tbody.querySelectorAll("tr")).forEach((tr, i) => {
-      const firstTd = tr.querySelector("td");
-      if (firstTd) firstTd.textContent = String(i + 1);
+  function renumber(tbody) {
+    tbody.querySelectorAll("tr").forEach((tr, i) => {
+      const td = tr.querySelector("td");
+      if (td) td.textContent = i + 1;
     });
   }
 
-  async function saveReorder(storyId, toIndex) {
+  async function saveReorder(id, toIndex) {
     const res = await fetch(WORKER_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         action: "reorder_story",
-        payload: { id: String(storyId), toIndex: Number(toIndex) }
+        payload: { id: String(id), toIndex: Number(toIndex) }
       })
     });
 
-    // لو Worker رجّع 400 يبقى الـ payload غلط (غالبًا storyId مش UUID)
     if (!res.ok) {
-      let extra = "";
-      try { extra = await res.text(); } catch {}
-      console.error("❌ Worker rejected reorder:", res.status, extra);
-      throw new Error("Worker rejected reorder");
+      const t = await res.text();
+      console.error("❌ reorder failed:", t);
+      throw new Error("reorder_story rejected");
     }
   }
 
-  function showInputNextToRow(row, maxIndex) {
-    removeInput();
+  document.addEventListener(
+    "dblclick",
+    async e => {
+      const row = e.target.closest("tbody tr");
+      if (!row) return;
 
-    reorderInput = document.createElement("input");
-    reorderInput.type = "number";
-    reorderInput.min = "1";
-    reorderInput.max = String(maxIndex);
-    reorderInput.placeholder = "رقم الترتيب";
-    reorderInput.autocomplete = "off";
+      e.preventDefault();
+      e.stopPropagation();
 
-    // شكل input
-    Object.assign(reorderInput.style, {
-      position: "absolute",
-      zIndex: "99999",
-      width: "110px",
-      padding: "6px 8px",
-      border: "1px solid #ccc",
-      borderRadius: "8px",
-      fontSize: "14px",
-      background: "#fff",
-      boxShadow: "0 10px 30px rgba(0,0,0,.15)"
-    });
+      const tbody = row.closest("tbody");
+      const rows = Array.from(tbody.querySelectorAll("tr"));
+      const max = rows.length;
 
-    // مكانه جنب الصف من اليمين
-    const rect = row.getBoundingClientRect();
-    reorderInput.style.top  = `${window.scrollY + rect.top + 6}px`;
-    reorderInput.style.left = `${window.scrollX + rect.right + 10}px`;
-
-    document.body.appendChild(reorderInput);
-    reorderInput.focus();
-    reorderInput.select();
-
-    return reorderInput;
-  }
-
-  // مهم: capture=true عشان نمسك الحدث قبل ما يروح لتحديد النص
-  document.addEventListener("dblclick", async (e) => {
-    const row = e.target.closest("tbody tr");
-    if (!row) return;
-
-    // امنع تحديد النص
-    e.preventDefault();
-    e.stopPropagation();
-
-    const tbody = row.closest("tbody");
-    const rows = Array.from(tbody.querySelectorAll("tr"));
-    const maxIndex = rows.length;
-
-    const storyId = extractStoryId(row);
-
-    if (!storyId || !UUID_RE.test(storyId)) {
-      console.error("❌ Cannot extract valid story UUID from this row.", { storyId, row });
-      alert("مش لاقي الـ ID الحقيقي (UUID) جوّه الصف. لازم الـ app.js يطبع UUID في أي زر/attribute.");
-      return;
-    }
-
-    const input = showInputNextToRow(row, maxIndex);
-
-    input.onkeydown = async (ev) => {
-      if (ev.key === "Escape") {
-        removeInput();
+      const storyId = extractStoryId(row);
+      if (!UUID_RE.test(storyId)) {
+        alert("❌ لم يتم العثور على UUID صحيح للصف");
         return;
       }
-      if (ev.key !== "Enter") return;
-
-      const toIndex = Number(input.value);
-      if (!toIndex || toIndex < 1 || toIndex > maxIndex) return;
 
       removeInput();
+      reorderInput = document.createElement("input");
+      reorderInput.type = "number";
+      reorderInput.min = 1;
+      reorderInput.max = max;
+      reorderInput.placeholder = "رقم الترتيب";
 
-      // 1) UI reorder
-      const currentRows = Array.from(tbody.querySelectorAll("tr"));
-      const anchor = currentRows[toIndex - 1] || null;
+      const r = row.getBoundingClientRect();
+      Object.assign(reorderInput.style, {
+        position: "absolute",
+        top: `${window.scrollY + r.top}px`,
+        left: `${window.scrollX + r.right + 8}px`,
+        zIndex: 9999,
+        width: "110px",
+        padding: "6px",
+        borderRadius: "8px"
+      });
 
-      // لو بتحرك لأسفل، لازم نراعي إن removal يغير الـ index
-      const isMovingDown = row.rowIndex < (anchor?.rowIndex || 0);
-      tbody.removeChild(row);
-      tbody.insertBefore(row, isMovingDown ? (anchor?.nextSibling || null) : anchor);
+      document.body.appendChild(reorderInput);
+      reorderInput.focus();
 
-      // 2) Renumber column #
-      renumberTbody(tbody);
+      reorderInput.onkeydown = async ev => {
+        if (ev.key === "Escape") return removeInput();
+        if (ev.key !== "Enter") return;
 
-      // 3) Save to worker
-      try {
-        await saveReorder(storyId, toIndex);
-      } catch (err) {
-        console.error("❌ reorder failed:", err);
-        alert("حصل خطأ في حفظ الترتيب على الـ Worker (شوف Console).");
-      }
-    };
-  }, true);
+        const to = Number(reorderInput.value);
+        if (!to || to < 1 || to > max) return;
 
-  // لو ضغطت أي مكان تاني، اقفل input
-  document.addEventListener("mousedown", (e) => {
-    if (!reorderInput) return;
-    if (e.target === reorderInput) return;
-    removeInput();
+        removeInput();
+
+        const current = Array.from(tbody.querySelectorAll("tr"));
+        const target = current[to - 1];
+        tbody.removeChild(row);
+        tbody.insertBefore(row, target);
+
+        renumber(tbody);
+
+        try {
+          await saveReorder(storyId, to);
+        } catch {
+          alert("❌ فشل حفظ الترتيب (راجع Console)");
+        }
+      };
+    },
+    true
+  );
+
+  document.addEventListener("mousedown", e => {
+    if (e.target !== reorderInput) removeInput();
   });
 
-  // منع تحديد نص مزعج داخل الجدول عند الـ dblclick (اختياري لكن مفيد)
   const style = document.createElement("style");
   style.textContent = `
-    table tbody tr { user-select: none; }
-    table tbody tr * { user-select: none; }
-    input { user-select: text !important; }
+    tbody tr { user-select:none }
+    input { user-select:text!important }
   `;
   document.head.appendChild(style);
 })();
 </script>
 
-
-<script>
-// تعطيل الكاش بالكامل بدون تعديل app.js
-
-(function() {
-    console.log("⛔ Cache Override Activated (AI Cache Disabled)");
-
-    // إلغاء وظيفة القراءة من الكاش
-    window.getCachedAi = function () {
-        console.log("Cache read blocked");
-        return null;
-    };
-
-    // إلغاء وظيفة الكتابة إلى الكاش
-    window.setCachedAi = function () {
-        console.log("Cache write blocked");
-    };
+  <script>
+(function () {
+  console.log("⛔ Cache Override Active");
+  window.getCachedAi = () => null;
+  window.setCachedAi = () => {};
 })();
 </script>
 
   <script>
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("service-worker.js");
-    }
-  </script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("service-worker.js");
+}
+</script>
+
+  
 <style> 
 .manual-input-row {
   display: grid;
