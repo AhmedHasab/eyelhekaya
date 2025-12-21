@@ -320,20 +320,19 @@ async function toggleFavorite(id) {
   flex-direction: column;
   justify-content: center;
 }
-/* الغلاف الخارجي للجدول */
-.table-wrapper {
-  overflow-x: auto;      /* سحب أفقي عند الحاجة */
-  overflow-y: hidden;
-  width: 100%;
-}
-
-/* الجدول نفسه */
 #stories-table,
 #short-stories-table {
-  min-width: 1400px;     /* ✔ هذا الرقم هو الحد الأدنى لعرض الجدول */
-  width: 100%;           /* يمتلئ عند توفر مساحة */
-  border-collapse: collapse;
-  table-layout: fixed;   /* يحافظ على شكل الأعمدة */
+    min-width: 1250px;   /* 👈 هذا هو الحد الأدنى الصحيح حسب الصورة */
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.table-wrapper {
+    overflow-x: auto;  /* يسمح بالسحب يمين/شمال عند الحاجة */
+    overflow-y: auto;
+    resize: vertical;  /* لو حابب تسحب رأسيًا */
+    min-height: 400px;
 }
 
 .resizable-textarea {
