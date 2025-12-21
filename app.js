@@ -220,10 +220,16 @@ function detectCategoriesFromTitle(title = "") {
     .map(r => r.category);
 }
 
- function detectCategoriesSmart({ title = "", keywords = [] }) {
-  const textTitle = normalizeArabic(title.toLowerCase());
+function detectCategoriesSmart({ title = "", keywords = [] }) {
+  // 🔑 مفتاح التشابه: أول 15 كلمة كما هي
+  const similarityKey = normalizeArabic(title)
+    .split(" ")
+    .slice(0, 15)
+    .join(" ");
+
+  const textTitle = similarityKey;
   const textKeywords = normalizeArabic(
-    Array.isArray(keywords) ? keywords.join(" ").toLowerCase() : ""
+    Array.isArray(keywords) ? keywords.join(" ") : ""
   );
 
   const results = [];
@@ -235,12 +241,9 @@ function detectCategoriesFromTitle(title = "") {
       const word = normalizeArabic(kw.toLowerCase());
       if (!word) continue;
 
-      // 🔴 تطابق في العنوان = وزن أعلى
       if (textTitle.includes(word)) {
         score += Math.min(word.length * 2, 10);
-      }
-      // 🟡 تطابق في الكلمات المفتاحية = دعم
-      else if (textKeywords.includes(word)) {
+      } else if (textKeywords.includes(word)) {
         score += Math.min(word.length, 6);
       }
     }
@@ -250,10 +253,15 @@ function detectCategoriesFromTitle(title = "") {
     }
   }
 
-  return results
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 3)   // ✅ حد أقصى 3 فئات
-    .map(r => r.category);
+  // ⛔ نفس السلوك القديم + المفتاح الجديد
+  return {
+    categories: results
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3)
+      .map(r => r.category),
+
+    similarityKey
+  };
 }
 
  /* =========================
@@ -419,7 +427,7 @@ function normalizeStoryObject(input, forcedType) {
       ...(input.category ? [input.category] : []),
       ...autoCategories
     ])),
-
+  similarityKey: input.similarityKey || null, // ✅ أضفه هنا
     type: forcedType || input.type || "long",
 
     score: Number(input.score ?? 80),
@@ -1128,13 +1136,18 @@ ${favoriteIds.has(String(r.id || tmp)) ? "⭐ مفضلة" : "☆ مفضلة"}
           return;
         }
         
+const smart = detectCategoriesSmart({
+  title,
+  keywords: chosen.keywords || chosen.tags || []
+});
+
         const normalized = normalizeStoryObject(
           {
             title: title,
-          categories: detectCategoriesSmart({
-  title,
-  keywords: chosen.keywords || chosen.tags || []
-}),            
+
+categories: smart.categories,
+similarityKey: smart.similarityKey,
+         
             type: chosen.type || "long",
             score: Number(chosen.score ?? 80),
             trendScore: Number(chosen.trendScore ?? 0),
@@ -1480,4 +1493,3 @@ document.addEventListener("DOMContentLoaded", () => {
   
   // 🚀 شغّل التطبيق
   bootstrapApp();
-
