@@ -121,34 +121,53 @@ function extractLinksFromText(text = "") {
      .trim();
  }
 
- function getSmartTitleTokens(title = "", limit = 15) {
-    return normalizeArabic(title)
-      .split(" ")
-      .filter(w =>
-        w.length > 2 && // تجاهل القصير
-        ![
-          "قصة","حكاية","تفاصيل","كاملة","كامل",
-          "بعد","قبل","سبب","حقيقة","اسرار",
-          "وفاة","مقتل","اغتيال","قضية"
-        ].includes(w)
-      )
-      .slice(0, limit);
+ function similarityScore(a = [], b = []) {
+    let score = 0;
+    const maxLen = Math.max(a.length, b.length);
+  
+    for (let i = 0; i < Math.min(a.length, b.length); i++) {
+      if (a[i] === b[i]) {
+        score += 2; // نفس الكلمة + نفس الترتيب
+      } else if (a.includes(b[i])) {
+        score += 1; // نفس الكلمة ترتيب مختلف
+      }
+    }
+  
+    return maxLen ? score / maxLen : 0;
   }
   
-  function similarityScore(tokensA = [], tokensB = []) {
-    let score = 0;
-    tokensA.forEach(t => {
-      if (tokensB.includes(t)) score++;
-    });
-    return score;
-  }
   
   function smartGroupByTitleSimilarity(list = []) {
-    // نسخة للعرض فقط (مهم جدًا)
+    if (!list.length) return list;
+  
+    // تجهيز العناصر + التوكنز (حتى 15 كلمة)
     const items = list.map(s => ({
       ...s,
-      _tokens: getSmartTitleTokens(s.title, 15)
+      _tokens: normalizeArabic(s.title || "")
+        .split(" ")
+        .filter(w => w.length > 0)
+        .slice(0, 15)
     }));
+  
+  
+    // حساب متوسط التشابه العام (لتحديد الصرامة تلقائيًا)
+    let total = 0;
+    let comparisons = 0;
+  
+    for (let i = 0; i < items.length; i++) {
+      for (let j = i + 1; j < items.length; j++) {
+        total += similarityScore(items[i]._tokens, items[j]._tokens);
+        comparisons++;
+      }
+    }
+  
+    const avgSimilarity = comparisons ? total / comparisons : 0;
+  
+    // 🎯 تحديد مستوى الصرامة تلقائيًا
+    let THRESHOLD;
+    if (avgSimilarity > 0.55) THRESHOLD = 0.6;       // أسماء شبه متطابقة
+    else if (avgSimilarity > 0.35) THRESHOLD = 0.45; // تشابه متوسط
+    else THRESHOLD = 0.3;                            // تشابه ضعيف
   
     const used = new Set();
     const result = [];
@@ -159,7 +178,6 @@ function extractLinksFromText(text = "") {
       const base = items[i];
       used.add(base.id);
   
-      // المجموعة الحالية
       const group = [base];
   
       for (let j = i + 1; j < items.length; j++) {
@@ -167,21 +185,17 @@ function extractLinksFromText(text = "") {
         if (used.has(candidate.id)) continue;
   
         const score = similarityScore(base._tokens, candidate._tokens);
-  
-        // ⭐ شرط التشابه (ذكي ومتحفظ)
-        if (score >= 2) {
+        if (score >= THRESHOLD) {
           group.push(candidate);
           used.add(candidate.id);
         }
       }
   
-      // لو فيه أكتر من قصة → رتّبهم داخليًا بالأقوى تشابه
-      if (group.length > 1) {
-        group.sort((a, b) =>
-          similarityScore(base._tokens, b._tokens) -
-          similarityScore(base._tokens, a._tokens)
-        );
-      }
+      // ترتيب داخلي حسب أقوى تشابه
+      group.sort((a, b) =>
+        similarityScore(base._tokens, b._tokens) -
+        similarityScore(base._tokens, a._tokens)
+      );
   
       result.push(...group);
     }
