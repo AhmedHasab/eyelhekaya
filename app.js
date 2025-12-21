@@ -186,26 +186,6 @@ function extractLinksFromText(text = "") {
      .trim();
  }
 
-function groupBySimilarity(list) {
-  const map = new Map();
-
-  for (const s of list) {
-    const key =
-      s.similarityKey ||
-      normalizeArabic(s.title || "")
-        .split(" ")
-        .slice(0, 15)
-        .join(" ");
-
-    if (!map.has(key)) map.set(key, []);
-    map.get(key).push(s);
-  }
-
-  // ⚠️ مهم: بنرجّع نفس الترتيب الداخلي
-  return Array.from(map.values()).flat();
-}
-
-
 function detectCategoriesFromTitle(title = "") {
   const text = normalizeArabic(title.toLowerCase());
   const results = [];
@@ -240,16 +220,10 @@ function detectCategoriesFromTitle(title = "") {
     .map(r => r.category);
 }
 
-function detectCategoriesSmart({ title = "", keywords = [] }) {
-  // 🔑 مفتاح التشابه: أول 15 كلمة كما هي
-  const similarityKey = normalizeArabic(title)
-    .split(" ")
-    .slice(0, 15)
-    .join(" ");
-
-  const textTitle = similarityKey;
+ function detectCategoriesSmart({ title = "", keywords = [] }) {
+  const textTitle = normalizeArabic(title.toLowerCase());
   const textKeywords = normalizeArabic(
-    Array.isArray(keywords) ? keywords.join(" ") : ""
+    Array.isArray(keywords) ? keywords.join(" ").toLowerCase() : ""
   );
 
   const results = [];
@@ -261,9 +235,12 @@ function detectCategoriesSmart({ title = "", keywords = [] }) {
       const word = normalizeArabic(kw.toLowerCase());
       if (!word) continue;
 
+      // 🔴 تطابق في العنوان = وزن أعلى
       if (textTitle.includes(word)) {
         score += Math.min(word.length * 2, 10);
-      } else if (textKeywords.includes(word)) {
+      }
+      // 🟡 تطابق في الكلمات المفتاحية = دعم
+      else if (textKeywords.includes(word)) {
         score += Math.min(word.length, 6);
       }
     }
@@ -273,15 +250,10 @@ function detectCategoriesSmart({ title = "", keywords = [] }) {
     }
   }
 
-  // ⛔ نفس السلوك القديم + المفتاح الجديد
-  return {
-    categories: results
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 3)
-      .map(r => r.category),
-
-    similarityKey
-  };
+  return results
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3)   // ✅ حد أقصى 3 فئات
+    .map(r => r.category);
 }
 
  /* =========================
@@ -447,7 +419,7 @@ function normalizeStoryObject(input, forcedType) {
       ...(input.category ? [input.category] : []),
       ...autoCategories
     ])),
-  similarityKey: input.similarityKey || null, // ✅ أضفه هنا
+
     type: forcedType || input.type || "long",
 
     score: Number(input.score ?? 80),
@@ -475,9 +447,6 @@ function normalizeStoryObject(input, forcedType) {
     - Existing long table: #stories-tbody
     - Optional short table: #short-stories-tbody (if you add it in index.html)
  ========================= */
-
-
-
  function renderStoriesTables(filterText = "") {
 
     const q = normalizeArabic(filterText);
@@ -493,14 +462,13 @@ function normalizeStoryObject(input, forcedType) {
       );
     }
   
-const longStories = groupBySimilarity(
-  filteredStories.filter(s => (s.type || "long") === "long")
-);
-
-const shortStories = groupBySimilarity(
-  filteredStories.filter(s => s.type === "short")
-);
-
+    const longStories = filteredStories.filter(
+      s => (s.type || "long") === "long"
+    );
+  
+    const shortStories = filteredStories.filter(
+      s => s.type === "short"
+    );
   
     renderTableBody($("stories-tbody"), longStories);
     renderTableBody($("short-stories-tbody"), shortStories);
@@ -1160,18 +1128,13 @@ ${favoriteIds.has(String(r.id || tmp)) ? "⭐ مفضلة" : "☆ مفضلة"}
           return;
         }
         
-const smart = detectCategoriesSmart({
-  title,
-  keywords: chosen.keywords || chosen.tags || []
-});
-
         const normalized = normalizeStoryObject(
           {
             title: title,
-
-categories: smart.categories,
-similarityKey: smart.similarityKey,
-         
+          categories: detectCategoriesSmart({
+  title,
+  keywords: chosen.keywords || chosen.tags || []
+}),            
             type: chosen.type || "long",
             score: Number(chosen.score ?? 80),
             trendScore: Number(chosen.trendScore ?? 0),
