@@ -461,10 +461,15 @@ function words15(title) {
 function overlapCount(a, b) {
   const A = new Set(words15(a));
   const B = new Set(words15(b));
+
   let c = 0;
-  A.forEach(w => B.has(w) && c++);
+  A.forEach(w => {
+    if (w.length > 1 && B.has(w)) c++;   // تجاهل الكلمات القصيرة جدًا
+  });
+
   return c;
 }
+
 
 function groupStoriesBySimilarity(list) {
   const used = new Set();
@@ -482,11 +487,10 @@ function groupStoriesBySimilarity(list) {
       if (used.has(other.id)) continue;
 
       if (
-  overlapCount(base.title, other.title) >= 2 ||
-  normalizeArabic(other.title).includes(normalizeArabic(base.title)) ||
-  normalizeArabic(base.title).includes(normalizeArabic(other.title))
-) {
-
+        overlapCount(base.title, other.title) >= 1 ||   // ← التعديل هنا
+        normalizeArabic(other.title).includes(normalizeArabic(base.title)) ||
+        normalizeArabic(base.title).includes(normalizeArabic(other.title))
+      ) {
         group.push(other);
         used.add(other.id);
       }
@@ -503,6 +507,7 @@ function groupStoriesBySimilarity(list) {
 
   return result;
 }
+
 
 
  function renderStoriesTables(filterText = "") {
