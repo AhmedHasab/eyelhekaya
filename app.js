@@ -544,7 +544,7 @@ if (FORCE_GROUPING) {
   }
 
  
-  /*let reorderBoxEl = null;*/
+  let reorderBoxEl = null;
 
 
 
@@ -628,7 +628,7 @@ if (!tr) return;
     }
   
 // 3) ضغط ماوس على الصف → افتح مربع الترتيب (بدون تحديد نص)
-/*tbodyEl.onmousedown = async (e) => {
+tbodyEl.onmousedown = async (e) => {
     const tr = e.target.closest("tr");
     if (!tr) return;
   
@@ -711,7 +711,7 @@ if (!tr) return;
         hideReorderBox();
         await reorderStoryOnServer(box.dataset.id, to);
       }
-    };*/
+    };
   };
   
  }
