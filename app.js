@@ -321,42 +321,56 @@ function detectCategoriesFromTitle(title = "") {
  /* =========================
     LOAD STORIES (SERVER -> CACHE -> RENDER)
  ========================= */
- async function loadStoriesFromServer() {
-    try {
-      // 1️⃣ القصص
-      const data = await postToWorker({ action: "get_stories" });
-  
-      if (Array.isArray(data.stories)) {
-        stories = data.stories;
-        localStorage.setItem(
-          LS_KEYS.STORIES_CACHE,
-          JSON.stringify(stories)
-        );
-      } else {
-        stories =
-          JSON.parse(localStorage.getItem(LS_KEYS.STORIES_CACHE)) || [];
-      }
-  
-      // 2️⃣ المفضلة (بعد القصص)
-      try {
-        const favRes = await postToWorker({ action: "get_favorites" });
-        favoriteIds = new Set((favRes?.ids || []).map(String));
-      } catch {
-        favoriteIds = new Set();
-      }
-  
-    } catch (err) {
+async function loadStoriesFromServer() {
+  try {
+    // 1️⃣ تحميل القصص
+    const data = await postToWorker({ action: "get_stories" });
+
+    if (Array.isArray(data.stories)) {
+      stories = data.stories;
+      localStorage.setItem(
+        LS_KEYS.STORIES_CACHE,
+        JSON.stringify(stories)
+      );
+    } else {
       stories =
         JSON.parse(localStorage.getItem(LS_KEYS.STORIES_CACHE)) || [];
-      favoriteIds = new Set();
     }
-  
-    // 3️⃣ render
-    syncMaxLocalIdFromStories(stories);
-    renderStoriesTables();
-    updateStatusPills();
+
+    // 2️⃣ تحميل المفضلة + ترتيبها (من KV منفصل)
+    try {
+      const favRes = await postToWorker({ action: "get_favorites" });
+
+      const ids = Array.isArray(favRes?.ids)
+        ? favRes.ids.map(String)
+        : [];
+
+      favoriteIds = new Set(ids);
+
+      // 🧠 خريطة الترتيب: id → index
+      window.favoriteOrder = {};
+      ids.forEach((id, idx) => {
+        window.favoriteOrder[id] = idx;
+      });
+
+    } catch {
+      favoriteIds = new Set();
+      window.favoriteOrder = {};
+    }
+
+  } catch (err) {
+    // fallback لو السيرفر وقع
+    stories =
+      JSON.parse(localStorage.getItem(LS_KEYS.STORIES_CACHE)) || [];
+    favoriteIds = new Set();
+    window.favoriteOrder = {};
   }
-  
+
+  // 3️⃣ render
+  syncMaxLocalIdFromStories(stories);
+  renderStoriesTables();
+  updateStatusPills();
+}
  
  /* =========================
     ADD / UPDATE / DELETE (SERVER TRUTH)
@@ -540,9 +554,12 @@ if (FORCE_GROUPING) {
   
     // ⭐ لو وضع عرض المفضلة فقط مفعّل
     if (showFavoritesOnly) {
-      filteredStories = filteredStories.filter(s =>
-        favoriteIds.has(String(s.id))
-      );
+     filteredStories = filteredStories
+  .filter(s => favoriteIds.has(String(s.id)))
+  .sort((a, b) =>
+    (favoriteOrder[a.id] ?? 1e9) -
+    (favoriteOrder[b.id] ?? 1e9)
+  );
     }
   
     const longStories = filteredStories.filter(
