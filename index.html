@@ -168,7 +168,7 @@
     <button id="btn-force-group" class="btn secondary" type="button">
           🧩 تجميع متشابه (مؤقت)
         </button>
-<button id="btn-scan-duplicates">🔍 فحص التكرار</button>
+<button id="btn-scan-duplicates" class="btn-scan-duplicates" type="button">🔍 فحص التكرار</button>
         
         <!-- جدول القصص -->
         <div class="table-wrapper">
@@ -224,6 +224,112 @@
 
   </div>
 <!-- سكريبت التحكم في الفئات (Categories) -->
+
+  <script>
+/* ===============================
+   SIMPLE PASSWORD GATE (24H)
+   =============================== */
+
+(function () {
+  const SITE_PASSWORD_HASH =
+    "928f2e55019395383928aaa5974f07a725ea5481b57eb985ccda67b2fcb3eb51";
+
+  const STORAGE_KEY = "EH_AUTH_OK_UNTIL";
+  const NOW = Date.now();
+  const DAY_24H = 24 * 60 * 60 * 1000;
+
+  // 🔹 لو الجهاز مصرح له خلال 24 ساعة
+  const validUntil = Number(localStorage.getItem(STORAGE_KEY) || 0);
+  if (validUntil > NOW) {
+    console.log("🔓 Access granted (cached)");
+    return;
+  }
+
+  // 🔐 اطلب كلمة السر
+  document.documentElement.innerHTML = `
+    <style>
+      body {
+        margin: 0;
+        font-family: system-ui, sans-serif;
+        background: #0f172a;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+      }
+      .gate {
+        background: #020617;
+        padding: 24px 28px;
+        border-radius: 10px;
+        box-shadow: 0 10px 40px rgba(0,0,0,.6);
+        width: 320px;
+        text-align: center;
+      }
+      .gate h2 {
+        margin: 0 0 10px;
+      }
+      .gate input {
+        width: 100%;
+        padding: 10px;
+        border-radius: 6px;
+        border: none;
+        margin-top: 10px;
+        font-size: 15px;
+      }
+      .gate button {
+        margin-top: 14px;
+        width: 100%;
+        padding: 10px;
+        border-radius: 6px;
+        border: none;
+        background: #2563eb;
+        color: #fff;
+        font-size: 15px;
+        cursor: pointer;
+      }
+      .err {
+        margin-top: 10px;
+        color: #f87171;
+        font-size: 14px;
+        display: none;
+      }
+    </style>
+
+    <div class="gate">
+      <h2>🔐 دخول خاص</h2>
+      <p>أدخل كلمة السر</p>
+      <input type="password" id="pw" placeholder="Password" />
+      <button id="btn">دخول</button>
+      <div class="err" id="err">❌ كلمة السر غير صحيحة</div>
+    </div>
+  `;
+
+  async function sha256(text) {
+    const enc = new TextEncoder().encode(text);
+    const buf = await crypto.subtle.digest("SHA-256", enc);
+    return Array.from(new Uint8Array(buf))
+      .map(b => b.toString(16).padStart(2, "0"))
+      .join("");
+  }
+
+  document.getElementById("btn").onclick = async () => {
+    const input = document.getElementById("pw").value.trim();
+    if (!input) return;
+
+    const hash = await sha256(input);
+
+    if (hash === SITE_PASSWORD_HASH) {
+      // ✅ خزّن السماح 24 ساعة
+      localStorage.setItem(STORAGE_KEY, String(Date.now() + DAY_24H));
+      location.reload();
+    } else {
+      document.getElementById("err").style.display = "block";
+    }
+  };
+})();
+</script>
+
 <script>
   
 async function toggleFavorite(id) {
@@ -368,6 +474,10 @@ async function toggleFavorite(id) {
   background: #f7f7f7;
   border-radius: 4px;
 }
+  .btn-scan-duplicates {
+    background: #ddd;
+  color: #222;
+  }
 .table-toolbar {
   margin-bottom: 8px;
   display: flex;
