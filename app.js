@@ -1290,30 +1290,53 @@ async function addToFavorites(storyId) {
     renderStoriesTables($("stories-search")?.value || "");
   }
   
-  async function reorderFavoriteOnServer(id, toIndex) {
+async function reorderFavoriteOnServer(id, toIndex) {
   if (!id || !Number.isFinite(toIndex)) return;
 
-  const res = await postToWorker({
-    action: "reorder_favorite",
-    payload: {
-      id,
-      toIndex
-    }
-  });
+  /* =========================
+     1️⃣ UPDATE UI IMMEDIATELY
+  ========================= */
+  const current = [...favoriteIds];
 
-  if (!res || !Array.isArray(res.ids)) return;
+  const fromIndex = current.indexOf(String(id));
+  if (fromIndex === -1) return;
 
-  // المصدر الحقيقي
-  favoriteIds = new Set(res.ids.map(String));
+  // نقل العنصر محليًا
+  current.splice(fromIndex, 1);
+  current.splice(toIndex - 1, 0, String(id));
 
-  // ترتيب المفضلة
+  // تحديث الحالة المحلية فورًا
+  favoriteIds = new Set(current);
+
   window.favoriteOrder = {};
-  res.ids.forEach((fid, idx) => {
+  current.forEach((fid, idx) => {
     window.favoriteOrder[fid] = idx;
   });
 
-  // إعادة رسم جدول المفضلة
+  // 🔥 التأثير اللحظي
   renderStoriesTables($("stories-search")?.value || "");
+
+  /* =========================
+     2️⃣ CONFIRM WITH SERVER
+  ========================= */
+  try {
+    const res = await postToWorker({
+      action: "reorder_favorite",
+      payload: { id, toIndex }
+    });
+
+    // مزامنة نهائية (مصدر الحقيقة)
+    if (res?.order) {
+      favoriteIds = new Set(res.order.map(String));
+
+      window.favoriteOrder = {};
+      res.order.forEach((fid, idx) => {
+        window.favoriteOrder[fid] = idx;
+      });
+    }
+  } catch (err) {
+    console.error("❌ reorder_favorite failed", err);
+  }
 }
 
 
