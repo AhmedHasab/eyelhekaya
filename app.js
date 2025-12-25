@@ -623,6 +623,11 @@ function renderTableBody(tbodyEl, list) {
         <button data-action="edit" data-id="${story.id}">✏️</button>
         <button data-action="done" data-id="${story.id}">✅</button>
         <button data-action="del" data-id="${story.id}">🗑</button>
+          <button
+    class="fav-btn ${favoriteIds.has(String(story.id)) ? "active" : ""}"
+    data-fav-id="${story.id}">
+    ${favoriteIds.has(String(story.id)) ? "⭐" : "☆"}
+  </button>
       </td>
     `;
 
