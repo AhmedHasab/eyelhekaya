@@ -51,6 +51,29 @@ body {
   background: #ff5252;
   color: white;
 }
+.fav-btn {
+  border: 1px solid #ddd;
+  background: #fff;
+  color: #999;
+  font-size: 16px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all .2s ease;
+}
+
+.fav-btn:hover {
+  border-color: #f4c430;
+  color: #f4c430;
+}
+
+.fav-btn.active {
+  background: #fff7d6;
+  border-color: #f4c430;
+  color: #f4c430;
+  font-weight: 700;
+  box-shadow: 0 0 0 2px rgba(244,196,48,.25);
+}
 
 .btn.accent {
   background: #ffb300;
