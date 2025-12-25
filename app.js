@@ -1303,6 +1303,11 @@ function isStoryAlreadyAdded({ title, link }) {
       const notes = escapeHtml(r.notes || "");
 
       const tmp = escapeHtml(r.tmpId || r.id || `${Date.now()}_${idx}`);
+const dateText = r.publishedAt
+  ? new Date(r.publishedAt).toLocaleString("ar-EG")
+  : r.fetchedAt
+    ? new Date(r.fetchedAt).toLocaleString("ar-EG")
+    : "—";
 
       return `
         <div class="trend-card">
@@ -1311,6 +1316,9 @@ function isStoryAlreadyAdded({ title, link }) {
           </div>
 
           <div class="trend-title">${title}</div>
+<div class="trend-meta">
+  📅 <b>التاريخ:</b> ${dateText}
+</div>
 
           <div class="trend-meta">
             <b>Country:</b> ${country} |
