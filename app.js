@@ -209,6 +209,7 @@ function parseSingleDate(input) {
 function parseDateQuery(text) {
   if (!text) return null;
 
+  // 📅 Range: DD/MM/YYYY - DD/MM/YYYY
   const range = text.match(
     /(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})\s*-\s*(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/
   );
@@ -220,8 +221,19 @@ function parseDateQuery(text) {
     };
   }
 
-  const single = parseSingleDate(text);
-  if (single) return { from: single, to: single };
+  // 🔁 دعم صيغة YYYY/MM/DD
+  const normalizedText = text.replace(
+    /^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/,
+    (_, y, m, d) => `${d}/${m}/${y}`
+  );
+
+  const single =
+    parseSingleDate(normalizedText) ||
+    parseSingleDate(text);
+
+  if (single) {
+    return { from: single, to: single };
+  }
 
   return null;
 }
@@ -647,8 +659,17 @@ function renderStoriesTables(filterText = "") {
 
     /* 📅 التاريخ */
     if (parsed.dateRange) {
-      const d = new Date(s.createdAt);
-      if (isNaN(d.getTime())) return false;
+      let d;
+
+if (typeof s.createdAt === "string" && s.createdAt.includes("/")) {
+  // دعم YYYY/M/D
+  const [y, m, day] = s.createdAt.split("/").map(Number);
+  d = new Date(y, m - 1, day);
+} else {
+  d = new Date(s.createdAt);
+}
+
+if (isNaN(d.getTime())) return false;
 
       const from = new Date(parsed.dateRange.from);
 from.setHours(0, 0, 0, 0);
@@ -731,8 +752,17 @@ function renderTableBody(tbodyEl, list) {
           ${story.done ? "✔" : "✖"}
         </span>
       </td>
-      <td>${story.createdAt ? new Date(story.createdAt).toLocaleDateString() : "-"}</td>
-      <td>${renderNotesCell(story.notes || "")}</td>
+      <td>${
+  story.createdAt
+    ? (() => {
+        if (typeof story.createdAt === "string" && story.createdAt.includes("/")) {
+          const [y, m, d] = story.createdAt.split("/").map(Number);
+          return new Date(y, m - 1, d).toLocaleDateString("ar-EG");
+        }
+        return new Date(story.createdAt).toLocaleDateString("ar-EG");
+      })()
+    : "-"
+}</td>
       <td class="table-actions">
         <button data-action="view" data-id="${story.id}">👁</button>
         <button data-action="edit" data-id="${story.id}">✏️</button>
@@ -876,7 +906,17 @@ function renderTableBody(tbodyEl, list) {
 |
          <b>Type:</b> ${escapeHtml(s.type || "long")} |
          <b>Done:</b> ${s.done ? "Yes" : "No"} |
-         <b>Date:</b> ${escapeHtml(s.createdAt ? new Date(s.createdAt).toLocaleString() : "-")}
+         <b>Date:</b> ${
+  s.createdAt
+    ? (() => {
+        if (typeof s.createdAt === "string" && s.createdAt.includes("/")) {
+          const [y, m, d] = s.createdAt.split("/").map(Number);
+          return new Date(y, m - 1, d).toLocaleString("ar-EG");
+        }
+        return new Date(s.createdAt).toLocaleString("ar-EG");
+      })()
+    : "-"
+}
        </div>
        <div class="trend-scores">
          <b>Score:</b> ${Number(s.score ?? 0)} |
