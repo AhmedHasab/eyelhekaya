@@ -61,6 +61,22 @@ body {
   background: #ddd;
   color: #222;
 }
+.done-mark {
+  font-size: 20px;      /* حجم واضح */
+  font-weight: 900;     /* تخين */
+  display: inline-block;
+  line-height: 1;
+}
+
+/* ❌ لم تُنفّذ */
+.done-no {
+  color: #d32f2f;       /* أحمر قوي */
+}
+
+/* ✅ تم التنفيذ */
+.done-yes {
+  color: #2e7d32;       /* أخضر واضح */
+}
 
 .btn.small {
   padding: 7px 14px;
