@@ -400,6 +400,22 @@ function detectCategoriesFromTitle(title = "") {
    if (isAutoBackupEnabled()) autoBackupDownloadSilent();
  }
  
+
+ async function reorderStoryOnServer(id, toIndex) {
+  if (!id || !Number.isFinite(toIndex)) return;
+
+  await postToWorker({
+    action: "reorder_story",
+    payload: {
+      id,
+      toIndex
+    }
+  });
+
+  // إعادة تحميل القصص من المصدر
+  await loadStoriesFromServer();
+}
+
  /* =========================
     STORY NORMALIZATION (Standard schema)
  ========================= */
@@ -544,7 +560,7 @@ if (FORCE_GROUPING) {
   }
 
  
-  let reorderBoxEl = null;
+  /*let reorderBoxEl = null;*/
 
 
 
@@ -601,7 +617,7 @@ ${favoriteIds.has(String(story.id)) ? "⭐ مفضلة" : "☆ مفضلة"}
    });
  
    // Delegate click handling inside tbody
-  /* tbodyEl.onclick = async (e) => {
+   tbodyEl.onclick = async (e) => {
 
     const tr = e.target.closest("tr");
 if (!tr) return;
@@ -628,92 +644,56 @@ if (!tr) return;
     }
   
 // 3) ضغط ماوس على الصف → افتح مربع الترتيب (بدون تحديد نص)
-tbodyEl.onmousedown = async (e) => {
-    const tr = e.target.closest("tr");
-    if (!tr) return;
-  
-    // تجاهل الضغط على الأزرار
-    if (e.target.closest("button")) return;
-  
-    e.preventDefault(); // ⛔ يمنع تحديد النص نهائيًا
-  
-    const id = tr.dataset.storyId;
-    if (!id) return;
-  
-    const box = ensureReorderBox();
-    const input = box.querySelector("#reorder-input");
-  
-    const r = tr.getBoundingClientRect();
-  
-    box.style.left = `${Math.min(window.innerWidth - 180, r.right + 10)}px`;
-    box.style.top = `${Math.max(10, r.top)}px`;
-    box.style.display = "block";
-  
-    const max = tr.parentElement?.querySelectorAll("tr")?.length || 1;
-    box.dataset.id = String(id);
-    box.dataset.max = String(max);
-  
-    input.value = "";
-    input.focus();
-  
-    input.onkeydown = async (ev) => {
-      if (ev.key === "Escape") {
-        hideReorderBox();
-        return;
-      }
-  
-      if (ev.key === "Enter") {
-        const to = Number(input.value);
-        const mx = Number(box.dataset.max || 1);
-  
-        if (!Number.isFinite(to) || to < 1 || to > mx) {
-          input.value = "";
-          input.placeholder = `من 1 إلى ${mx}`;
-          return;
-        }
-  
-        hideReorderBox();
-        await reorderStoryOnServer(box.dataset.id, to);
-      }
-    };
-  }};*/
-  
-    // أقصى يمين الصف (في الشاشة)
-  /*  const r = tr.getBoundingClientRect();
-    box.style.left = `${Math.min(window.innerWidth - 180, r.right + 10)}px`;
-    box.style.top = `${Math.max(10, r.top)}px`;
-    box.style.display = "block";
-  
-    // max = عدد الصفوف في نفس الجدول (طويل أو قصير)
-    const max = tr.parentElement?.querySelectorAll("tr")?.length || 1;
-    box.dataset.id = String(id);
-    box.dataset.max = String(max);
-  
-    input.value = "";
-    input.focus();
-  
-    // Events (مرة واحدة كل فتح)
-    input.onkeydown = async (ev) => {
-      if (ev.key === "Escape") {
-        hideReorderBox();
-        return;
-      }
-      if (ev.key === "Enter") {
-        const to = Number(input.value);
-        const mx = Number(box.dataset.max || 1);
-  
-        if (!Number.isFinite(to) || to < 1 || to > mx) {
-          input.value = "";
-          input.placeholder = `من 1 إلى ${mx}`;
-          return;
-        }
-  
-        hideReorderBox();
-        await reorderStoryOnServer(box.dataset.id, to);
-      }
-    };
+/*tbodyEl.onmousedown = async (e) => {
+  const tr = e.target.closest("tr");
+  if (!tr) return;
+
+  // تجاهل الأزرار
+  if (e.target.closest("button")) return;
+
+  e.preventDefault();
+
+  const id = tr.dataset.storyId;
+  if (!id) return;
+
+  const to = prompt("اكتب رقم الترتيب الجديد:");
+  if (!to) return;
+
+  const num = Number(to);
+  if (!Number.isFinite(num)) return;
+
+  await reorderStoryOnServer(id, num);
+};*/
+
   };
   
+
+  tbodyEl.onmousedown = async (e) => {
+    if (FORCE_GROUPING) {
+  alert("❌ لا يمكن الترتيب أثناء تفعيل التجميع المتشابه");
+  return;
+}
+
+  const tr = e.target.closest("tr");
+  if (!tr) return;
+
+  // تجاهل الأزرار
+  if (e.target.closest("button")) return;
+
+  e.preventDefault();
+
+  const id = tr.dataset.storyId;
+  if (!id) return;
+
+  const to = prompt("اكتب رقم الترتيب الجديد:");
+  if (!to) return;
+
+  const num = Number(to);
+  if (!Number.isFinite(num)) return;
+
+  await reorderStoryOnServer(id, num);
+};
+
  }
  
  /* =========================
@@ -1545,14 +1525,11 @@ async function bootstrapApp() {
 document.addEventListener("DOMContentLoaded", () => {
     const reelsBtn = $("btn-pick-short");
   
-    if (!reelsBtn) {
-      console.error("❌ btn-pick-short not found");
-      return;
-    }
-  
-    reelsBtn.onclick = handlePickTrendShortReels;
- // 🚀 شغّل التطبيق
-  bootstrapApp();
+ if (reelsBtn) {
+  reelsBtn.onclick = handlePickTrendShortReels;
+}
+bootstrapApp();
+
 
   });
   
