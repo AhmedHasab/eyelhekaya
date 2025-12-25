@@ -168,7 +168,12 @@
     <button id="btn-force-group" class="btn secondary" type="button">
           🧩 تجميع متشابه (مؤقت)
         </button>
-<button id="btn-scan-duplicates" class="btn-scan-duplicates" type="button">🔍 فحص التكرار</button>
+<button
+  id="btn-scan-duplicates"
+  class="btn secondary small danger-outline"
+  type="button">
+  🔍 فحص التكرار
+</button>
         
         <!-- جدول القصص -->
         <div class="table-wrapper">
@@ -474,10 +479,22 @@ async function toggleFavorite(id) {
   background: #f7f7f7;
   border-radius: 4px;
 }
-  .btn-scan-duplicates {
-    background: #ddd;
-  color: #222;
-  }
+/* زر فحص التكرار */
+.btn.danger-outline {
+  border: 1px solid #f59e0b;   /* برتقالي تحذيري */
+  background: #fff7ed;
+  color: #92400e;
+  font-weight: 600;
+}
+
+.btn.danger-outline:hover {
+  background: #ffedd5;
+  border-color: #d97706;
+}
+
+.btn.danger-outline:active {
+  transform: scale(0.97);
+}
 .table-toolbar {
   margin-bottom: 8px;
   display: flex;
