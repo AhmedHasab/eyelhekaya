@@ -186,59 +186,6 @@ function extractLinksFromText(text = "") {
      .trim();
  }
 
- /* =========================
-   DATE SEARCH HELPERS
-========================= */
-
-function parseSingleDate(input) {
-  if (!input) return null;
-
-  const m = input.trim().match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2}|\d{4})$/);
-  if (!m) return null;
-
-  let [, d, mth, y] = m;
-  d = Number(d);
-  mth = Number(mth) - 1;
-  y = Number(y);
-  if (y < 100) y += 2000;
-
-  const dt = new Date(y, mth, d);
-  return isNaN(dt.getTime()) ? null : dt;
-}
-
-function parseDateQuery(text) {
-  if (!text) return null;
-
-  // 📅 Range: DD/MM/YYYY - DD/MM/YYYY
-  const range = text.match(
-    /(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})\s*-\s*(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/
-  );
-
-  if (range) {
-    return {
-      from: parseSingleDate(range[1]),
-      to: parseSingleDate(range[2])
-    };
-  }
-
-  // 🔁 دعم صيغة YYYY/MM/DD
-  const normalizedText = text.replace(
-    /^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/,
-    (_, y, m, d) => `${d}/${m}/${y}`
-  );
-
-  const single =
-    parseSingleDate(normalizedText) ||
-    parseSingleDate(text);
-
-  if (single) {
-    return { from: single, to: single };
-  }
-
-  return null;
-}
-
-
 function detectCategoriesFromTitle(title = "") {
   const text = normalizeArabic(title.toLowerCase());
   const results = [];
@@ -491,25 +438,15 @@ function normalizeStoryObject(input, forcedType) {
 
   const title = (input.title ?? input.name ?? "").trim();
 
-  // 🧠 الفئات اليدوية (لو موجودة)
-  const manualCategories = Array.isArray(input.categories)
-    ? input.categories
-    : input.category
-      ? [input.category]
-      : [];
-
-  // 🤖 الفئات التلقائية (تُستخدم فقط لو مفيش يدوي)
-  const autoCategories =
-    manualCategories.length === 0
-      ? detectCategoriesFromTitle(title)
-      : [];
+  // ✅ هنا مكانها الصح
+  const autoCategories = detectCategoriesFromTitle(title);
 
   return {
     title,
 
-    // ✅ المصدر النهائي للفئات
     categories: Array.from(new Set([
-      ...manualCategories,
+      ...(Array.isArray(input.categories) ? input.categories : []),
+      ...(input.category ? [input.category] : []),
       ...autoCategories
     ])),
 
@@ -519,7 +456,7 @@ function normalizeStoryObject(input, forcedType) {
     trendScore: Number(input.trendScore ?? 0),
     finalScore: Number(
       input.finalScore ??
-      Number(input.score ?? 80)
+      (Number(input.score ?? 80))
     ),
 
     done: Boolean(input.done ?? false),
@@ -601,89 +538,15 @@ function groupStoriesBySimilarity(list) {
   return result;
 }
 
-/* =========================
-   SMART SEARCH PARSER
-========================= */
-
-function parseSearchQuery(raw = "") {
-  const normalized = normalizeArabic(raw);
-
-  // 🏷 استخراج الفئات من النص
-  const categories = Object.values(STORY_CATEGORIES)
-    .filter(cat => normalized.includes(normalizeArabic(cat)));
-
-  // 📅 استخراج التاريخ / النطاق
-  const dateRange = parseDateQuery(raw);
-
-  // ✏️ نص البحث بعد إزالة الفئات والتاريخ
-  let text = normalized;
-
-  categories.forEach(cat => {
-    text = text.replace(normalizeArabic(cat), "");
-  });
-
-  if (dateRange) {
-    text = text.replace(/\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/g, "");
-    text = text.replace("-", "");
-  }
-
-  return {
-    text: text.trim(),
-    categories,
-    dateRange
-  };
-}
 
 
-function renderStoriesTables(filterText = "") {
+ function renderStoriesTables(filterText = "") {
 
-  const parsed = parseSearchQuery(filterText);
-
-  let filteredStories = stories.filter(s => {
-
-    /* 🔍 البحث النصي (زي ما كان) */
-    if (parsed.text) {
-      if (!normalizeArabic(s.title || "").includes(parsed.text)) {
-        return false;
-      }
-    }
-
-    /* 🏷 الفئات */
-    if (parsed.categories.length) {
-      const storyCats = Array.isArray(s.categories) ? s.categories : [];
-      const match = parsed.categories.some(cat =>
-        storyCats.includes(cat)
-      );
-      if (!match) return false;
-    }
-
-    /* 📅 التاريخ */
-    if (parsed.dateRange) {
-      let d;
-
-if (typeof s.createdAt === "string" && s.createdAt.includes("/")) {
-  // دعم YYYY/M/D
-  const [y, m, day] = s.createdAt.split("/").map(Number);
-  d = new Date(y, m - 1, day);
-} else {
-  d = new Date(s.createdAt);
-}
-
-if (isNaN(d.getTime())) return false;
-
-      const from = new Date(parsed.dateRange.from);
-from.setHours(0, 0, 0, 0);
-
-const to = new Date(parsed.dateRange.to);
-to.setHours(23, 59, 59, 999);
-
-if (d < from || d > to) return false;
-
-    }
-
-    return true;
-  });
-
+    const q = normalizeArabic(filterText);
+  
+    let filteredStories = stories.filter(s =>
+      normalizeArabic(s.title || "").includes(q)
+    );
   
 if (FORCE_GROUPING) {
   filteredStories = groupStoriesBySimilarity(filteredStories);
@@ -752,17 +615,8 @@ function renderTableBody(tbodyEl, list) {
           ${story.done ? "✔" : "✖"}
         </span>
       </td>
-      <td>${
-  story.createdAt
-    ? (() => {
-        if (typeof story.createdAt === "string" && story.createdAt.includes("/")) {
-          const [y, m, d] = story.createdAt.split("/").map(Number);
-          return new Date(y, m - 1, d).toLocaleDateString("ar-EG");
-        }
-        return new Date(story.createdAt).toLocaleDateString("ar-EG");
-      })()
-    : "-"
-}</td>
+      <td>${story.createdAt ? new Date(story.createdAt).toLocaleDateString() : "-"}</td>
+      <td>${renderNotesCell(story.notes || "")}</td>
       <td class="table-actions">
         <button data-action="view" data-id="${story.id}">👁</button>
         <button data-action="edit" data-id="${story.id}">✏️</button>
@@ -906,17 +760,7 @@ function renderTableBody(tbodyEl, list) {
 |
          <b>Type:</b> ${escapeHtml(s.type || "long")} |
          <b>Done:</b> ${s.done ? "Yes" : "No"} |
-         <b>Date:</b> ${
-  s.createdAt
-    ? (() => {
-        if (typeof s.createdAt === "string" && s.createdAt.includes("/")) {
-          const [y, m, d] = s.createdAt.split("/").map(Number);
-          return new Date(y, m - 1, d).toLocaleString("ar-EG");
-        }
-        return new Date(s.createdAt).toLocaleString("ar-EG");
-      })()
-    : "-"
-}
+         <b>Date:</b> ${escapeHtml(s.createdAt ? new Date(s.createdAt).toLocaleString() : "-")}
        </div>
        <div class="trend-scores">
          <b>Score:</b> ${Number(s.score ?? 0)} |
@@ -1594,25 +1438,16 @@ const dateText = r.publishedAt
       return;
     }
 
-// 1️⃣ إضافة للسيرفر
-await addStoryToServer(normalized);
+    // 1️⃣ إضافة للسيرفر
+    await addStoryToServer(normalized);
 
-// 📌 جيب القصة مرة واحدة
-const added = stories.find(
-  s => normalizeArabic(s.title) === normalizeArabic(normalized.title)
-);
-
-// 🧠 مزامنة المفضلة
-if (added?.id && favoriteIds.has(String(tmp))) {
-  await addToFavorites(tmp);        // إزالة tmpId
-  await addToFavorites(added.id);   // إضافة id الحقيقي
-}
-
-// 2️⃣ تحديد قصة اليوم
-if (added?.id) {
-  await addStoryToToday(added.id);
-}
-
+    // 2️⃣ تحديد قصة اليوم
+    const added = stories.find(
+      s => normalizeArabic(s.title) === normalizeArabic(normalized.title)
+    );
+    if (added?.id) {
+      await addStoryToToday(added.id);
+    }
 
     btn.textContent = "✅ تمت الإضافة";
   };
