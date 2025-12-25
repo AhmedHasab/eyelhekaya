@@ -1118,156 +1118,196 @@ Number.isFinite(Number(item.localNumericId))
     - btn-pick-short
     - btn-update-trends
  ========================= */
- function renderAIResultCards(results, modeLabel) {
-   if (!Array.isArray(results)) results = [];
-   if (!results.length) {
-     setHtml($("ai-output"), `<p>لا توجد نتائج.</p>`);
-     return;
-   }
  
-   const html = results
-     .map((r, idx) => {
-       const title = escapeHtml(r.title || r.name || "");
-       const country = escapeHtml(r.country || "-");
-       const source = escapeHtml(r.source || "-");
-       const score = Number(r.score ?? 0);
-       const trendScore = Number(r.trendScore ?? 0);
-       const finalScore = Number(r.finalScore ?? 0);
-       const type = escapeHtml(r.type || "long");
-       const notes = escapeHtml(r.notes || "");
- 
-       // Worker returns a stable id or a temp key for trend items
-       const tmp = escapeHtml(r.tmpId || r.id || `${Date.now()}_${idx}`);
- 
-       return `
-         <div class="trend-card">
-         <div class="trend-rank">
-         #${idx + 1} — 
-         ${type === "short" ? "🎬 ريلز" : "🎥 فيديو طويل"}
-       </div>       
-           <div class="trend-title">${title}</div>
-           <div class="trend-meta">
-           <b>Country:</b> ${country} |
-           <b>Source:</b> ${source} |
-           <b>Type:</b> ${type}
-         </div>
-         
-         <div class="trend-meta">
-           <b>Domain:</b> ${escapeHtml(r.domain || "-")}
-         </div>
-         
-         <div class="trend-meta">
-           <b>Link:</b> 
-           <a href="${escapeHtml(r.url || r.link || r.href || "#")}" 
-              target="_blank" 
-              style="color:#1a73e8; text-decoration:underline;">
-              اضغط هنا لزيارة المصدر
-           </a>
-         </div>
-         
-           <div class="trend-scores">
-             <b>Score:</b> ${score} |
-             <b>Trend:</b> ${trendScore} |
-             <b>Final:</b> ${finalScore}
-           </div>
-           <div class="trend-meta"><b>Notes:</b> ${notes}</div>
-           <button class="add-btn" data-add="1" data-tmp="${tmp}">➕ أضف إلى قصة اليوم</button>
-           <button class="fav-btn ${favoriteIds.has(String(r.id || tmp)) ? "active" : ""}"
-        data-fav-id="${r.id || tmp}">
-${favoriteIds.has(String(r.id || tmp)) ? "⭐ مفضلة" : "☆ مفضلة"}
-</button>
-         </div>
-       `;
-     })
-     .join("");
- 
-   setHtml($("ai-output"), html);
- 
-   // Add buttons wiring (delegation)
-   const out = $("ai-output");
-   if (out) {
-    out.onclick = null;
-    out.onclick = async (e) => {
-        const favBtn = e.target.closest("button.fav-btn");
-       if (favBtn) {
-  const favId = favBtn.getAttribute("data-fav-id");
-  await addToFavorites(favId);
-
-  // ✅ حدّث شكل الزر هنا فقط (AI cards لا تُعاد رسمها)
-  const isFav = favoriteIds.has(String(favId));
-  favBtn.classList.toggle("active", isFav);
-  favBtn.textContent = isFav ? "⭐ مفضلة" : "☆ مفضلة";
-
-  return;
+ // ===== منع التكرار (عنوان + رابط) =====
+function getTitlePrefix(title = "", maxWords = 20) {
+  return normalizeArabic(title)
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, maxWords)
+    .join(" ");
 }
-        const btn = e.target.closest("button[data-add='1']");
-        if (!btn) return;
-      
-        // امنع التكرار
-        if (btn.dataset.loading === "1") return;
-        btn.dataset.loading = "1";
-        btn.disabled = true;
-        btn.textContent = "⏳ جاري الإضافة...";
-      
-        const tmp = btn.getAttribute("data-tmp");
-        if (!tmp || !lastAIResults || !Array.isArray(lastAIResults)) return;
-      
-        const chosen = lastAIResults.find(
-          (x) => String(x.tmpId || x.id) === String(tmp)
-        );
-        if (!chosen) return;
-        const title = (chosen.title || chosen.name || "").trim();
 
-        if (!title) {
-          btn.textContent = "❌ عنوان غير صالح";
-          btn.disabled = false;
-          btn.dataset.loading = "0";
-          return;
-        }
-        
-        const normalized = normalizeStoryObject(
-          {
-            title: title,
-          categories: detectCategoriesSmart({
-  title,
-  keywords: chosen.keywords || chosen.tags || []
-}),            
-            type: chosen.type || "long",
-            score: Number(chosen.score ?? 80),
-            trendScore: Number(chosen.trendScore ?? 0),
-            finalScore: Number(chosen.finalScore ?? Number(chosen.score ?? 80)),
-            done: false,
-            notes: chosen.notes || "",
-            source: chosen.source || "trend",
-            country: chosen.country || "",
-            analysis: chosen.analysis || null,
-            localNumericId: getNextLocalNumericId(),
-          },
-          chosen.type || "long"
-        );
-        
-      
-        // 1️⃣ أضف القصة للسيرفر
-        await addStoryToServer(normalized);
-      
-        // 2️⃣ بعد التحميل، هتكون القصة دخلت في stories
-        const added = stories.find(
-          (s) => normalizeArabic(s.title) === normalizeArabic(normalized.title)
-        );
-      
-        // 3️⃣ علّمها قصة اليوم
-        if (added?.id) {
-          await addStoryToToday(added.id);
-        }
-      
-        // 4️⃣ شكليًا نقول تم
-        btn.textContent = "✅ تمت الإضافة";
-      };
-      
+function isStoryAlreadyAdded({ title, link }) {
+  if (!title || !link) return false;
 
-      
-   }
- }
+  const incomingTitle = getTitlePrefix(title, 20);
+  const incomingLink = link.trim();
+
+  return stories.some(s => {
+    if (s.deleted) return false; // تجاهل المحذوف
+
+    const storedTitle = getTitlePrefix(s.title || "", 20);
+    const storedLink = (s.notes || s.link || "").trim();
+
+    return (
+      incomingTitle === storedTitle &&
+      incomingLink === storedLink
+    );
+  });
+}
+
+ 
+ function renderAIResultCards(results, modeLabel) {
+  if (!Array.isArray(results)) results = [];
+  if (!results.length) {
+    setHtml($("ai-output"), `<p>لا توجد نتائج.</p>`);
+    return;
+  }
+
+  const html = results
+    .map((r, idx) => {
+      const title = escapeHtml(r.title || r.name || "");
+      const country = escapeHtml(r.country || "-");
+      const source = escapeHtml(r.source || "-");
+      const score = Number(r.score ?? 0);
+      const trendScore = Number(r.trendScore ?? 0);
+      const finalScore = Number(r.finalScore ?? 0);
+      const type = escapeHtml(r.type || "long");
+      const notes = escapeHtml(r.notes || "");
+
+      const tmp = escapeHtml(r.tmpId || r.id || `${Date.now()}_${idx}`);
+
+      return `
+        <div class="trend-card">
+          <div class="trend-rank">
+            #${idx + 1} — ${type === "short" ? "🎬 ريلز" : "🎥 فيديو طويل"}
+          </div>
+
+          <div class="trend-title">${title}</div>
+
+          <div class="trend-meta">
+            <b>Country:</b> ${country} |
+            <b>Source:</b> ${source} |
+            <b>Type:</b> ${type}
+          </div>
+
+          <div class="trend-meta">
+            <b>Domain:</b> ${escapeHtml(r.domain || "-")}
+          </div>
+
+          <div class="trend-meta">
+            <b>Link:</b>
+            <a href="${escapeHtml(r.url || r.link || r.href || "#")}"
+               target="_blank"
+               style="color:#1a73e8; text-decoration:underline;">
+               اضغط هنا لزيارة المصدر
+            </a>
+          </div>
+
+          <div class="trend-scores">
+            <b>Score:</b> ${score} |
+            <b>Trend:</b> ${trendScore} |
+            <b>Final:</b> ${finalScore}
+          </div>
+
+          <div class="trend-meta"><b>Notes:</b> ${notes}</div>
+
+          <button class="add-btn" data-add="1" data-tmp="${tmp}">
+            ➕ أضف إلى قصة اليوم
+          </button>
+
+          <button class="fav-btn ${favoriteIds.has(String(r.id || tmp)) ? "active" : ""}"
+                  data-fav-id="${r.id || tmp}">
+            ${favoriteIds.has(String(r.id || tmp)) ? "⭐ مفضلة" : "☆ مفضلة"}
+          </button>
+        </div>
+      `;
+    })
+    .join("");
+
+  setHtml($("ai-output"), html);
+
+  const out = $("ai-output");
+  if (!out) return;
+
+  out.onclick = async (e) => {
+
+    /* ⭐ مفضلة */
+    const favBtn = e.target.closest("button.fav-btn");
+    if (favBtn) {
+      const favId = favBtn.getAttribute("data-fav-id");
+      await addToFavorites(favId);
+
+      const isFav = favoriteIds.has(String(favId));
+      favBtn.classList.toggle("active", isFav);
+      favBtn.textContent = isFav ? "⭐ مفضلة" : "☆ مفضلة";
+      return;
+    }
+
+    /* ➕ إضافة قصة اليوم */
+    const btn = e.target.closest("button[data-add='1']");
+    if (!btn) return;
+
+    if (btn.dataset.loading === "1") return;
+    btn.dataset.loading = "1";
+    btn.disabled = true;
+    btn.textContent = "⏳ جاري الإضافة...";
+
+    const tmp = btn.getAttribute("data-tmp");
+    if (!tmp || !lastAIResults) return;
+
+    const chosen = lastAIResults.find(
+      x => String(x.tmpId || x.id) === String(tmp)
+    );
+    if (!chosen) return;
+
+    const title = (chosen.title || chosen.name || "").trim();
+    if (!title) {
+      btn.textContent = "❌ عنوان غير صالح";
+      btn.disabled = false;
+      btn.dataset.loading = "0";
+      return;
+    }
+
+    const normalized = normalizeStoryObject(
+      {
+        title,
+        categories: detectCategoriesSmart({
+          title,
+          keywords: chosen.keywords || chosen.tags || []
+        }),
+        type: chosen.type || "long",
+        score: Number(chosen.score ?? 80),
+        trendScore: Number(chosen.trendScore ?? 0),
+        finalScore: Number(chosen.finalScore ?? Number(chosen.score ?? 80)),
+        done: false,
+        notes: chosen.notes || "",
+        source: chosen.source || "trend",
+        country: chosen.country || "",
+        analysis: chosen.analysis || null,
+        localNumericId: getNextLocalNumericId(),
+      },
+      chosen.type || "long"
+    );
+
+    /* 🚫 فلتر منع التكرار (العنوان + الرابط) */
+    if (
+      isStoryAlreadyAdded({
+        title: normalized.title,
+        link: normalized.notes
+      })
+    ) {
+      btn.textContent = "⚠️ تم إضافة الموضوع من قبل";
+      btn.disabled = false;
+      btn.dataset.loading = "0";
+      return;
+    }
+
+    // 1️⃣ إضافة للسيرفر
+    await addStoryToServer(normalized);
+
+    // 2️⃣ تحديد قصة اليوم
+    const added = stories.find(
+      s => normalizeArabic(s.title) === normalizeArabic(normalized.title)
+    );
+    if (added?.id) {
+      await addStoryToToday(added.id);
+    }
+
+    btn.textContent = "✅ تمت الإضافة";
+  };
+}
 
  /* =========================
    FAVORITES (GLOBAL)
