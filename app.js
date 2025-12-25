@@ -186,6 +186,47 @@ function extractLinksFromText(text = "") {
      .trim();
  }
 
+ /* =========================
+   DATE SEARCH HELPERS
+========================= */
+
+function parseSingleDate(input) {
+  if (!input) return null;
+
+  const m = input.trim().match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2}|\d{4})$/);
+  if (!m) return null;
+
+  let [, d, mth, y] = m;
+  d = Number(d);
+  mth = Number(mth) - 1;
+  y = Number(y);
+  if (y < 100) y += 2000;
+
+  const dt = new Date(y, mth, d);
+  return isNaN(dt.getTime()) ? null : dt;
+}
+
+function parseDateQuery(text) {
+  if (!text) return null;
+
+  const range = text.match(
+    /(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})\s*-\s*(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/
+  );
+
+  if (range) {
+    return {
+      from: parseSingleDate(range[1]),
+      to: parseSingleDate(range[2])
+    };
+  }
+
+  const single = parseSingleDate(text);
+  if (single) return { from: single, to: single };
+
+  return null;
+}
+
+
 function detectCategoriesFromTitle(title = "") {
   const text = normalizeArabic(title.toLowerCase());
   const results = [];
@@ -548,15 +589,80 @@ function groupStoriesBySimilarity(list) {
   return result;
 }
 
+/* =========================
+   SMART SEARCH PARSER
+========================= */
+
+function parseSearchQuery(raw = "") {
+  const normalized = normalizeArabic(raw);
+
+  // 🏷 استخراج الفئات من النص
+  const categories = Object.values(STORY_CATEGORIES)
+    .filter(cat => normalized.includes(normalizeArabic(cat)));
+
+  // 📅 استخراج التاريخ / النطاق
+  const dateRange = parseDateQuery(raw);
+
+  // ✏️ نص البحث بعد إزالة الفئات والتاريخ
+  let text = normalized;
+
+  categories.forEach(cat => {
+    text = text.replace(normalizeArabic(cat), "");
+  });
+
+  if (dateRange) {
+    text = text.replace(/\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/g, "");
+    text = text.replace("-", "");
+  }
+
+  return {
+    text: text.trim(),
+    categories,
+    dateRange
+  };
+}
 
 
- function renderStoriesTables(filterText = "") {
+function renderStoriesTables(filterText = "") {
 
-    const q = normalizeArabic(filterText);
-  
-    let filteredStories = stories.filter(s =>
-      normalizeArabic(s.title || "").includes(q)
-    );
+  const parsed = parseSearchQuery(filterText);
+
+  let filteredStories = stories.filter(s => {
+
+    /* 🔍 البحث النصي (زي ما كان) */
+    if (parsed.text) {
+      if (!normalizeArabic(s.title || "").includes(parsed.text)) {
+        return false;
+      }
+    }
+
+    /* 🏷 الفئات */
+    if (parsed.categories.length) {
+      const storyCats = Array.isArray(s.categories) ? s.categories : [];
+      const match = parsed.categories.some(cat =>
+        storyCats.includes(cat)
+      );
+      if (!match) return false;
+    }
+
+    /* 📅 التاريخ */
+    if (parsed.dateRange) {
+      const d = new Date(s.createdAt);
+      if (isNaN(d.getTime())) return false;
+
+      const from = new Date(parsed.dateRange.from);
+from.setHours(0, 0, 0, 0);
+
+const to = new Date(parsed.dateRange.to);
+to.setHours(23, 59, 59, 999);
+
+if (d < from || d > to) return false;
+
+    }
+
+    return true;
+  });
+
   
 if (FORCE_GROUPING) {
   filteredStories = groupStoriesBySimilarity(filteredStories);
