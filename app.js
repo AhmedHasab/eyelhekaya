@@ -1128,6 +1128,67 @@ function getTitlePrefix(title = "", maxWords = 20) {
     .join(" ");
 }
 
+function getStoryLink(story) {
+  return (story.notes || story.link || "").trim();
+}
+
+function findDuplicateStories() {
+  const map = new Map();
+  const duplicates = [];
+
+  stories.forEach(story => {
+    if (story.deleted) return;
+
+    const titleKey = getTitlePrefix(story.title || "", 20);
+    const linkKey = getStoryLink(story);
+
+    if (!titleKey || !linkKey) return;
+
+    const key = `${titleKey}||${linkKey}`;
+
+    if (!map.has(key)) {
+      map.set(key, [story]);
+    } else {
+      map.get(key).push(story);
+    }
+  });
+
+  map.forEach(group => {
+    if (group.length > 1) {
+      duplicates.push(group);
+    }
+  });
+
+  return duplicates;
+}
+
+function renderDuplicateReport() {
+  const groups = findDuplicateStories();
+
+  if (!groups.length) {
+    setHtml($("ai-output"), "<p>✅ لا يوجد أي تكرار حاليًا.</p>");
+    return;
+  }
+
+  const html = groups.map((group, idx) => `
+    <div class="trend-card">
+      <div class="trend-title">⚠️ تشابه رقم ${idx + 1}</div>
+      ${group.map(s => `
+        <div style="margin:6px 0;">
+          <b>${escapeHtml(s.title)}</b><br>
+          <small>${escapeHtml(getStoryLink(s))}</small><br>
+          <button onclick="deleteStoryFromServer('${s.id}')">
+            🗑 حذف هذه القصة
+          </button>
+        </div>
+      `).join("")}
+    </div>
+  `).join("");
+
+  setHtml($("ai-output"), html);
+}
+
+
 function isStoryAlreadyAdded({ title, link }) {
   if (!title || !link) return false;
 
@@ -1525,54 +1586,60 @@ async function reorderFavoriteOnServer(id, toIndex) {
  /* =========================
     INIT: WIRE ALL HTML INTERACTIVE ELEMENTS
  ========================= */
- function wireEventListeners() {
-    // Top buttons
-    $("btn-pick-today")?.addEventListener("click", handlePickTodayTrendLong);
-    $("btn-pick-long")?.addEventListener("click", handlePickRandomFromSavedLong);
-    $("btn-update-trends")?.addEventListener("click", handleUpdateTrendsAll);
-    // ⚠️ ملحوظة: زر الريلز (btn-pick-short) НЕ يتم ربطه هنا
-  
-    // Layout controls
-    $("btn-show-stories-only")?.addEventListener("click", showStoriesOnly);
-    $("btn-show-both")?.addEventListener("click", showBothPanels);
-    $("btn-show-ai-only")?.addEventListener("click", showAiOnly);
-  
-    // Raw parse
-    $("btn-parse-raw")?.addEventListener("click", parseRawToStories);
-  
-    // Manual add / edit
-    $("btn-add-manual")?.addEventListener("click", handleManualAddOrEdit);
-  
-    // Export / Import
-    $("btn-export")?.addEventListener("click", exportStoriesToFile);
-    $("import-file")?.addEventListener("change", (e) => {
-      const f = e.target.files?.[0];
-      if (f) importStoriesFromFile(f);
-      e.target.value = "";
-    });
-    $("btn-show-favorites")?.addEventListener("click", () => {
-        showFavoritesOnly = !showFavoritesOnly;
-        $("btn-show-favorites").textContent =
-          showFavoritesOnly ? "⭐ عرض الكل" : "⭐ عرض المفضلة";
-        renderStoriesTables($("stories-search")?.value || "");
-      });
-      
-    // Search
-    $("stories-search")?.addEventListener("input", handleSearchInput);
-$("btn-force-group")?.addEventListener("click", () => {
-  FORCE_GROUPING = !FORCE_GROUPING;
+function wireEventListeners() {
+  // Top buttons
+  $("btn-pick-today")?.addEventListener("click", handlePickTodayTrendLong);
+  $("btn-pick-long")?.addEventListener("click", handlePickRandomFromSavedLong);
+  $("btn-update-trends")?.addEventListener("click", handleUpdateTrendsAll);
+  // ⚠️ ملحوظة: زر الريلز (btn-pick-short) НЕ يتم ربطه هنا
 
-  $("btn-force-group").textContent =
-    FORCE_GROUPING
-      ? "🧩 تجميع متشابه (مفعّل)"
-      : "🧩 تجميع متشابه (مؤقت)";
+  // 🔍 فحص التكرار (الجديد)
+  $("btn-scan-duplicates")?.addEventListener("click", renderDuplicateReport);
 
-  renderStoriesTables($("stories-search")?.value || "");
-});
+  // Layout controls
+  $("btn-show-stories-only")?.addEventListener("click", showStoriesOnly);
+  $("btn-show-both")?.addEventListener("click", showBothPanels);
+  $("btn-show-ai-only")?.addEventListener("click", showAiOnly);
 
-  }
+  // Raw parse
+  $("btn-parse-raw")?.addEventListener("click", parseRawToStories);
+
+  // Manual add / edit
+  $("btn-add-manual")?.addEventListener("click", handleManualAddOrEdit);
+
+  // Export / Import
+  $("btn-export")?.addEventListener("click", exportStoriesToFile);
+  $("import-file")?.addEventListener("change", (e) => {
+    const f = e.target.files?.[0];
+    if (f) importStoriesFromFile(f);
+    e.target.value = "";
+  });
+
+  // Favorites toggle
+  $("btn-show-favorites")?.addEventListener("click", () => {
+    showFavoritesOnly = !showFavoritesOnly;
+    $("btn-show-favorites").textContent =
+      showFavoritesOnly ? "⭐ عرض الكل" : "⭐ عرض المفضلة";
+    renderStoriesTables($("stories-search")?.value || "");
+  });
+
+  // Search
+  $("stories-search")?.addEventListener("input", handleSearchInput);
+
+  // Force grouping
+  $("btn-force-group")?.addEventListener("click", () => {
+    FORCE_GROUPING = !FORCE_GROUPING;
+
+    $("btn-force-group").textContent =
+      FORCE_GROUPING
+        ? "🧩 تجميع متشابه (مفعّل)"
+        : "🧩 تجميع متشابه (مؤقت)";
+
+    renderStoriesTables($("stories-search")?.value || "");
+  });
+}
+
   
- 
 /* =========================
    BOOTSTRAP (FINAL & CLEAN)
    - Worker = Source of Truth
