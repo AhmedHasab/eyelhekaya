@@ -559,113 +559,127 @@ if (FORCE_GROUPING) {
     updateStatusPills();
   }
 
- 
-  /*let reorderBoxEl = null;*/
+
+let reorderBoxEl = null;
+
+window.addEventListener("scroll", () => {
+  if (reorderBoxEl) {
+    reorderBoxEl.remove();
+    reorderBoxEl = null;
+  }
+});
+
 
 function renderTableBody(tbodyEl, list) {
-  if (!tbodyEl) return;
+  if (reorderBoxEl) {
+    reorderBoxEl.remove();
+    reorderBoxEl = null;
+  }
 
+
+  if (!tbodyEl) return;
   tbodyEl.innerHTML = "";
 
   list.forEach((story, idx) => {
     const tr = document.createElement("tr");
 
-    const doneBadge = story.done
-      ? "<span class='badge-done'>✔</span>"
-      : "<span class='badge-not-done'>✖</span>";
-
-    const dateStr = story.createdAt
-      ? new Date(story.createdAt).toLocaleDateString()
-      : "-";
-
     tr.innerHTML = `
       <td class="order-cell">${idx + 1}</td>
       <td>${escapeHtml(story.title || "")}</td>
-      <td>
-        ${
-          escapeHtml(
-            Array.isArray(story.categories) && story.categories.length
-              ? story.categories.join(" ، ")
-              : story.category || "-"
-          )
-        }
-      </td>
+      <td>${escapeHtml(
+        Array.isArray(story.categories) && story.categories.length
+          ? story.categories.join(" ، ")
+          : story.category || "-"
+      )}</td>
       <td>${Number(story.score ?? 0)}</td>
       <td>${Number(story.trendScore ?? 0)}</td>
       <td>${Number(story.finalScore ?? 0)}</td>
-      <td>${doneBadge}</td>
-      <td>${escapeHtml(dateStr)}</td>
+      <td>${story.done ? "✔" : "✖"}</td>
+      <td>${story.createdAt ? new Date(story.createdAt).toLocaleDateString() : "-"}</td>
       <td>${renderNotesCell(story.notes || "")}</td>
       <td class="table-actions">
-        <button class="btn small secondary" data-action="view" data-id="${story.id}">👁</button>
-        <button class="btn small secondary" data-action="edit" data-id="${story.id}">✏️</button>
-        <button class="btn small secondary" data-action="done" data-id="${story.id}">✅</button>
-        <button class="btn small secondary" data-action="del" data-id="${story.id}">🗑</button>
-        <button class="btn small secondary fav-btn ${
-          favoriteIds.has(String(story.id)) ? "active" : ""
-        }" data-fav-id="${story.id}">
-          ${favoriteIds.has(String(story.id)) ? "⭐ مفضلة" : "☆ مفضلة"}
-        </button>
+        <button data-action="view" data-id="${story.id}">👁</button>
+        <button data-action="edit" data-id="${story.id}">✏️</button>
+        <button data-action="done" data-id="${story.id}">✅</button>
+        <button data-action="del" data-id="${story.id}">🗑</button>
       </td>
     `;
 
-    tr.dataset.storyId = String(story.id);
+    tr.dataset.storyId = story.id;
     tbodyEl.appendChild(tr);
 
     /* =========================
-       🧠 DOUBLE CLICK INLINE REORDER
+       DOUBLE CLICK → FLOATING INPUT
     ========================= */
-    tr.ondblclick = async (e) => {
+    tr.ondblclick = (e) => {
       if (FORCE_GROUPING) {
         alert("❌ لا يمكن الترتيب أثناء تفعيل التجميع المتشابه");
         return;
       }
 
-      // تجاهل الدبل كليك على الأزرار
       if (e.target.closest("button")) return;
-
-      // لو فيه تحديد نص
       if (window.getSelection()?.toString()) return;
 
-      // لو input شغال بالفعل
-      if (tr.querySelector(".reorder-input")) return;
+      // اقفل أي Box مفتوح
+      if (reorderBoxEl) {
+        reorderBoxEl.remove();
+        reorderBoxEl = null;
+      }
 
-      const orderCell = tr.querySelector(".order-cell");
-      if (!orderCell) return;
+      const rect = tr.getBoundingClientRect();
 
-      const input = document.createElement("input");
-      input.type = "number";
-      input.min = "1";
-      input.value = idx + 1;
-      input.className = "reorder-input";
+      const box = document.createElement("div");
+      box.style.position = "fixed";
+      box.style.top = `${rect.top + rect.height / 2 - 18}px`;
+      box.style.left = `${rect.right + 10}px`;
+      box.style.background = "#fff";
+      box.style.border = "1px solid #ccc";
+      box.style.borderRadius = "6px";
+      box.style.padding = "6px";
+      box.style.boxShadow = "0 4px 12px rgba(0,0,0,.15)";
+      box.style.zIndex = "9999";
 
-      orderCell.appendChild(input);
+      box.innerHTML = `
+        <input type="number" min="1"
+          value="${idx + 1}"
+          style="width:60px; padding:4px; font-size:13px;">
+      `;
+
+      document.body.appendChild(box);
+      reorderBoxEl = box;
+
+      const input = box.querySelector("input");
       input.focus();
       input.select();
 
-      const cleanup = () => {
-        input.remove();
+      let submitted = false;
+
+      const closeBox = () => {
+        if (reorderBoxEl) {
+          reorderBoxEl.remove();
+          reorderBoxEl = null;
+        }
       };
 
-      input.onkeydown = async (ev) => {
+      input.addEventListener("keydown", async (ev) => {
         if (ev.key === "Escape") {
-          cleanup();
-          return;
+          closeBox();
         }
 
-        if (ev.key === "Enter") {
+        if (ev.key === "Enter" && !submitted) {
+          submitted = true;
           const newPos = Number(input.value);
-          if (!Number.isFinite(newPos)) {
-            cleanup();
-            return;
+          closeBox();
+
+          if (Number.isFinite(newPos)) {
+            await reorderStoryOnServer(tr.dataset.storyId, newPos);
           }
-
-          cleanup();
-          await reorderStoryOnServer(tr.dataset.storyId, newPos);
         }
-      };
+      });
 
-      input.onblur = cleanup;
+      input.addEventListener("blur", () => {
+        if (!submitted) closeBox();
+      });
     };
   });
 
@@ -673,30 +687,19 @@ function renderTableBody(tbodyEl, list) {
      CLICK HANDLERS
   ========================= */
   tbodyEl.onclick = async (e) => {
-    const tr = e.target.closest("tr");
-    if (!tr) return;
-
-    // ⭐ مفضلة
-    const favBtn = e.target.closest("button[data-fav-id]");
-    if (favBtn) {
-      const favId = favBtn.getAttribute("data-fav-id");
-      await addToFavorites(favId);
-      return;
-    }
-
-    // 🎯 أزرار الأكشن
     const btn = e.target.closest("button[data-action]");
-    if (btn) {
-      const id = btn.getAttribute("data-id");
-      const action = btn.getAttribute("data-action");
+    if (!btn) return;
 
-      if (action === "view") showStoryDetails(id);
-      if (action === "edit") startEditStory(id);
-      if (action === "done") toggleDone(id);
-      if (action === "del") deleteStoryFromServer(id);
-    }
+    const id = btn.dataset.id;
+    const action = btn.dataset.action;
+
+    if (action === "view") showStoryDetails(id);
+    if (action === "edit") startEditStory(id);
+    if (action === "done") toggleDone(id);
+    if (action === "del") deleteStoryFromServer(id);
   };
 }
+
 
  /* =========================
     DETAILS VIEW (👁)
