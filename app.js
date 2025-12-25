@@ -562,140 +562,142 @@ if (FORCE_GROUPING) {
  
   /*let reorderBoxEl = null;*/
 
+function renderTableBody(tbodyEl, list) {
+  if (!tbodyEl) return;
 
+  tbodyEl.innerHTML = "";
 
+  list.forEach((story, idx) => {
+    const tr = document.createElement("tr");
 
- function renderTableBody(tbodyEl, list) {
-   if (!tbodyEl) return;
- 
-   tbodyEl.innerHTML = "";
-   list.forEach((story, idx) => {
-     const tr = document.createElement("tr");
- 
-     const doneBadge = story.done
-       ? "<span class='badge-done'>✔</span>"
-       : "<span class='badge-not-done'>✖</span>";
- 
-     const dateStr = story.createdAt
-       ? new Date(story.createdAt).toLocaleDateString()
-       : "-";
- 
-     tr.innerHTML = `
-       <td>${idx + 1}</td>
-       <td>${escapeHtml(story.title || "")}</td>
-       <td>
-  ${
-    escapeHtml(
-      Array.isArray(story.categories) && story.categories.length
-        ? story.categories.join(" ، ")
-        : story.category || "-"
-    )
-  }
-</td>
-       <td>${Number(story.score ?? 0)}</td>
-       <td>${Number(story.trendScore ?? 0)}</td>
-       <td>${Number(story.finalScore ?? 0)}</td>
-       <td>${doneBadge}</td>
-       <td>${escapeHtml(dateStr)}</td>
-       <td>${renderNotesCell(story.notes || "")}</td>
-       <td class="table-actions">
-         <button class="btn small secondary" data-action="view" data-id="${story.id}">👁</button>
-         <button class="btn small secondary" data-action="edit" data-id="${story.id}">✏️</button>
-         <button class="btn small secondary" data-action="done" data-id="${story.id}">✅</button>
-         <button class="btn small secondary" data-action="del" data-id="${story.id}">🗑</button>
-         <button class="btn small secondary fav-btn ${favoriteIds.has(String(story.id)) ? "active" : ""}"
-        data-fav-id="${story.id}">
-${favoriteIds.has(String(story.id)) ? "⭐ مفضلة" : "☆ مفضلة"}
-</button>
-       </td>
-     `;
- 
-     tbodyEl.appendChild(tr);
+    const doneBadge = story.done
+      ? "<span class='badge-done'>✔</span>"
+      : "<span class='badge-not-done'>✖</span>";
 
-     tr.dataset.storyId = String(story.id);
+    const dateStr = story.createdAt
+      ? new Date(story.createdAt).toLocaleDateString()
+      : "-";
 
-   });
- 
-   // Delegate click handling inside tbody
-   tbodyEl.onclick = async (e) => {
+    tr.innerHTML = `
+      <td class="order-cell">${idx + 1}</td>
+      <td>${escapeHtml(story.title || "")}</td>
+      <td>
+        ${
+          escapeHtml(
+            Array.isArray(story.categories) && story.categories.length
+              ? story.categories.join(" ، ")
+              : story.category || "-"
+          )
+        }
+      </td>
+      <td>${Number(story.score ?? 0)}</td>
+      <td>${Number(story.trendScore ?? 0)}</td>
+      <td>${Number(story.finalScore ?? 0)}</td>
+      <td>${doneBadge}</td>
+      <td>${escapeHtml(dateStr)}</td>
+      <td>${renderNotesCell(story.notes || "")}</td>
+      <td class="table-actions">
+        <button class="btn small secondary" data-action="view" data-id="${story.id}">👁</button>
+        <button class="btn small secondary" data-action="edit" data-id="${story.id}">✏️</button>
+        <button class="btn small secondary" data-action="done" data-id="${story.id}">✅</button>
+        <button class="btn small secondary" data-action="del" data-id="${story.id}">🗑</button>
+        <button class="btn small secondary fav-btn ${
+          favoriteIds.has(String(story.id)) ? "active" : ""
+        }" data-fav-id="${story.id}">
+          ${favoriteIds.has(String(story.id)) ? "⭐ مفضلة" : "☆ مفضلة"}
+        </button>
+      </td>
+    `;
 
+    tr.dataset.storyId = String(story.id);
+    tbodyEl.appendChild(tr);
+
+    /* =========================
+       🧠 DOUBLE CLICK INLINE REORDER
+    ========================= */
+    tr.ondblclick = async (e) => {
+      if (FORCE_GROUPING) {
+        alert("❌ لا يمكن الترتيب أثناء تفعيل التجميع المتشابه");
+        return;
+      }
+
+      // تجاهل الدبل كليك على الأزرار
+      if (e.target.closest("button")) return;
+
+      // لو فيه تحديد نص
+      if (window.getSelection()?.toString()) return;
+
+      // لو input شغال بالفعل
+      if (tr.querySelector(".reorder-input")) return;
+
+      const orderCell = tr.querySelector(".order-cell");
+      if (!orderCell) return;
+
+      const input = document.createElement("input");
+      input.type = "number";
+      input.min = "1";
+      input.value = idx + 1;
+      input.className = "reorder-input";
+
+      orderCell.appendChild(input);
+      input.focus();
+      input.select();
+
+      const cleanup = () => {
+        input.remove();
+      };
+
+      input.onkeydown = async (ev) => {
+        if (ev.key === "Escape") {
+          cleanup();
+          return;
+        }
+
+        if (ev.key === "Enter") {
+          const newPos = Number(input.value);
+          if (!Number.isFinite(newPos)) {
+            cleanup();
+            return;
+          }
+
+          cleanup();
+          await reorderStoryOnServer(tr.dataset.storyId, newPos);
+        }
+      };
+
+      input.onblur = cleanup;
+    };
+  });
+
+  /* =========================
+     CLICK HANDLERS
+  ========================= */
+  tbodyEl.onclick = async (e) => {
     const tr = e.target.closest("tr");
-if (!tr) return;
+    if (!tr) return;
 
-    // 1) مفضلة
+    // ⭐ مفضلة
     const favBtn = e.target.closest("button[data-fav-id]");
     if (favBtn) {
       const favId = favBtn.getAttribute("data-fav-id");
       await addToFavorites(favId);
       return;
     }
-  
-    // 2) أزرار الأكشن
+
+    // 🎯 أزرار الأكشن
     const btn = e.target.closest("button[data-action]");
     if (btn) {
       const id = btn.getAttribute("data-id");
       const action = btn.getAttribute("data-action");
-  
+
       if (action === "view") showStoryDetails(id);
       if (action === "edit") startEditStory(id);
       if (action === "done") toggleDone(id);
       if (action === "del") deleteStoryFromServer(id);
-      return;
     }
-  
-// 3) ضغط ماوس على الصف → افتح مربع الترتيب (بدون تحديد نص)
-/*tbodyEl.onmousedown = async (e) => {
-  const tr = e.target.closest("tr");
-  if (!tr) return;
-
-  // تجاهل الأزرار
-  if (e.target.closest("button")) return;
-
-  e.preventDefault();
-
-  const id = tr.dataset.storyId;
-  if (!id) return;
-
-  const to = prompt("اكتب رقم الترتيب الجديد:");
-  if (!to) return;
-
-  const num = Number(to);
-  if (!Number.isFinite(num)) return;
-
-  await reorderStoryOnServer(id, num);
-};*/
-
   };
-  
-
-  tbodyEl.onmousedown = async (e) => {
-    if (FORCE_GROUPING) {
-  alert("❌ لا يمكن الترتيب أثناء تفعيل التجميع المتشابه");
-  return;
 }
 
-  const tr = e.target.closest("tr");
-  if (!tr) return;
-
-  // تجاهل الأزرار
-  if (e.target.closest("button")) return;
-
-  e.preventDefault();
-
-  const id = tr.dataset.storyId;
-  if (!id) return;
-
-  const to = prompt("اكتب رقم الترتيب الجديد:");
-  if (!to) return;
-
-  const num = Number(to);
-  if (!Number.isFinite(num)) return;
-
-  await reorderStoryOnServer(id, num);
-};
-
- }
- 
  /* =========================
     DETAILS VIEW (👁)
  ========================= */
