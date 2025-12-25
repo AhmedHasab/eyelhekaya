@@ -601,7 +601,7 @@ ${favoriteIds.has(String(story.id)) ? "⭐ مفضلة" : "☆ مفضلة"}
    });
  
    // Delegate click handling inside tbody
-   tbodyEl.onclick = async (e) => {
+  /* tbodyEl.onclick = async (e) => {
 
     const tr = e.target.closest("tr");
 if (!tr) return;
@@ -676,7 +676,7 @@ tbodyEl.onmousedown = async (e) => {
         await reorderStoryOnServer(box.dataset.id, to);
       }
     };
-  };*/
+  }};*/
   
     // أقصى يمين الصف (في الشاشة)
   /*  const r = tr.getBoundingClientRect();
