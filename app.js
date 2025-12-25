@@ -593,7 +593,6 @@ function renderTableBody(tbodyEl, list) {
     reorderBoxEl = null;
   }
 
-
   if (!tbodyEl) return;
   tbodyEl.innerHTML = "";
 
@@ -612,10 +611,10 @@ function renderTableBody(tbodyEl, list) {
       <td>${Number(story.trendScore ?? 0)}</td>
       <td>${Number(story.finalScore ?? 0)}</td>
       <td>
-  <span class="done-mark ${story.done ? "done-yes" : "done-no"}">
-    ${story.done ? "✔" : "✖"}
-  </span>
-</td>
+        <span class="done-mark ${story.done ? "done-yes" : "done-no"}">
+          ${story.done ? "✔" : "✖"}
+        </span>
+      </td>
       <td>${story.createdAt ? new Date(story.createdAt).toLocaleDateString() : "-"}</td>
       <td>${renderNotesCell(story.notes || "")}</td>
       <td class="table-actions">
@@ -623,12 +622,12 @@ function renderTableBody(tbodyEl, list) {
         <button data-action="edit" data-id="${story.id}">✏️</button>
         <button data-action="done" data-id="${story.id}">✅</button>
         <button data-action="del" data-id="${story.id}">🗑</button>
-      <button
-  class="fav-btn ${favoriteIds.has(String(story.id)) ? "active" : ""}"
-  data-fav-id="${story.id}"
-  title="إضافة / إزالة من المفضلة">
-  ${favoriteIds.has(String(story.id)) ? "⭐" : "☆"}
-</button>
+        <button
+          class="fav-btn ${favoriteIds.has(String(story.id)) ? "active" : ""}"
+          data-fav-id="${story.id}"
+          title="إضافة / إزالة من المفضلة">
+          ${favoriteIds.has(String(story.id)) ? "⭐" : "☆"}
+        </button>
       </td>
     `;
 
@@ -647,7 +646,6 @@ function renderTableBody(tbodyEl, list) {
       if (e.target.closest("button")) return;
       if (window.getSelection()?.toString()) return;
 
-      // اقفل أي Box مفتوح
       if (reorderBoxEl) {
         reorderBoxEl.remove();
         reorderBoxEl = null;
@@ -699,7 +697,13 @@ function renderTableBody(tbodyEl, list) {
           closeBox();
 
           if (Number.isFinite(newPos)) {
-            await reorderStoryOnServer(tr.dataset.storyId, newPos);
+            if (showFavoritesOnly) {
+              // ⭐ ترتيب مستقل للمفضلة
+              await reorderFavoriteOnServer(tr.dataset.storyId, newPos);
+            } else {
+              // 📋 ترتيب الجداول العادي
+              await reorderStoryOnServer(tr.dataset.storyId, newPos);
+            }
           }
         }
       });
@@ -713,36 +717,29 @@ function renderTableBody(tbodyEl, list) {
   /* =========================
      CLICK HANDLERS
   ========================= */
-tbodyEl.onclick = async (e) => {
+  tbodyEl.onclick = async (e) => {
 
-  /* ⭐ زر المفضلة (إضافة / إزالة) */
-  const favBtn = e.target.closest("button[data-fav-id]");
-  if (favBtn) {
-    const id = favBtn.dataset.favId;
+    /* ⭐ زر المفضلة */
+    const favBtn = e.target.closest("button[data-fav-id]");
+    if (favBtn) {
+      const id = favBtn.dataset.favId;
+      await addToFavorites(id);
+      return;
+    }
 
-    // 🔥 السيرفر (KV) هو اللي يقرر الإضافة أو الإزالة
-    await addToFavorites(id);
+    /* 🎯 باقي الأزرار */
+    const btn = e.target.closest("button[data-action]");
+    if (!btn) return;
 
-    // ❌ ممنوع أي تعديل شكلي هنا
-    // ✅ renderStoriesTables يتم استدعاؤها داخل addToFavorites
-    return;
-  }
+    const id = btn.dataset.id;
+    const action = btn.dataset.action;
 
-  /* 🎯 باقي الأزرار */
-  const btn = e.target.closest("button[data-action]");
-  if (!btn) return;
-
-  const id = btn.dataset.id;
-  const action = btn.dataset.action;
-
-  if (action === "view") showStoryDetails(id);
-  if (action === "edit") startEditStory(id);
-  if (action === "done") toggleDone(id);
-  if (action === "del") deleteStoryFromServer(id);
-};
-
+    if (action === "view") showStoryDetails(id);
+    if (action === "edit") startEditStory(id);
+    if (action === "done") toggleDone(id);
+    if (action === "del") deleteStoryFromServer(id);
+  };
 }
-
 
  /* =========================
     DETAILS VIEW (👁)
@@ -1293,7 +1290,32 @@ async function addToFavorites(storyId) {
     renderStoriesTables($("stories-search")?.value || "");
   }
   
-  
+  async function reorderFavoriteOnServer(id, toIndex) {
+  if (!id || !Number.isFinite(toIndex)) return;
+
+  const res = await postToWorker({
+    action: "reorder_favorite",
+    payload: {
+      id,
+      toIndex
+    }
+  });
+
+  if (!res || !Array.isArray(res.ids)) return;
+
+  // المصدر الحقيقي
+  favoriteIds = new Set(res.ids.map(String));
+
+  // ترتيب المفضلة
+  window.favoriteOrder = {};
+  res.ids.forEach((fid, idx) => {
+    window.favoriteOrder[fid] = idx;
+  });
+
+  // إعادة رسم جدول المفضلة
+  renderStoriesTables($("stories-search")?.value || "");
+}
+
 
  async function handlePickTodayTrendLong() {
    setHtml($("ai-output"), "<p>⏳ جاري جلب أفضل تريندات للفيديو الطويل...</p>");
