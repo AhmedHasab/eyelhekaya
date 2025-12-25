@@ -1162,32 +1162,107 @@ function findDuplicateStories() {
   return duplicates;
 }
 
-function renderDuplicateReport() {
-  const groups = findDuplicateStories();
+function findTitleOnlySimilarStories() {
+  const map = new Map();
+  const results = [];
 
-  if (!groups.length) {
+  stories.forEach(story => {
+    if (story.deleted) return;
+
+    const titleKey = getTitlePrefix(story.title || "", 20);
+    if (!titleKey) return;
+
+    if (!map.has(titleKey)) {
+      map.set(titleKey, [story]);
+    } else {
+      map.get(titleKey).push(story);
+    }
+  });
+
+  map.forEach(group => {
+    if (group.length > 1) {
+      results.push(group);
+    }
+  });
+
+  return results;
+}
+
+
+function renderDuplicateReport() {
+  const strictGroups = findDuplicateStories(); // AND (اسم + رابط)
+  const titleOnlyGroups = findTitleOnlySimilarStories(); // اسم فقط
+
+  if (!strictGroups.length && !titleOnlyGroups.length) {
     setHtml($("ai-output"), "<p>✅ لا يوجد أي تكرار حاليًا.</p>");
     return;
   }
 
-  const html = groups.map((group, idx) => `
-    <div class="trend-card">
-      <div class="trend-title">⚠️ تشابه رقم ${idx + 1}</div>
-      ${group.map(s => `
-        <div style="margin:6px 0;">
-          <b>${escapeHtml(s.title)}</b><br>
-          <small>${escapeHtml(getStoryLink(s))}</small><br>
-          <button onclick="deleteStoryFromServer('${s.id}')">
-            🗑 حذف هذه القصة
-          </button>
-        </div>
-      `).join("")}
-    </div>
-  `).join("");
+  let html = "";
+
+  /* ======================
+     1️⃣ AND RESULTS
+  ====================== */
+  if (strictGroups.length) {
+    html += `
+      <h3>🔴 تكرار كامل (اسم + رابط)</h3>
+    `;
+
+    html += strictGroups.map((group, idx) => `
+      <div class="trend-card">
+        <div class="trend-title">⚠️ تكرار مؤكد رقم ${idx + 1}</div>
+        ${group.map(s => `
+          <div style="margin:6px 0;">
+            <b>${escapeHtml(s.title)}</b><br>
+            <small>${escapeHtml(getStoryLink(s))}</small><br>
+            <button onclick="deleteDuplicateAndRefresh('${s.id}')">
+              🗑 حذف هذه القصة
+            </button>
+          </div>
+        `).join("")}
+      </div>
+    `).join("");
+  }
+
+  /* ======================
+     2️⃣ NAME ONLY RESULTS
+  ====================== */
+  if (titleOnlyGroups.length) {
+    html += `
+      <h3 style="margin-top:25px;">🟡 تشابه في العنوان فقط (بدون روابط)</h3>
+      <p style="opacity:.7">
+        ⚠️ هذه النتائج متشابهة في الاسم فقط، راجعها يدويًا
+      </p>
+    `;
+
+    html += titleOnlyGroups.map((group, idx) => `
+      <div class="trend-card">
+        <div class="trend-title">📌 تشابه اسم رقم ${idx + 1}</div>
+        ${group.map(s => `
+          <div style="margin:6px 0;">
+            <b>${escapeHtml(s.title)}</b><br>
+            <small>${escapeHtml(getStoryLink(s) || "— بدون رابط —")}</small><br>
+            <button onclick="deleteStoryFromServer('${s.id}')">
+              🗑 حذف
+            </button>
+          </div>
+        `).join("")}
+      </div>
+    `).join("");
+  }
 
   setHtml($("ai-output"), html);
 }
 
+async function deleteDuplicateAndRefresh(id) {
+  if (!id) return;
+
+  // 1️⃣ حذف من السيرفر
+  await deleteStoryFromServer(id);
+
+  // 2️⃣ تحديث فوري لنتيجة فحص التكرار
+  renderDuplicateReport();
+}
 
 function isStoryAlreadyAdded({ title, link }) {
   if (!title || !link) return false;
