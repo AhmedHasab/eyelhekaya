@@ -438,15 +438,25 @@ function normalizeStoryObject(input, forcedType) {
 
   const title = (input.title ?? input.name ?? "").trim();
 
-  // ✅ هنا مكانها الصح
-  const autoCategories = detectCategoriesFromTitle(title);
+  // 🧠 الفئات اليدوية (لو موجودة)
+  const manualCategories = Array.isArray(input.categories)
+    ? input.categories
+    : input.category
+      ? [input.category]
+      : [];
+
+  // 🤖 الفئات التلقائية (تُستخدم فقط لو مفيش يدوي)
+  const autoCategories =
+    manualCategories.length === 0
+      ? detectCategoriesFromTitle(title)
+      : [];
 
   return {
     title,
 
+    // ✅ المصدر النهائي للفئات
     categories: Array.from(new Set([
-      ...(Array.isArray(input.categories) ? input.categories : []),
-      ...(input.category ? [input.category] : []),
+      ...manualCategories,
       ...autoCategories
     ])),
 
@@ -456,7 +466,7 @@ function normalizeStoryObject(input, forcedType) {
     trendScore: Number(input.trendScore ?? 0),
     finalScore: Number(
       input.finalScore ??
-      (Number(input.score ?? 80))
+      Number(input.score ?? 80)
     ),
 
     done: Boolean(input.done ?? false),
@@ -1438,16 +1448,25 @@ const dateText = r.publishedAt
       return;
     }
 
-    // 1️⃣ إضافة للسيرفر
-    await addStoryToServer(normalized);
+// 1️⃣ إضافة للسيرفر
+await addStoryToServer(normalized);
 
-    // 2️⃣ تحديد قصة اليوم
-    const added = stories.find(
-      s => normalizeArabic(s.title) === normalizeArabic(normalized.title)
-    );
-    if (added?.id) {
-      await addStoryToToday(added.id);
-    }
+// 📌 جيب القصة مرة واحدة
+const added = stories.find(
+  s => normalizeArabic(s.title) === normalizeArabic(normalized.title)
+);
+
+// 🧠 مزامنة المفضلة
+if (added?.id && favoriteIds.has(String(tmp))) {
+  await addToFavorites(tmp);        // إزالة tmpId
+  await addToFavorites(added.id);   // إضافة id الحقيقي
+}
+
+// 2️⃣ تحديد قصة اليوم
+if (added?.id) {
+  await addStoryToToday(added.id);
+}
+
 
     btn.textContent = "✅ تمت الإضافة";
   };
