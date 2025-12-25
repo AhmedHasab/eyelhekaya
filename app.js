@@ -623,11 +623,12 @@ function renderTableBody(tbodyEl, list) {
         <button data-action="edit" data-id="${story.id}">✏️</button>
         <button data-action="done" data-id="${story.id}">✅</button>
         <button data-action="del" data-id="${story.id}">🗑</button>
-          <button
-    class="fav-btn ${favoriteIds.has(String(story.id)) ? "active" : ""}"
-    data-fav-id="${story.id}">
-    ${favoriteIds.has(String(story.id)) ? "⭐" : "☆"}
-  </button>
+      <button
+  class="fav-btn ${favoriteIds.has(String(story.id)) ? "active" : ""}"
+  data-fav-id="${story.id}"
+  title="إضافة / إزالة من المفضلة">
+  ${favoriteIds.has(String(story.id)) ? "⭐" : "☆"}
+</button>
       </td>
     `;
 
@@ -712,18 +713,34 @@ function renderTableBody(tbodyEl, list) {
   /* =========================
      CLICK HANDLERS
   ========================= */
-  tbodyEl.onclick = async (e) => {
-    const btn = e.target.closest("button[data-action]");
-    if (!btn) return;
+tbodyEl.onclick = async (e) => {
 
-    const id = btn.dataset.id;
-    const action = btn.dataset.action;
+  /* ⭐ زر المفضلة (إضافة / إزالة) */
+  const favBtn = e.target.closest("button[data-fav-id]");
+  if (favBtn) {
+    const id = favBtn.dataset.favId;
 
-    if (action === "view") showStoryDetails(id);
-    if (action === "edit") startEditStory(id);
-    if (action === "done") toggleDone(id);
-    if (action === "del") deleteStoryFromServer(id);
-  };
+    // 🔥 السيرفر (KV) هو اللي يقرر الإضافة أو الإزالة
+    await addToFavorites(id);
+
+    // ❌ ممنوع أي تعديل شكلي هنا
+    // ✅ renderStoriesTables يتم استدعاؤها داخل addToFavorites
+    return;
+  }
+
+  /* 🎯 باقي الأزرار */
+  const btn = e.target.closest("button[data-action]");
+  if (!btn) return;
+
+  const id = btn.dataset.id;
+  const action = btn.dataset.action;
+
+  if (action === "view") showStoryDetails(id);
+  if (action === "edit") startEditStory(id);
+  if (action === "done") toggleDone(id);
+  if (action === "del") deleteStoryFromServer(id);
+};
+
 }
 
 
@@ -1175,12 +1192,17 @@ ${favoriteIds.has(String(r.id || tmp)) ? "⭐ مفضلة" : "☆ مفضلة"}
     out.onclick = null;
     out.onclick = async (e) => {
         const favBtn = e.target.closest("button.fav-btn");
-        if (favBtn) {
-          const favId = favBtn.getAttribute("data-fav-id");
-          await addToFavorites(favId);
-          
-          return;
-        };
+       if (favBtn) {
+  const favId = favBtn.getAttribute("data-fav-id");
+  await addToFavorites(favId);
+
+  // ✅ حدّث شكل الزر هنا فقط (AI cards لا تُعاد رسمها)
+  const isFav = favoriteIds.has(String(favId));
+  favBtn.classList.toggle("active", isFav);
+  favBtn.textContent = isFav ? "⭐ مفضلة" : "☆ مفضلة";
+
+  return;
+}
         const btn = e.target.closest("button[data-add='1']");
         if (!btn) return;
       
