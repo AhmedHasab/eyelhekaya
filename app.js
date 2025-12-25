@@ -594,7 +594,11 @@ function renderTableBody(tbodyEl, list) {
       <td>${Number(story.score ?? 0)}</td>
       <td>${Number(story.trendScore ?? 0)}</td>
       <td>${Number(story.finalScore ?? 0)}</td>
-      <td>${story.done ? "✔" : "✖"}</td>
+      <td>
+  <span class="done-mark ${story.done ? "done-yes" : "done-no"}">
+    ${story.done ? "✔" : "✖"}
+  </span>
+</td>
       <td>${story.createdAt ? new Date(story.createdAt).toLocaleDateString() : "-"}</td>
       <td>${renderNotesCell(story.notes || "")}</td>
       <td class="table-actions">
