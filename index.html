@@ -10,10 +10,8 @@
   <link rel="stylesheet" href="style.css" />
 
   <meta name="theme-color" content="#ffffff" />
- <link rel="icon" type="image/png" href="Logo_Channel.png">
-<link rel="apple-touch-icon" href="icon-192.png">
-
-
+  <link rel="icon" type="image/png" href="Logo_Channel.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
 </head>
 
 <body>
@@ -28,6 +26,7 @@
         <button id="btn-pick-long" class="btn primary">🎥 اختيار قصة عشوائية مسجلة بالموقع (فيديو طويل)</button>
         <button id="btn-pick-short" class="btn accent">⚡ اختيار فيديو (ريلز) من الترند</button>
         <button id="btn-update-trends" class="btn secondary">📈 تحديث التريندات</button>
+      </div><!-- ✅ top-buttons CLOSED -->
 
       <!-- حالة التريند -->
       <div class="status-row">
@@ -35,7 +34,6 @@
         <span id="status-youtube" class="status-pill muted">تريندات YouTube غير محدثة</span>
         <span id="status-deaths" class="status-pill muted">وفيات آخر 48 ساعة غير محدثة</span>
       </div>
-
 
       <!-- التحكم في عرض اللوحين -->
       <div class="layout-controls">
@@ -58,126 +56,112 @@
       <!-- لوحة إدارة القصص -->
       <section class="stories-panel card">
         <h2>📚 إدارة القصص</h2>
-        <div id="edit-banner" class="edit-banner hidden">
-  ✏️ تعديل قصة: <span id="edit-banner-title"></span>
-</div>
-                <textarea id="raw-input" rows="5" placeholder="مثال:
+
+        <!-- ✅ منطقة التعديل / الإدخال (Sticky) -->
+        <div id="edit-form-container">
+
+          <!-- بانر التعديل -->
+          <div id="edit-banner" class="edit-banner hidden">
+            ✏️ تعديل قصة: <span id="edit-banner-title"></span>
+          </div>
+
+          <textarea id="raw-input" rows="5" placeholder="مثال:
 ليلى مراد
 محاولات اغتيال مبارك
 حادثة طائرة مصر للطيران
 ..."></textarea><br>
 
-        <label class="block-label">✂️ الصق النص الخام للقصص (كل سطر = قصة):</label><br>
+          <label class="block-label">✂️ الصق النص الخام للقصص (كل سطر = قصة):</label><br>
 
+          <button id="btn-parse-raw" class="btn primary small">➕ تحويل النص إلى قصص</button>
 
+          <!-- إدخال يدوي كامل -->
+          <div class="manual-input-row">
 
-        <button id="btn-parse-raw" class="btn primary small">➕ تحويل النص إلى قصص</button>
+            <div class="manual-cell">
+              <label>اسم القصة</label>
+              <textarea id="manual-name" placeholder="اكتب اسم القصة هنا" rows="2" class="resizable-textarea"></textarea>
+            </div>
 
-        <!-- إدخال يدوي كامل -->
-        <div class="manual-input-row">
+            <div class="manual-cell">
+              <label>نوع القصة (Category)</label>
 
-          <div class="manual-cell">
-            <label>اسم القصة</label>
-            <textarea
-  id="manual-name"
-  placeholder="اكتب اسم القصة هنا"
-  rows="2"
-  class="resizable-textarea"
-></textarea>
+              <button type="button" id="toggle-categories" class="dropdown-btn">
+                اختر الفئات ▼
+              </button>
+
+              <div id="categories-dropdown" class="categories-dropdown hidden">
+                <label><input type="checkbox" value="A">A- المشاهير والنجوم</label>
+                <label><input type="checkbox" value="B">B- السياسيين والزعماء والقادة</label>
+                <label><input type="checkbox" value="C">C- المخابرات والجواسيس</label>
+                <label><input type="checkbox" value="D">D- الجرائم والاختفاءات</label>
+                <label><input type="checkbox" value="E">E- التاريخ العسكري</label>
+                <label><input type="checkbox" value="F">F- الأنبياء والصحابة والغزوات</label>
+                <label><input type="checkbox" value="G">G- العلماء والمفكرين</label>
+              </div>
+
+              <small style="opacity:.7">اختر فئة واحدة أو أكثر</small>
+            </div>
+
+            <div class="manual-cell">
+              <label>نوع المحتوى</label>
+
+              <label>
+                <input type="radio" name="story-type" value="long" checked>
+                🎬 قصة طويلة
+              </label>
+
+              <label>
+                <input type="radio" name="story-type" value="short">
+                ⚡ قصة قصيرة (ريلز)
+              </label>
+            </div>
+
+            <div class="manual-cell">
+              <label>تقييمك الشخصي (الدرجة)</label>
+              <input id="manual-score" type="number" min="0" max="100" value="80" />
+            </div>
+
+            <div class="manual-cell">
+              <label>ملاحظات / روابط</label>
+              <textarea id="manual-notes" placeholder="ملاحظة – رابط – كلمة مفتاحية" rows="4"
+                class="resizable-textarea"></textarea>
+            </div>
+
+            <div class="manual-cell manual-cell-action">
+              <label>&nbsp;</label>
+              <button id="btn-add-manual" class="btn primary small">➕ إضافة قصة يدويًا</button>
+            </div>
           </div>
 
-<div class="manual-cell">
-  <label>نوع القصة (Category)</label>
+          <p class="manual-hint">⚙ يتم احتساب تاريخ التسجيل ودرجة الذكاء تلقائيًا.</p>
 
-  <button type="button" id="toggle-categories" class="dropdown-btn">
-    اختر الفئات ▼
-  </button>
+          <!-- تصدير واستيراد -->
+          <div class="backup-row">
+            <button id="btn-export" class="btn secondary small">💾 تصدير القصص</button>
 
-  <div id="categories-dropdown" class="categories-dropdown hidden">
-    <label><input type="checkbox" value="A">A- المشاهير والنجوم</label>
-    <label><input type="checkbox" value="B">B- السياسيين والزعماء والقادة</label>
-    <label><input type="checkbox" value="C">C- المخابرات والجواسيس</label>
-    <label><input type="checkbox" value="D">D- الجرائم والاختفاءات</label>
-    <label><input type="checkbox" value="E">E- التاريخ العسكري</label>
-    <label><input type="checkbox" value="F">F- الأنبياء والصحابة والغزوات</label>
-    <label><input type="checkbox" value="G">G- العلماء والمفكرين</label>
-  </div>
-
-  <small style="opacity:.7">
-    اختر فئة واحدة أو أكثر
-  </small>
-</div>
-<div class="manual-cell">
-  <label>نوع المحتوى</label>
-
-  <label>
-    <input type="radio" name="story-type" value="long" checked>
-    🎬 قصة طويلة
-  </label>
-
-  <label>
-    <input type="radio" name="story-type" value="short">
-    ⚡ قصة قصيرة (ريلز)
-  </label>
-</div>
-
-          <div class="manual-cell">
-            <label>تقييمك الشخصي (الدرجة)</label>
-            <input id="manual-score" type="number" min="0" max="100" value="80" />
+            <label for="import-file" class="btn secondary small file-label">📂 استيراد القصص</label>
+            <input type="file" id="import-file" hidden accept="application/json" />
           </div>
 
-          <div class="manual-cell">
-            <label>ملاحظات / روابط</label>
-            <textarea
-  id="manual-notes"
-  placeholder="ملاحظة – رابط – كلمة مفتاحية"
-  rows="4"
-  class="resizable-textarea"
-></textarea>
+          <!-- شريط البحث -->
+          <div class="search-row">
+            <label>🔎 شريط بحث:</label>
+            <textarea id="stories-search" placeholder="اكتب للبحث في جميع القصص…" rows="2"
+              class="resizable-textarea"></textarea>
           </div>
 
-          <div class="manual-cell manual-cell-action">
-            <label>&nbsp;</label>
-            <button id="btn-add-manual" class="btn primary small">➕ إضافة قصة يدويًا</button>
-          </div>
-        </div>
+          <!-- زر المفضلة -->
+          <button id="btn-show-favorites" class="btn secondary small">⭐ عرض المفضلة</button>
 
-        <p class="manual-hint">⚙ يتم احتساب تاريخ التسجيل ودرجة الذكاء تلقائيًا.</p>
+          <button id="btn-force-group" class="btn secondary" type="button">🧩 تجميع متشابه (مؤقت)</button>
 
-        <!-- تصدير واستيراد -->
-        <div class="backup-row">
-          <button id="btn-export" class="btn secondary small">💾 تصدير القصص</button>
+          <button id="btn-scan-duplicates" class="btn secondary small danger-outline" type="button">
+            🔍 فحص التكرار
+          </button>
 
-          <label for="import-file" class="btn secondary small file-label">📂 استيراد القصص</label>
-          <input type="file" id="import-file" hidden accept="application/json" />
-        </div>
+        </div><!-- ✅ edit-form-container CLOSED in the correct place -->
 
-        <!-- شريط البحث -->
-        <div class="search-row">
-          <label>🔎 شريط بحث:</label>
-          <textarea
-  id="stories-search"
-  placeholder="اكتب للبحث في جميع القصص…"
-  rows="2"
-  class="resizable-textarea"
-></textarea>
-        </div>
-
-            <!-- زر المفضلة -->
-          <button id="btn-show-favorites" class="btn secondary small">
-         ⭐ عرض المفضلة
-           </button>
-
-    <button id="btn-force-group" class="btn secondary" type="button">
-          🧩 تجميع متشابه (مؤقت)
-        </button>
-<button
-  id="btn-scan-duplicates"
-  class="btn secondary small danger-outline"
-  type="button">
-  🔍 فحص التكرار
-</button>
-        
         <!-- جدول القصص -->
         <div class="table-wrapper">
           <table id="stories-table">
@@ -199,62 +183,58 @@
           </table>
         </div>
 
+        <!-- ========================= -->
+        <!-- جدول القصص القصيرة (ريلز) -->
+        <!-- ========================= -->
+        <h3 style="margin-top:25px;">⚡ القصص القصيرة (ريلز)</h3>
+
+        <div class="table-wrapper">
+          <table id="short-stories-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>الاسم</th>
+                <th>النوع</th>
+                <th>الدرجة</th>
+                <th>الجاذبية</th>
+                <th>ذكاء</th>
+                <th>تنفيذ</th>
+                <th>تاريخ</th>
+                <th>ملاحظات</th>
+                <th>تحكم</th>
+              </tr>
+            </thead>
+            <tbody id="short-stories-tbody">
+              <!-- يتم الملء تلقائيًا من app.js -->
+            </tbody>
+          </table>
+        </div>
+
       </section>
-      <!-- ========================= -->
-<!-- جدول القصص القصيرة (ريلز) -->
-<!-- ========================= -->
-
-<h3 style="margin-top:25px;">⚡ القصص القصيرة (ريلز)</h3>
-
-<div class="table-wrapper">
-  <table id="short-stories-table">
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>الاسم</th>
-        <th>النوع</th>
-        <th>الدرجة</th>
-        <th>الجاذبية</th>
-        <th>ذكاء</th>
-        <th>تنفيذ</th>
-        <th>تاريخ</th>
-        <th>ملاحظات</th>
-        <th>تحكم</th>
-      </tr>
-    </thead>
-    <tbody id="short-stories-tbody">
-      <!-- يتم الملء تلقائيًا من app.js -->
-    </tbody>
-  </table>
-</div>
-
     </main>
 
-  </div>
-<!-- سكريبت التحكم في الفئات (Categories) -->
+  </div><!-- ✅ app-container CLOSED -->
 
+
+  <!-- ===============================
+     SIMPLE PASSWORD GATE (24H)
+     =============================== -->
   <script>
-/* ===============================
-   SIMPLE PASSWORD GATE (24H)
-   =============================== */
+    (function () {
+      const SITE_PASSWORD_HASH =
+        "dd6cee257e7d07b78a5cb40b20969a4f66d04d8317920e469e9316702a47cb33";
 
-(function () {
-  const SITE_PASSWORD_HASH =
-    "dd6cee257e7d07b78a5cb40b20969a4f66d04d8317920e469e9316702a47cb33";
+      const STORAGE_KEY = "EH_AUTH_OK_UNTIL";
+      const NOW = Date.now();
+      const DAY_24H = 24 * 60 * 60 * 1000;
 
-  const STORAGE_KEY = "EH_AUTH_OK_UNTIL";
-  const NOW = Date.now();
-  const DAY_24H = 24 * 60 * 60 * 1000;
+      const validUntil = Number(localStorage.getItem(STORAGE_KEY) || 0);
+      if (validUntil > NOW) {
+        console.log("🔓 Access granted (cached)");
+        return;
+      }
 
-  // 🔹 لو الجهاز مصرح له خلال 24 ساعة
-  const validUntil = Number(localStorage.getItem(STORAGE_KEY) || 0);
-  if (validUntil > NOW) {
-    console.log("🔓 Access granted (cached)");
-    return;
-  }
-
-  // 🔐 اطلب كلمة السر
-  document.documentElement.innerHTML = `
+      document.documentElement.innerHTML = `
     <style>
       body {
         margin: 0;
@@ -274,9 +254,7 @@
         width: 320px;
         text-align: center;
       }
-      .gate h2 {
-        margin: 0 0 10px;
-      }
+      .gate h2 { margin: 0 0 10px; }
       .gate input {
         width: 100%;
         padding: 10px;
@@ -313,231 +291,230 @@
     </div>
   `;
 
-  async function sha256(text) {
-    const enc = new TextEncoder().encode(text);
-    const buf = await crypto.subtle.digest("SHA-256", enc);
-    return Array.from(new Uint8Array(buf))
-      .map(b => b.toString(16).padStart(2, "0"))
-      .join("");
-  }
+      async function sha256(text) {
+        const enc = new TextEncoder().encode(text);
+        const buf = await crypto.subtle.digest("SHA-256", enc);
+        return Array.from(new Uint8Array(buf))
+          .map(b => b.toString(16).padStart(2, "0"))
+          .join("");
+      }
 
-  document.getElementById("btn").onclick = async () => {
-    const input = document.getElementById("pw").value.trim();
-    if (!input) return;
+      document.getElementById("btn").onclick = async () => {
+        const input = document.getElementById("pw").value.trim();
+        if (!input) return;
 
-    const hash = await sha256(input);
+        const hash = await sha256(input);
 
-    if (hash === SITE_PASSWORD_HASH) {
-      // ✅ خزّن السماح 24 ساعة
-      localStorage.setItem(STORAGE_KEY, String(Date.now() + DAY_24H));
-      location.reload();
-    } else {
-      document.getElementById("err").style.display = "block";
-    }
-  };
-})();
-</script>
+        if (hash === SITE_PASSWORD_HASH) {
+          localStorage.setItem(STORAGE_KEY, String(Date.now() + DAY_24H));
+          location.reload();
+        } else {
+          document.getElementById("err").style.display = "block";
+        }
+      };
+    })();
+  </script>
 
-<script>
-  
-async function toggleFavorite(id) {
-  const res = await postToWorker({
-    action: "add_favorite",
-    payload: { id }
-  });
-
-  if (!res.ok) return;
-
-  // 🔴 المهم هنا
-  FAVORITE_IDS = res.ids;   // تحديث الحالة فورًا
-
-  renderAllTables();        // إعادة رسم كل الجداول
-}
-// اختيار قصة طويله او قصيرة 
-  function getSelectedStoryType() {
-  const el = document.querySelector(
-    "input[name='story-type']:checked"
-  );
-  return el ? el.value : "long";
-}
-  
-  function setCategoriesSelection(categories = []) {
-    document
-      .querySelectorAll("#categories-dropdown input[type='checkbox']")
-      .forEach(cb => {
-        cb.checked = categories.includes(cb.value);
-      });
-  }
-
-  function clearCategoriesSelection() {
-    document
-      .querySelectorAll("#categories-dropdown input[type='checkbox']")
-      .forEach(cb => {
-        cb.checked = false;
-      });
-  }
-</script>
   <script>
-  // فتح / قفل القائمة
-  document.getElementById("toggle-categories")?.addEventListener("click", () => {
-    document
-      .getElementById("categories-dropdown")
-      .classList.toggle("hidden");
-  });
+    async function toggleFavorite(id) {
+      const res = await postToWorker({
+        action: "add_favorite",
+        payload: { id }
+      });
 
-  // الدالة اللي app.js بيستخدمها
-  function getSelectedCategories() {
-    return Array.from(
-      document.querySelectorAll(
-        "#categories-dropdown input[type='checkbox']:checked"
-      )
-    ).map(cb => cb.value);
-  }
-</script>
+      if (!res.ok) return;
 
+      FAVORITE_IDS = res.ids;
+      renderAllTables();
+    }
+
+    function getSelectedStoryType() {
+      const el = document.querySelector("input[name='story-type']:checked");
+      return el ? el.value : "long";
+    }
+
+    function setCategoriesSelection(categories = []) {
+      document
+        .querySelectorAll("#categories-dropdown input[type='checkbox']")
+        .forEach(cb => {
+          cb.checked = categories.includes(cb.value);
+        });
+    }
+
+    function clearCategoriesSelection() {
+      document
+        .querySelectorAll("#categories-dropdown input[type='checkbox']")
+        .forEach(cb => {
+          cb.checked = false;
+        });
+    }
+  </script>
+
+  <script>
+    document.getElementById("toggle-categories")?.addEventListener("click", () => {
+      document.getElementById("categories-dropdown").classList.toggle("hidden");
+    });
+
+    function getSelectedCategories() {
+      return Array.from(
+        document.querySelectorAll("#categories-dropdown input[type='checkbox']:checked")
+      ).map(cb => cb.value);
+    }
+  </script>
 
   <script src="app.js"></script>
-<script>
-// تعطيل الكاش بالكامل بدون تعديل app.js
 
-(function() {
-    console.log("⛔ Cache Override Activated (AI Cache Disabled)");
+  <script>
+    (function () {
+      console.log("⛔ Cache Override Activated (AI Cache Disabled)");
 
-    // إلغاء وظيفة القراءة من الكاش
-    window.getCachedAi = function () {
+      window.getCachedAi = function () {
         console.log("Cache read blocked");
         return null;
-    };
+      };
 
-    // إلغاء وظيفة الكتابة إلى الكاش
-    window.setCachedAi = function () {
+      window.setCachedAi = function () {
         console.log("Cache write blocked");
-    };
-})();
-</script>
+      };
+    })();
+  </script>
 
   <script>
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("service-worker.js");
     }
   </script>
-<style> 
-.manual-input-row {
-  display: grid;
-  grid-template-columns: 2fr 1.2fr 0.6fr 2fr auto;
-  gap: 12px;
-  align-items: center;
-  margin-bottom: 15px;
-}
-.manual-cell {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-.table-wrapper {
-    display: inline-block;     /* يسمح بالتمدد الحقيقي */
-    resize: both;              /* سحب أفقي + سحب رأسي */
-    overflow: auto;            /* يسمح بزيادة الحجم */
-    
-    min-width: 900px;          /* الحد الأدنى للعرض */
-    min-height: 500px;         /* الحد الأدنى للطول */
-    
-    width: auto;               /* ضروري لحرية التمدد */
-    height: auto;              /* ضروري لحرية التمدد */
-    
-    max-width: 1000px;           /* بدون أي حدود للعرض */
-    max-height:750px;          /* بدون أي حدود للطول */
-    
-    box-sizing: border-box;    /* يمنع مشاكل القياس */
-}
-  
-.resizable-textarea {
-  width: 100%;
-  resize: vertical;
-  min-height: 42px;
-  padding: 8px 10px;
-  font-family: inherit;
-  font-size: 14px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-}
-#manual-notes {
-  min-height: 80px;
-}
-.search-row {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 10px;
-  align-items: center;
-  margin: 15px 0;
-}
 
-#stories-search {
-  max-width: 480px;
-}
-.dropdown-btn {
-  padding: 6px 12px;
-  cursor: pointer;
-  border: 1px solid #ccc;
-  background: #f7f7f7;
-  border-radius: 4px;
-}
-/* زر فحص التكرار */
-.btn.danger-outline {
-  border: 1px solid #f59e0b;   /* برتقالي تحذيري */
-  background: #fff7ed;
-  color: #92400e;
-  font-weight: 800;
-}
+  <style>
+    .manual-input-row {
+      display: grid;
+      grid-template-columns: 2fr 1.2fr 0.6fr 2fr auto;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 15px;
+    }
 
-.btn.danger-outline:hover {
-  background: #ffedd5;
-  border-color: #d97706;
-}
+    .manual-cell {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
 
-.btn.danger-outline:active {
-  transform: scale(0.97);
-}
-.table-toolbar {
-  margin-bottom: 8px;
-  display: flex;
-  justify-content: flex-start;
-}
-.categories-dropdown {
-  margin-top: 6px;
-  padding: 10px;
-  border: 1px solid #ccc;
-  background: #fff;
-  max-width: 320px;
-}
+    .table-wrapper {
+      display: inline-block;
+      resize: both;
+      overflow: auto;
 
-.categories-dropdown label {
-  display: block;
-  margin: 6px 0;
-  cursor: pointer;
-}
+      min-width: 900px;
+      min-height: 500px;
 
-.hidden {
-  display: none;
-}
-  #edit-form-container {
-  position: sticky;
-  top: 0;
-  z-index: 1000;
+      width: auto;
+      height: auto;
 
-  background: #ffffff;
-  padding: 12px 10px;
-  border-bottom: 2px solid #f59e0b;
+      max-width: 1000px;
+      max-height: 750px;
 
-  transition: box-shadow 0.2s ease;
-}
+      box-sizing: border-box;
+    }
 
-/* لما يكون في وضع تعديل */
-#edit-form-container.editing {
-  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
-}
+    .resizable-textarea {
+      width: 100%;
+      resize: vertical;
+      min-height: 42px;
+      padding: 8px 10px;
+      font-family: inherit;
+      font-size: 14px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
 
+    #manual-notes {
+      min-height: 80px;
+    }
+
+    .search-row {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 10px;
+      align-items: center;
+      margin: 15px 0;
+    }
+
+    #stories-search {
+      max-width: 480px;
+    }
+
+    .dropdown-btn {
+      padding: 6px 12px;
+      cursor: pointer;
+      border: 1px solid #ccc;
+      background: #f7f7f7;
+      border-radius: 4px;
+    }
+
+    .btn.danger-outline {
+      border: 1px solid #f59e0b;
+      background: #fff7ed;
+      color: #92400e;
+      font-weight: 800;
+    }
+
+    .btn.danger-outline:hover {
+      background: #ffedd5;
+      border-color: #d97706;
+    }
+
+    .btn.danger-outline:active {
+      transform: scale(0.97);
+    }
+
+    .table-toolbar {
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: flex-start;
+    }
+
+    .categories-dropdown {
+      margin-top: 6px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      background: #fff;
+      max-width: 320px;
+    }
+
+    .categories-dropdown label {
+      display: block;
+      margin: 6px 0;
+      cursor: pointer;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    #edit-form-container {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+
+      background: #ffffff;
+      padding: 12px 10px;
+      border-bottom: 2px solid #f59e0b;
+
+      transition: box-shadow 0.2s ease;
+    }
+
+    #edit-form-container.editing {
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .edit-banner {
+      background: #fff3cd;
+      border-bottom: 2px solid #f59e0b;
+      padding: 10px 14px;
+      font-weight: 700;
+    }
   </style>
-</body>
 
+</body>
 </html>
