@@ -520,6 +520,23 @@ async function toggleFavorite(id) {
 .hidden {
   display: none;
 }
+  #edit-form-container {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+
+  background: #ffffff;
+  padding: 12px 10px;
+  border-bottom: 2px solid #f59e0b;
+
+  transition: box-shadow 0.2s ease;
+}
+
+/* لما يكون في وضع تعديل */
+#edit-form-container.editing {
+  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
   </style>
 </body>
 
