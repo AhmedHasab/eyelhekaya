@@ -49,6 +49,19 @@ body {
   }
 
 }
+.edit-banner {
+  position: sticky;
+  top: 0;
+  z-index: 1200;
+  background: #fff3cd;
+  border-bottom: 2px solid #f59e0b;
+  padding: 10px 14px;
+  font-weight: 700;
+}
+
+.edit-banner.hidden {
+  display: none;
+}
 
 .app-container {
   max-width: 1300px;
