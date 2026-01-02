@@ -746,6 +746,9 @@ function renderTableBody(tbodyEl, list) {
  ========================= */
  function showStoryDetails(id) {
    const s = stories.find((x) => String(x.id) === String(id));
+   // 🔵 إخفاء بانر التعديل عند العرض فقط
+document.getElementById("edit-banner")?.classList.add("hidden");
+document.getElementById("edit-banner-title").textContent = "";
    if (!s) return;
  
    const html = `
@@ -798,11 +801,22 @@ function renderTableBody(tbodyEl, list) {
    if ($("btn-add-manual")) {
      $("btn-add-manual").textContent = "💾 حفظ التعديل";
    }
+
+   // 🟡 إظهار بانر التعديل
+const banner = document.getElementById("edit-banner");
+const titleSpan = document.getElementById("edit-banner-title");
+
+if (banner) banner.classList.remove("hidden");
+if (titleSpan) titleSpan.textContent = s.title || "";
+
  }
  
  function resetEditMode() {
    editingStoryId = null;
    if ($("btn-add-manual")) $("btn-add-manual").textContent = "➕ إضافة قصة يدويًا";
+   // 🟢 إخفاء بانر التعديل
+document.getElementById("edit-banner")?.classList.add("hidden");
+document.getElementById("edit-banner-title").textContent = "";
  }
  
  /* =========================
