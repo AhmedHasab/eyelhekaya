@@ -802,22 +802,37 @@ document.getElementById("edit-banner-title").textContent = "";
      $("btn-add-manual").textContent = "💾 حفظ التعديل";
    }
 
-   // 🟡 إظهار بانر التعديل
-const banner = document.getElementById("edit-banner");
-const titleSpan = document.getElementById("edit-banner-title");
+  // 🟡 إظهار البانر
+  const banner = $("edit-banner");
+  const titleSpan = $("edit-banner-title");
+  banner.classList.remove("hidden");
+  titleSpan.textContent = s.title || "";
 
-if (banner) banner.classList.remove("hidden");
-if (titleSpan) titleSpan.textContent = s.title || "";
+  // 🔴 هنا المهم
+  $("edit-form-container")?.classList.add("editing");
 
+  // 📌 اسحب الصفحة فوق النموذج
+  $("edit-form-container")?.scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
+  // ✅ تثبيت الفورم أثناء التعديل فقط
+$("edit-sticky-wrapper")?.classList.add("editing");
  }
  
- function resetEditMode() {
-   editingStoryId = null;
-   if ($("btn-add-manual")) $("btn-add-manual").textContent = "➕ إضافة قصة يدويًا";
-   // 🟢 إخفاء بانر التعديل
-document.getElementById("edit-banner")?.classList.add("hidden");
-document.getElementById("edit-banner-title").textContent = "";
- }
+function resetEditMode() {
+  editingStoryId = null;
+
+  $("btn-add-manual").textContent = "➕ إضافة قصة يدويًا";
+
+  $("edit-banner")?.classList.add("hidden");
+  $("edit-banner-title").textContent = "";
+
+// ❌ فك التثبيت بعد الحفظ / الإضافة
+$("edit-sticky-wrapper")?.classList.remove("editing");
+
+}
+
  
  /* =========================
     DONE TOGGLE
