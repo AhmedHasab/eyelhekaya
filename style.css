@@ -11,6 +11,44 @@ body {
   direction: rtl;
   color: #222;
 }
+/* =========================
+   MOBILE VIEW
+========================= */
+@media (max-width: 768px) {
+
+  /* خلي الصفحة عمود واحد */
+  .main-layout {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* اخفاء لوحة AI مؤقتًا (اختياري) */
+  .ai-panel {
+    display: none;
+  }
+
+  /* تكبير الأزرار */
+  button {
+    font-size: 15px;
+    padding: 8px 10px;
+  }
+
+  /* الجدول يبقى Scroll أفقي */
+  .stories-panel {
+    overflow-x: auto;
+  }
+
+  table {
+    min-width: 900px;
+  }
+
+  /* تقليل الأعمدة الأقل أهمية */
+  td:nth-child(4),  /* score */
+  td:nth-child(5),  /* trendScore */
+  td:nth-child(6) { /* finalScore */
+    display: none;
+  }
+
+}
 
 .app-container {
   max-width: 1300px;
