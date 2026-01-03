@@ -786,53 +786,51 @@ document.getElementById("edit-banner-title").textContent = "";
  /* =========================
     EDIT MODE
  ========================= */
- function startEditStory(id) {
-   const s = stories.find((x) => String(x.id) === String(id));
-   if (!s) return;
- 
-   editingStoryId = s.id;
-   setCategoriesSelection(s.categories || []);
- 
-   if ($("manual-name")) $("manual-name").value = s.title || "";
-  
-   if ($("manual-score")) $("manual-score").value = Number(s.score ?? 80);
-   if ($("manual-notes")) $("manual-notes").value = s.notes || "";
- 
-   if ($("btn-add-manual")) {
-     $("btn-add-manual").textContent = "💾 حفظ التعديل";
-   }
+function startEditStory(id) {
+  const s = stories.find(x => String(x.id) === String(id));
+  if (!s) return;
 
-  // 🟡 إظهار البانر
-  const banner = $("edit-banner");
-  const titleSpan = $("edit-banner-title");
-  banner.classList.remove("hidden");
-  titleSpan.textContent = s.title || "";
+  editingStoryId = s.id;
 
-  // 🔴 هنا المهم
-  $("edit-form-container")?.classList.add("editing");
+  setCategoriesSelection(s.categories || []);
 
-  // 📌 اسحب الصفحة فوق النموذج
-  $("edit-form-container")?.scrollIntoView({
+  $("manual-name").value = s.title || "";
+  $("manual-score").value = Number(s.score ?? 80);
+  $("manual-notes").value = s.notes || "";
+
+  $("btn-add-manual").textContent = "💾 حفظ التعديل";
+
+  const wrapper = $("edit-sticky-wrapper");
+  if (!wrapper) {
+    console.error("❌ edit-sticky-wrapper not found in DOM");
+    return;
+  }
+
+  wrapper.classList.add("editing");
+
+  // عشان المحتوى اللي تحت ما يستخبّطش
+  document.body.style.paddingTop = wrapper.offsetHeight + "px";
+
+  wrapper.scrollIntoView({
     behavior: "smooth",
     block: "start"
   });
-  // ✅ تثبيت الفورم أثناء التعديل فقط
-$("edit-sticky-wrapper")?.classList.add("editing");
-document.body.style.paddingTop =
-  $("edit-sticky-wrapper").offsetHeight + "px";
- }
+}
  
 function resetEditMode() {
   editingStoryId = null;
 
   $("btn-add-manual").textContent = "➕ إضافة قصة يدويًا";
 
-  $("edit-banner")?.classList.add("hidden");
-  $("edit-banner-title").textContent = "";
+  const wrapper = $("edit-sticky-wrapper");
+  if (wrapper) {
+    wrapper.classList.remove("editing");
+    document.body.style.paddingTop = "";
+  }
 
-// ❌ فك التثبيت بعد الحفظ / الإضافة
-$("edit-sticky-wrapper")?.classList.remove("editing");
-document.body.style.paddingTop = "";
+  $("manual-name").value = "";
+  $("manual-notes").value = "";
+  clearCategoriesSelection();
 }
 
  
