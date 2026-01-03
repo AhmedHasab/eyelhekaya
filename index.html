@@ -519,14 +519,18 @@ async function toggleFavorite(id) {
   position: static;
 }
 
-/* لما نكون في وضع تعديل */
 #edit-sticky-wrapper.editing {
-  position: sticky;
+  position: fixed;
   top: 0;
-  z-index: 999;
+  left: 0;
+  right: 0;
+
+  z-index: 9999;
   background: #ffffff;
   border-bottom: 2px solid #f59e0b;
-  padding-bottom: 10px;
+  padding: 12px 16px;
+
+  box-shadow: 0 6px 16px rgba(0,0,0,.15);
 }
 
 .hidden {
