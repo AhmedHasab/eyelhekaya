@@ -737,7 +737,13 @@ function renderTableBody(tbodyEl, list) {
     if (action === "view") showStoryDetails(id);
     if (action === "edit") startEditStory(id);
     if (action === "done") toggleDone(id);
-    if (action === "del") deleteStoryFromServer(id);
+    if (action === "del") {
+  const ok = confirm("❗ هل أنت متأكد من عملية حذف القصة؟\n⚠️ لا يمكن التراجع بعد الحذف.");
+  if (ok) {
+    deleteStoryFromServer(id);
+  }
+}
+
   };
 }
 
