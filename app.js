@@ -413,7 +413,15 @@ async function loadStoriesFromServer() {
    await loadStoriesFromServer();
    if (isAutoBackupEnabled()) autoBackupDownloadSilent();
  }
- 
+ async function confirmAndDeleteStory(id) {
+  const ok = confirm(
+    "❗ هل أنت متأكد من عملية حذف القصة؟\n⚠️ لا يمكن التراجع بعد الحذف."
+  );
+  if (!ok) return;
+
+  await deleteStoryFromServer(id);
+}
+
 
  async function reorderStoryOnServer(id, toIndex) {
   if (!id || !Number.isFinite(toIndex)) return;
@@ -737,12 +745,10 @@ function renderTableBody(tbodyEl, list) {
     if (action === "view") showStoryDetails(id);
     if (action === "edit") startEditStory(id);
     if (action === "done") toggleDone(id);
-    if (action === "del") {
-  const ok = confirm("❗ هل أنت متأكد من عملية حذف القصة؟\n⚠️ لا يمكن التراجع بعد الحذف.");
-  if (ok) {
-    deleteStoryFromServer(id);
-  }
+if (action === "del") {
+  confirmAndDeleteStory(id);
 }
+
 
   };
 }
@@ -1277,9 +1283,9 @@ function renderDuplicateReport() {
           <div style="margin:6px 0;">
             <b>${escapeHtml(s.title)}</b><br>
             <small>${escapeHtml(getStoryLink(s) || "— بدون رابط —")}</small><br>
-            <button onclick="deleteStoryFromServer('${s.id}')">
-              🗑 حذف
-            </button>
+           <button onclick="confirmAndDeleteStory('${s.id}')">
+  🗑 حذف
+</button>
           </div>
         `).join("")}
       </div>
@@ -1292,10 +1298,7 @@ function renderDuplicateReport() {
 async function deleteDuplicateAndRefresh(id) {
   if (!id) return;
 
-  // 1️⃣ حذف من السيرفر
-  await deleteStoryFromServer(id);
-
-  // 2️⃣ تحديث فوري لنتيجة فحص التكرار
+  await confirmAndDeleteStory(id);
   renderDuplicateReport();
 }
 
