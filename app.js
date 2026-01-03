@@ -818,6 +818,8 @@ document.getElementById("edit-banner-title").textContent = "";
   });
   // ✅ تثبيت الفورم أثناء التعديل فقط
 $("edit-sticky-wrapper")?.classList.add("editing");
+document.body.style.paddingTop =
+  $("edit-sticky-wrapper").offsetHeight + "px";
  }
  
 function resetEditMode() {
@@ -830,7 +832,7 @@ function resetEditMode() {
 
 // ❌ فك التثبيت بعد الحفظ / الإضافة
 $("edit-sticky-wrapper")?.classList.remove("editing");
-
+document.body.style.paddingTop = "";
 }
 
  
